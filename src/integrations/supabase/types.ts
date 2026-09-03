@@ -14,16 +14,430 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      customer_memberships: {
+        Row: {
+          created_at: string
+          customer_id: string
+          id: string
+          joined_at: string
+          last_visit_at: string | null
+          program_id: string
+          stamp_balance: number
+          store_id: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          customer_id: string
+          id?: string
+          joined_at?: string
+          last_visit_at?: string | null
+          program_id: string
+          stamp_balance?: number
+          store_id: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          customer_id?: string
+          id?: string
+          joined_at?: string
+          last_visit_at?: string | null
+          program_id?: string
+          stamp_balance?: number
+          store_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "customer_memberships_program_id_fkey"
+            columns: ["program_id"]
+            isOneToOne: false
+            referencedRelation: "loyalty_programs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "customer_memberships_store_id_fkey"
+            columns: ["store_id"]
+            isOneToOne: false
+            referencedRelation: "stores"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      loyalty_programs: {
+        Row: {
+          active: boolean
+          created_at: string
+          description: string | null
+          id: string
+          name: string
+          referrals_enabled: boolean
+          stamps_required: number
+          store_id: string
+          updated_at: string
+        }
+        Insert: {
+          active?: boolean
+          created_at?: string
+          description?: string | null
+          id?: string
+          name: string
+          referrals_enabled?: boolean
+          stamps_required?: number
+          store_id: string
+          updated_at?: string
+        }
+        Update: {
+          active?: boolean
+          created_at?: string
+          description?: string | null
+          id?: string
+          name?: string
+          referrals_enabled?: boolean
+          stamps_required?: number
+          store_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "loyalty_programs_store_id_fkey"
+            columns: ["store_id"]
+            isOneToOne: false
+            referencedRelation: "stores"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      profiles: {
+        Row: {
+          avatar_url: string | null
+          created_at: string
+          first_name: string | null
+          id: string
+          last_name: string | null
+          telegram_user_id: number | null
+          updated_at: string
+          username: string | null
+        }
+        Insert: {
+          avatar_url?: string | null
+          created_at?: string
+          first_name?: string | null
+          id: string
+          last_name?: string | null
+          telegram_user_id?: number | null
+          updated_at?: string
+          username?: string | null
+        }
+        Update: {
+          avatar_url?: string | null
+          created_at?: string
+          first_name?: string | null
+          id?: string
+          last_name?: string | null
+          telegram_user_id?: number | null
+          updated_at?: string
+          username?: string | null
+        }
+        Relationships: []
+      }
+      redemptions: {
+        Row: {
+          created_at: string
+          customer_id: string
+          expires_at: string
+          id: string
+          reward_id: string
+          status: Database["public"]["Enums"]["redemption_status"]
+          store_id: string
+          token_hash: string
+          used_at: string | null
+        }
+        Insert: {
+          created_at?: string
+          customer_id: string
+          expires_at: string
+          id?: string
+          reward_id: string
+          status?: Database["public"]["Enums"]["redemption_status"]
+          store_id: string
+          token_hash: string
+          used_at?: string | null
+        }
+        Update: {
+          created_at?: string
+          customer_id?: string
+          expires_at?: string
+          id?: string
+          reward_id?: string
+          status?: Database["public"]["Enums"]["redemption_status"]
+          store_id?: string
+          token_hash?: string
+          used_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "redemptions_reward_id_fkey"
+            columns: ["reward_id"]
+            isOneToOne: false
+            referencedRelation: "rewards"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "redemptions_store_id_fkey"
+            columns: ["store_id"]
+            isOneToOne: false
+            referencedRelation: "stores"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      referrals: {
+        Row: {
+          created_at: string
+          id: string
+          qualifying_transaction_id: string | null
+          referral_code: string
+          referred_customer_id: string | null
+          referrer_customer_id: string
+          rewarded_at: string | null
+          status: Database["public"]["Enums"]["referral_status"]
+          store_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          qualifying_transaction_id?: string | null
+          referral_code: string
+          referred_customer_id?: string | null
+          referrer_customer_id: string
+          rewarded_at?: string | null
+          status?: Database["public"]["Enums"]["referral_status"]
+          store_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          qualifying_transaction_id?: string | null
+          referral_code?: string
+          referred_customer_id?: string | null
+          referrer_customer_id?: string
+          rewarded_at?: string | null
+          status?: Database["public"]["Enums"]["referral_status"]
+          store_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "referrals_qualifying_transaction_id_fkey"
+            columns: ["qualifying_transaction_id"]
+            isOneToOne: false
+            referencedRelation: "transactions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "referrals_store_id_fkey"
+            columns: ["store_id"]
+            isOneToOne: false
+            referencedRelation: "stores"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      rewards: {
+        Row: {
+          active: boolean
+          created_at: string
+          description: string | null
+          id: string
+          kind: Database["public"]["Enums"]["reward_kind"]
+          name: string
+          program_id: string | null
+          stamps_required: number
+          store_id: string
+          updated_at: string
+        }
+        Insert: {
+          active?: boolean
+          created_at?: string
+          description?: string | null
+          id?: string
+          kind?: Database["public"]["Enums"]["reward_kind"]
+          name: string
+          program_id?: string | null
+          stamps_required?: number
+          store_id: string
+          updated_at?: string
+        }
+        Update: {
+          active?: boolean
+          created_at?: string
+          description?: string | null
+          id?: string
+          kind?: Database["public"]["Enums"]["reward_kind"]
+          name?: string
+          program_id?: string | null
+          stamps_required?: number
+          store_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "rewards_program_id_fkey"
+            columns: ["program_id"]
+            isOneToOne: false
+            referencedRelation: "loyalty_programs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "rewards_store_id_fkey"
+            columns: ["store_id"]
+            isOneToOne: false
+            referencedRelation: "stores"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      store_members: {
+        Row: {
+          created_at: string
+          id: string
+          role: Database["public"]["Enums"]["store_role"]
+          store_id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          role?: Database["public"]["Enums"]["store_role"]
+          store_id: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          role?: Database["public"]["Enums"]["store_role"]
+          store_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "store_members_store_id_fkey"
+            columns: ["store_id"]
+            isOneToOne: false
+            referencedRelation: "stores"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      stores: {
+        Row: {
+          active: boolean
+          created_at: string
+          description: string | null
+          id: string
+          logo_url: string | null
+          name: string
+          owner_id: string
+          updated_at: string
+        }
+        Insert: {
+          active?: boolean
+          created_at?: string
+          description?: string | null
+          id?: string
+          logo_url?: string | null
+          name: string
+          owner_id: string
+          updated_at?: string
+        }
+        Update: {
+          active?: boolean
+          created_at?: string
+          description?: string | null
+          id?: string
+          logo_url?: string | null
+          name?: string
+          owner_id?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      transactions: {
+        Row: {
+          amount: number
+          created_at: string
+          customer_id: string
+          id: string
+          metadata: Json
+          related_reward_id: string | null
+          staff_id: string | null
+          store_id: string
+          type: Database["public"]["Enums"]["transaction_type"]
+        }
+        Insert: {
+          amount?: number
+          created_at?: string
+          customer_id: string
+          id?: string
+          metadata?: Json
+          related_reward_id?: string | null
+          staff_id?: string | null
+          store_id: string
+          type: Database["public"]["Enums"]["transaction_type"]
+        }
+        Update: {
+          amount?: number
+          created_at?: string
+          customer_id?: string
+          id?: string
+          metadata?: Json
+          related_reward_id?: string | null
+          staff_id?: string | null
+          store_id?: string
+          type?: Database["public"]["Enums"]["transaction_type"]
+        }
+        Relationships: [
+          {
+            foreignKeyName: "transactions_related_reward_id_fkey"
+            columns: ["related_reward_id"]
+            isOneToOne: false
+            referencedRelation: "rewards"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "transactions_store_id_fkey"
+            columns: ["store_id"]
+            isOneToOne: false
+            referencedRelation: "stores"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      is_store_member: {
+        Args: { _store_id: string; _user_id: string }
+        Returns: boolean
+      }
+      is_store_owner: {
+        Args: { _store_id: string; _user_id: string }
+        Returns: boolean
+      }
     }
     Enums: {
-      [_ in never]: never
+      redemption_status: "pending" | "used" | "expired"
+      referral_status: "pending" | "qualified" | "rewarded"
+      reward_kind: "standard" | "referral" | "welcome"
+      store_role: "owner" | "staff"
+      transaction_type:
+        | "stamp_awarded"
+        | "stamp_reversed"
+        | "reward_redeemed"
+        | "referral_reward"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -150,6 +564,17 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      redemption_status: ["pending", "used", "expired"],
+      referral_status: ["pending", "qualified", "rewarded"],
+      reward_kind: ["standard", "referral", "welcome"],
+      store_role: ["owner", "staff"],
+      transaction_type: [
+        "stamp_awarded",
+        "stamp_reversed",
+        "reward_redeemed",
+        "referral_reward",
+      ],
+    },
   },
 } as const
