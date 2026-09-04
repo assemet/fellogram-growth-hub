@@ -27,7 +27,7 @@ function Wallet() {
   const loadContext = useServerFn(getMyContext);
   const { data } = useQuery({
     queryKey: ["my-context"],
-    queryFn: () => loadContext({ data: {} }),
+    queryFn: () => loadContext(),
     enabled: state === "ready",
   });
 
@@ -38,7 +38,7 @@ function Wallet() {
 
   return (
     <main className="min-h-screen pb-14">
-      <AppHeader subtitle={firstName ? `Hi ${firstName} 👋` : undefined} />
+      <AppHeader subtitle={firstName ? `Hi ${firstName} 👋` : t("app.tagline")} />
 
       <section className="app-shell">
         <h1 className="mb-3 text-xl font-bold">{t("wallet.title")}</h1>
