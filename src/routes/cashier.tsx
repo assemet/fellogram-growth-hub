@@ -27,7 +27,7 @@ function Cashier() {
   const loadContext = useServerFn(getMyContext);
   const { data } = useQuery({
     queryKey: ["my-context"],
-    queryFn: () => loadContext({ data: {} }),
+    queryFn: () => loadContext(),
     enabled: state === "ready",
   });
 

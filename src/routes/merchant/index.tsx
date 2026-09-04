@@ -47,7 +47,7 @@ function MerchantDashboard() {
   const loadStore = useServerFn(getMyStore);
   const { data, isLoading } = useQuery({
     queryKey: ["my-store"],
-    queryFn: () => loadStore({ data: {} }),
+    queryFn: () => loadStore(),
     enabled: state === "ready",
   });
 

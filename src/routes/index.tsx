@@ -40,7 +40,7 @@ function SplashRouter() {
     let cancelled = false;
     (async () => {
       try {
-        const context = await loadContext({ data: {} });
+        const context = await loadContext();
         if (cancelled) return;
         if (context.staffStoreId) {
           navigate({ to: "/cashier", replace: true });

@@ -35,7 +35,7 @@ export const getMyStore = createServerFn({ method: "POST" })
       .from("stores")
       .select("*")
       .eq("owner_id", userId)
-      .order("created_at", { ascending: true })
+      .order("created_at", { ascending: false })
       .limit(1)
       .maybeSingle();
     if (!store) return null;
@@ -91,10 +91,17 @@ export const createStore = createServerFn({ method: "POST" })
       .single();
     if (storeError) throw new Error(storeError.message);
 
+    // Roll back the store if any later step fails, so no half-configured
+    // store is left behind.
+    const rollback = async (message: string) => {
+      await supabase.from("stores").delete().eq("id", store.id);
+      throw new Error(message);
+    };
+
     const { error: memberError } = await supabase
       .from("store_members")
       .insert({ store_id: store.id, user_id: userId, role: "owner" });
-    if (memberError) throw new Error(memberError.message);
+    if (memberError) await rollback(memberError.message);
 
     const { data: program, error: programError } = await supabase
       .from("loyalty_programs")
@@ -105,7 +112,11 @@ export const createStore = createServerFn({ method: "POST" })
       })
       .select("id")
       .single();
-    if (programError) throw new Error(programError.message);
+    if (programError || !program) {
+      await supabase.from("stores").delete().eq("id", store.id);
+      throw new Error(programError?.message ?? "PROGRAM_CREATE_FAILED");
+    }
+
 
     const { error: rewardError } = await supabase.from("rewards").insert({
       store_id: store.id,
@@ -114,7 +125,7 @@ export const createStore = createServerFn({ method: "POST" })
       stamps_required: data.stampsRequired,
       kind: "standard",
     });
-    if (rewardError) throw new Error(rewardError.message);
+    if (rewardError) await rollback(rewardError.message);
 
     return { storeId: store.id };
   });

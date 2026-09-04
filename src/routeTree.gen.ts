@@ -10,33 +10,73 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as CashierRouteImport } from './routes/cashier'
+import { Route as WalletRouteImport } from './routes/wallet'
+import { Route as MerchantIndexRouteImport } from './routes/merchant/index'
+import { Route as MerchantNewRouteImport } from './routes/merchant/new'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const CashierRoute = CashierRouteImport.update({
+  id: '/cashier',
+  path: '/cashier',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const WalletRoute = WalletRouteImport.update({
+  id: '/wallet',
+  path: '/wallet',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const MerchantIndexRoute = MerchantIndexRouteImport.update({
+  id: '/merchant/',
+  path: '/merchant/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const MerchantNewRoute = MerchantNewRouteImport.update({
+  id: '/merchant/new',
+  path: '/merchant/new',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/cashier': typeof CashierRoute
+  '/wallet': typeof WalletRoute
+  '/merchant/new': typeof MerchantNewRoute
+  '/merchant/': typeof MerchantIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/cashier': typeof CashierRoute
+  '/wallet': typeof WalletRoute
+  '/merchant/new': typeof MerchantNewRoute
+  '/merchant': typeof MerchantIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/cashier': typeof CashierRoute
+  '/wallet': typeof WalletRoute
+  '/merchant/new': typeof MerchantNewRoute
+  '/merchant/': typeof MerchantIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/'
+  fullPaths: '/' | '/cashier' | '/wallet' | '/merchant/new' | '/merchant/'
   fileRoutesByTo: FileRoutesByTo
-  to: '/'
-  id: '__root__' | '/'
+  to: '/' | '/cashier' | '/wallet' | '/merchant/new' | '/merchant'
+  id: '__root__' | '/' | '/cashier' | '/wallet' | '/merchant/new' | '/merchant/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  CashierRoute: typeof CashierRoute
+  WalletRoute: typeof WalletRoute
+  MerchantNewRoute: typeof MerchantNewRoute
+  MerchantIndexRoute: typeof MerchantIndexRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -48,11 +88,43 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/cashier': {
+      id: '/cashier'
+      path: '/cashier'
+      fullPath: '/cashier'
+      preLoaderRoute: typeof CashierRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/wallet': {
+      id: '/wallet'
+      path: '/wallet'
+      fullPath: '/wallet'
+      preLoaderRoute: typeof WalletRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/merchant/': {
+      id: '/merchant/'
+      path: '/merchant'
+      fullPath: '/merchant/'
+      preLoaderRoute: typeof MerchantIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/merchant/new': {
+      id: '/merchant/new'
+      path: '/merchant/new'
+      fullPath: '/merchant/new'
+      preLoaderRoute: typeof MerchantNewRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  CashierRoute: CashierRoute,
+  WalletRoute: WalletRoute,
+  MerchantNewRoute: MerchantNewRoute,
+  MerchantIndexRoute: MerchantIndexRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
