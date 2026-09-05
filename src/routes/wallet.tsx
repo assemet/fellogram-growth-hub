@@ -5,9 +5,10 @@ import { Store, Sparkles } from "lucide-react";
 
 import { AppHeader } from "@/components/BrandMark";
 import { SplashScreen } from "@/components/SplashScreen";
+import { StampCard } from "@/components/StampCard";
 import { useFellogramAuth } from "@/hooks/useFellogramAuth";
 import { t } from "@/lib/i18n";
-import { getMyContext } from "@/lib/store.functions";
+import { getMyCards, getMyContext } from "@/lib/store.functions";
 
 export const Route = createFileRoute("/wallet")({
   ssr: false,
@@ -25,16 +26,22 @@ export const Route = createFileRoute("/wallet")({
 function Wallet() {
   const { state } = useFellogramAuth();
   const loadContext = useServerFn(getMyContext);
+  const loadCards = useServerFn(getMyCards);
+
   const { data } = useQuery({
     queryKey: ["my-context"],
     queryFn: () => loadContext(),
     enabled: state === "ready",
   });
+  const { data: cards } = useQuery({
+    queryKey: ["my-cards"],
+    queryFn: () => loadCards(),
+    enabled: state === "ready",
+  });
 
-  if (state !== "ready" || !data) return <SplashScreen />;
+  if (state !== "ready" || !data || !cards) return <SplashScreen />;
 
   const firstName = data.profile?.first_name ?? "";
-  const cards = data.cards ?? [];
 
   return (
     <main className="min-h-screen pb-14">
@@ -50,27 +57,10 @@ function Wallet() {
             <p className="mt-1 text-sm text-muted-foreground">{t("wallet.empty.body")}</p>
           </div>
         ) : (
-          <ul className="space-y-3">
-            {cards.map((card) => {
-              const required = card.loyalty_programs?.stamps_required ?? 10;
-              const balance = card.stamp_balance ?? 0;
-              return (
-                <li key={card.id} className="rounded-3xl bg-card p-4 shadow-[var(--shadow-card)]">
-                  <div className="flex items-center justify-between">
-                    <p className="font-semibold">{card.stores?.name}</p>
-                    <p className="text-sm font-bold text-primary">
-                      {balance} / {required}
-                    </p>
-                  </div>
-                  <div className="mt-3 h-2 overflow-hidden rounded-full bg-muted">
-                    <div
-                      className="h-full rounded-full bg-primary"
-                      style={{ width: `${Math.min(100, (balance / required) * 100)}%` }}
-                    />
-                  </div>
-                </li>
-              );
-            })}
+          <ul className="space-y-4">
+            {cards.map((card) => (
+              <StampCard key={card.id} card={card} />
+            ))}
           </ul>
         )}
 
