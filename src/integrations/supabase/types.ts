@@ -419,6 +419,14 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      award_stamp: {
+        Args: { _amount?: number; _customer_id: string; _store_id: string }
+        Returns: {
+          membership_id: string
+          stamp_balance: number
+          stamps_required: number
+        }[]
+      }
       is_store_member: {
         Args: { _store_id: string; _user_id: string }
         Returns: boolean
@@ -427,6 +435,7 @@ export type Database = {
         Args: { _store_id: string; _user_id: string }
         Returns: boolean
       }
+      join_store_program: { Args: { _store_id: string }; Returns: string }
     }
     Enums: {
       redemption_status: "pending" | "used" | "expired"
