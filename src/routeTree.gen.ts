@@ -15,6 +15,7 @@ import { Route as WalletRouteImport } from './routes/wallet'
 import { Route as JoinStoreIdRouteImport } from './routes/join.$storeId'
 import { Route as MerchantIndexRouteImport } from './routes/merchant/index'
 import { Route as MerchantNewRouteImport } from './routes/merchant/new'
+import { Route as MerchantProgramRouteImport } from './routes/merchant/program'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -46,6 +47,11 @@ const MerchantNewRoute = MerchantNewRouteImport.update({
   path: '/merchant/new',
   getParentRoute: () => rootRouteImport,
 } as any)
+const MerchantProgramRoute = MerchantProgramRouteImport.update({
+  id: '/merchant/program',
+  path: '/merchant/program',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -53,6 +59,7 @@ export interface FileRoutesByFullPath {
   '/wallet': typeof WalletRoute
   '/join/$storeId': typeof JoinStoreIdRoute
   '/merchant/new': typeof MerchantNewRoute
+  '/merchant/program': typeof MerchantProgramRoute
   '/merchant/': typeof MerchantIndexRoute
 }
 export interface FileRoutesByTo {
@@ -61,6 +68,7 @@ export interface FileRoutesByTo {
   '/wallet': typeof WalletRoute
   '/join/$storeId': typeof JoinStoreIdRoute
   '/merchant/new': typeof MerchantNewRoute
+  '/merchant/program': typeof MerchantProgramRoute
   '/merchant': typeof MerchantIndexRoute
 }
 export interface FileRoutesById {
@@ -70,6 +78,7 @@ export interface FileRoutesById {
   '/wallet': typeof WalletRoute
   '/join/$storeId': typeof JoinStoreIdRoute
   '/merchant/new': typeof MerchantNewRoute
+  '/merchant/program': typeof MerchantProgramRoute
   '/merchant/': typeof MerchantIndexRoute
 }
 export interface FileRouteTypes {
@@ -80,6 +89,7 @@ export interface FileRouteTypes {
     | '/wallet'
     | '/join/$storeId'
     | '/merchant/new'
+    | '/merchant/program'
     | '/merchant/'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -88,6 +98,7 @@ export interface FileRouteTypes {
     | '/wallet'
     | '/join/$storeId'
     | '/merchant/new'
+    | '/merchant/program'
     | '/merchant'
   id:
     | '__root__'
@@ -96,6 +107,7 @@ export interface FileRouteTypes {
     | '/wallet'
     | '/join/$storeId'
     | '/merchant/new'
+    | '/merchant/program'
     | '/merchant/'
   fileRoutesById: FileRoutesById
 }
@@ -105,6 +117,7 @@ export interface RootRouteChildren {
   WalletRoute: typeof WalletRoute
   JoinStoreIdRoute: typeof JoinStoreIdRoute
   MerchantNewRoute: typeof MerchantNewRoute
+  MerchantProgramRoute: typeof MerchantProgramRoute
   MerchantIndexRoute: typeof MerchantIndexRoute
 }
 
@@ -152,6 +165,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof MerchantNewRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/merchant/program': {
+      id: '/merchant/program'
+      path: '/merchant/program'
+      fullPath: '/merchant/program'
+      preLoaderRoute: typeof MerchantProgramRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -161,6 +181,7 @@ const rootRouteChildren: RootRouteChildren = {
   WalletRoute: WalletRoute,
   JoinStoreIdRoute: JoinStoreIdRoute,
   MerchantNewRoute: MerchantNewRoute,
+  MerchantProgramRoute: MerchantProgramRoute,
   MerchantIndexRoute: MerchantIndexRoute,
 }
 export const routeTree = rootRouteImport
