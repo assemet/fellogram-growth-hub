@@ -129,3 +129,196 @@ export const createStore = createServerFn({ method: "POST" })
 
     return { storeId: store.id };
   });
+
+/** Customer wallet: every loyalty card with program, reward and visit log. */
+export const getMyCards = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    const { supabase, userId } = context;
+
+    const [{ data: memberships }, { data: visits }] = await Promise.all([
+      supabase
+        .from("customer_memberships")
+        .select(
+          "id, store_id, stamp_balance, last_visit_at, joined_at, stores(id, name, description, logo_url), loyalty_programs(id, name, stamps_required)",
+        )
+        .eq("customer_id", userId)
+        .order("joined_at", { ascending: false }),
+      supabase
+        .from("transactions")
+        .select("id, store_id, type, amount, created_at")
+        .eq("customer_id", userId)
+        .order("created_at", { ascending: false })
+        .limit(50),
+    ]);
+
+    const storeIds = (memberships ?? []).map((m) => m.store_id);
+    const { data: rewards } = storeIds.length
+      ? await supabase
+          .from("rewards")
+          .select("id, store_id, name, description, stamps_required, kind, active")
+          .in("store_id", storeIds)
+          .eq("active", true)
+      : { data: [] as { id: string; store_id: string; name: string; description: string | null; stamps_required: number; kind: string; active: boolean }[] };
+
+    return (memberships ?? []).map((m) => ({
+      id: m.id,
+      storeId: m.store_id,
+      storeName: m.stores?.name ?? "Store",
+      storeDescription: m.stores?.description ?? null,
+      programName: m.loyalty_programs?.name ?? "Loyalty card",
+      stampsRequired: m.loyalty_programs?.stamps_required ?? 10,
+      stampBalance: m.stamp_balance ?? 0,
+      lastVisitAt: m.last_visit_at,
+      reward:
+        (rewards ?? []).find((r) => r.store_id === m.store_id && r.kind === "standard")?.name ??
+        (rewards ?? []).find((r) => r.store_id === m.store_id)?.name ??
+        null,
+      visits: (visits ?? [])
+        .filter((v) => v.store_id === m.store_id)
+        .slice(0, 5)
+        .map((v) => ({ id: v.id, type: v.type, amount: v.amount, createdAt: v.created_at })),
+    }));
+  });
+
+/** Public-ish store card shown before joining (signed-in Mini App users). */
+export const getStoreForJoin = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((data: { storeId: string }) => ({ storeId: String(data?.storeId ?? "") }))
+  .handler(async ({ data, context }) => {
+    const { supabase, userId } = context;
+    const { data: store } = await supabase
+      .from("stores")
+      .select("id, name, description")
+      .eq("id", data.storeId)
+      .eq("active", true)
+      .maybeSingle();
+    if (!store) return null;
+
+    const [{ data: program }, { data: reward }, { data: membership }] = await Promise.all([
+      supabase
+        .from("loyalty_programs")
+        .select("id, name, stamps_required")
+        .eq("store_id", store.id)
+        .eq("active", true)
+        .order("created_at")
+        .limit(1)
+        .maybeSingle(),
+      supabase
+        .from("rewards")
+        .select("id, name, description")
+        .eq("store_id", store.id)
+        .eq("active", true)
+        .order("created_at")
+        .limit(1)
+        .maybeSingle(),
+      supabase
+        .from("customer_memberships")
+        .select("id")
+        .eq("store_id", store.id)
+        .eq("customer_id", userId)
+        .maybeSingle(),
+    ]);
+
+    return {
+      store,
+      program: program ?? null,
+      reward: reward ?? null,
+      alreadyJoined: Boolean(membership),
+    };
+  });
+
+/** Join a store's loyalty program. Idempotent — returns the existing card. */
+export const joinStore = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((data: { storeId: string }) => ({ storeId: String(data?.storeId ?? "") }))
+  .handler(async ({ data, context }) => {
+    const { data: membershipId, error } = await context.supabase.rpc("join_store_program", {
+      _store_id: data.storeId,
+    });
+    if (error) throw new Error(error.message);
+    return { membershipId };
+  });
+
+type UpdateProgramInput = {
+  programName: string;
+  stampsRequired: number;
+  rewardName: string;
+  rewardDescription?: string;
+};
+
+/** Owner edits the stamp program and its primary reward. */
+export const updateProgram = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((data: UpdateProgramInput) => {
+    const programName = String(data?.programName ?? "").trim() || "Loyalty Card";
+    const rewardName = String(data?.rewardName ?? "").trim();
+    const stampsRequired = Math.min(50, Math.max(1, Math.round(Number(data?.stampsRequired ?? 10))));
+    if (rewardName.length < 2) throw new Error("REWARD_NAME_REQUIRED");
+    return {
+      programName,
+      rewardName,
+      stampsRequired,
+      rewardDescription: String(data?.rewardDescription ?? "").trim() || null,
+    };
+  })
+  .handler(async ({ data, context }) => {
+    const { supabase, userId } = context;
+
+    const { data: store } = await supabase
+      .from("stores")
+      .select("id")
+      .eq("owner_id", userId)
+      .order("created_at", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+    if (!store) throw new Error("STORE_NOT_FOUND");
+
+    const { data: program } = await supabase
+      .from("loyalty_programs")
+      .select("id")
+      .eq("store_id", store.id)
+      .order("created_at")
+      .limit(1)
+      .maybeSingle();
+    if (!program) throw new Error("PROGRAM_NOT_FOUND");
+
+    const { error: programError } = await supabase
+      .from("loyalty_programs")
+      .update({ name: data.programName, stamps_required: data.stampsRequired })
+      .eq("id", program.id);
+    if (programError) throw new Error(programError.message);
+
+    const { data: reward } = await supabase
+      .from("rewards")
+      .select("id")
+      .eq("store_id", store.id)
+      .eq("kind", "standard")
+      .order("created_at")
+      .limit(1)
+      .maybeSingle();
+
+    if (reward) {
+      const { error } = await supabase
+        .from("rewards")
+        .update({
+          name: data.rewardName,
+          description: data.rewardDescription,
+          stamps_required: data.stampsRequired,
+        })
+        .eq("id", reward.id);
+      if (error) throw new Error(error.message);
+    } else {
+      const { error } = await supabase.from("rewards").insert({
+        store_id: store.id,
+        program_id: program.id,
+        name: data.rewardName,
+        description: data.rewardDescription,
+        stamps_required: data.stampsRequired,
+        kind: "standard",
+      });
+      if (error) throw new Error(error.message);
+    }
+
+    return { ok: true };
+  });
