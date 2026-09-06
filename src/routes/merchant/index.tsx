@@ -85,6 +85,12 @@ function MerchantDashboard() {
           <p className="mt-1 text-sm opacity-90">
             {t("merchant.stamps", { count: data.program?.stamps_required ?? 0, reward })}
           </p>
+          <Link
+            to="/merchant/program"
+            className="mt-3 inline-block rounded-full bg-white/20 px-4 py-2 text-xs font-semibold"
+          >
+            {t("program.edit")}
+          </Link>
         </div>
 
         <div className="mt-4 grid grid-cols-2 gap-3">
