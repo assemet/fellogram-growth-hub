@@ -131,9 +131,11 @@ function ProgramEditor() {
                 type="button"
                 aria-label="decrease stamps"
                 onClick={() => {
-                  const next = Math.max(1, stampsRequired - 1);
-                  setStampsRequired(next);
-                  setStampsText(String(next));
+                  setStampsRequired((value) => {
+                    const next = Math.max(1, value - 1);
+                    setStampsText(String(next));
+                    return next;
+                  });
                 }}
                 className="flex h-11 w-11 items-center justify-center rounded-2xl bg-secondary text-secondary-foreground"
               >
@@ -158,9 +160,11 @@ function ProgramEditor() {
                 type="button"
                 aria-label="increase stamps"
                 onClick={() => {
-                  const next = Math.min(50, stampsRequired + 1);
-                  setStampsRequired(next);
-                  setStampsText(String(next));
+                  setStampsRequired((value) => {
+                    const next = Math.min(50, value + 1);
+                    setStampsText(String(next));
+                    return next;
+                  });
                 }}
                 className="flex h-11 w-11 items-center justify-center rounded-2xl bg-secondary text-secondary-foreground"
               >
