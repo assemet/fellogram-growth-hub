@@ -39,17 +39,21 @@ function ProgramEditor() {
 
   const [programName, setProgramName] = useState("");
   const [stampsRequired, setStampsRequired] = useState(10);
+  const [stampsText, setStampsText] = useState("10");
   const [rewardName, setRewardName] = useState("");
   const [rewardDescription, setRewardDescription] = useState("");
 
   useEffect(() => {
     if (!data) return;
     setProgramName(data.program?.name ?? "Loyalty Card");
-    setStampsRequired(data.program?.stamps_required ?? 10);
+    const required = data.program?.stamps_required ?? 10;
+    setStampsRequired(required);
+    setStampsText(String(required));
     const reward = data.rewards.find((r) => r.kind === "standard") ?? data.rewards[0];
     setRewardName(reward?.name ?? "");
     setRewardDescription(reward?.description ?? "");
   }, [data]);
+
 
   const mutation = useMutation({
     mutationFn: () =>
