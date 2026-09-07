@@ -425,6 +425,7 @@ export type Database = {
           membership_id: string
           stamp_balance: number
           stamps_required: number
+          transaction_id: string
         }[]
       }
       is_store_member: {
@@ -436,6 +437,14 @@ export type Database = {
         Returns: boolean
       }
       join_store_program: { Args: { _store_id: string }; Returns: string }
+      undo_last_stamp: {
+        Args: { _customer_id: string; _store_id: string }
+        Returns: {
+          membership_id: string
+          stamp_balance: number
+          stamps_required: number
+        }[]
+      }
     }
     Enums: {
       redemption_status: "pending" | "used" | "expired"
