@@ -129,12 +129,15 @@ function ProgramEditor() {
                 type="number"
                 min={1}
                 max={50}
-                value={stampsRequired}
-                onChange={(event) =>
-                  setStampsRequired(Math.min(50, Math.max(1, Number(event.target.value) || 1)))
-                }
+                value={stampsText}
+                onChange={(event) => setStampsText(event.target.value)}
+                onBlur={() => {
+                  const parsed = Math.min(50, Math.max(1, Math.round(Number(stampsText) || 10)));
+                  setStampsRequired(parsed);
+                }}
                 className="w-20 rounded-2xl border border-border bg-card px-4 py-3 text-center text-sm outline-none focus:border-primary"
               />
+
               <button
                 type="button"
                 aria-label="increase stamps"
