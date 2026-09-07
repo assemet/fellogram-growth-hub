@@ -39,21 +39,32 @@ function ProgramEditor() {
 
   const [programName, setProgramName] = useState("");
   const [stampsRequired, setStampsRequired] = useState(10);
+  const [stampsText, setStampsText] = useState("10");
   const [rewardName, setRewardName] = useState("");
   const [rewardDescription, setRewardDescription] = useState("");
 
   useEffect(() => {
     if (!data) return;
     setProgramName(data.program?.name ?? "Loyalty Card");
-    setStampsRequired(data.program?.stamps_required ?? 10);
+    const required = data.program?.stamps_required ?? 10;
+    setStampsRequired(required);
+    setStampsText(String(required));
     const reward = data.rewards.find((r) => r.kind === "standard") ?? data.rewards[0];
     setRewardName(reward?.name ?? "");
     setRewardDescription(reward?.description ?? "");
   }, [data]);
 
+
   const mutation = useMutation({
     mutationFn: () =>
-      save({ data: { programName, stampsRequired, rewardName, rewardDescription } }),
+      save({
+        data: {
+          programName,
+          stampsRequired: Math.min(50, Math.max(1, Math.round(Number(stampsText) || stampsRequired))),
+          rewardName,
+          rewardDescription,
+        },
+      }),
     onSuccess: async () => {
       toast.success(t("program.saved"));
       await queryClient.invalidateQueries({ queryKey: ["my-store"] });
@@ -119,7 +130,13 @@ function ProgramEditor() {
               <button
                 type="button"
                 aria-label="decrease stamps"
-                onClick={() => setStampsRequired((value) => Math.max(1, value - 1))}
+                onClick={() => {
+                  setStampsRequired((value) => {
+                    const next = Math.max(1, value - 1);
+                    setStampsText(String(next));
+                    return next;
+                  });
+                }}
                 className="flex h-11 w-11 items-center justify-center rounded-2xl bg-secondary text-secondary-foreground"
               >
                 <Minus className="h-4 w-4" />
@@ -129,16 +146,26 @@ function ProgramEditor() {
                 type="number"
                 min={1}
                 max={50}
-                value={stampsRequired}
-                onChange={(event) =>
-                  setStampsRequired(Math.min(50, Math.max(1, Number(event.target.value) || 1)))
-                }
+                value={stampsText}
+                onChange={(event) => setStampsText(event.target.value)}
+                onBlur={() => {
+                  const parsed = Math.min(50, Math.max(1, Math.round(Number(stampsText) || 10)));
+                  setStampsRequired(parsed);
+                  setStampsText(String(parsed));
+                }}
                 className="w-20 rounded-2xl border border-border bg-card px-4 py-3 text-center text-sm outline-none focus:border-primary"
               />
+
               <button
                 type="button"
                 aria-label="increase stamps"
-                onClick={() => setStampsRequired((value) => Math.min(50, value + 1))}
+                onClick={() => {
+                  setStampsRequired((value) => {
+                    const next = Math.min(50, value + 1);
+                    setStampsText(String(next));
+                    return next;
+                  });
+                }}
                 className="flex h-11 w-11 items-center justify-center rounded-2xl bg-secondary text-secondary-foreground"
               >
                 <Plus className="h-4 w-4" />
@@ -175,7 +202,10 @@ function ProgramEditor() {
           <div className="brand-surface rounded-3xl p-4">
             <p className="text-xs opacity-80">{t("merchant.program")}</p>
             <p className="font-display text-lg font-bold">
-              {t("program.preview", { count: stampsRequired, reward: rewardName || "—" })}
+              {t("program.preview", {
+                count: Math.min(50, Math.max(1, Math.round(Number(stampsText) || stampsRequired))),
+                reward: rewardName || "—",
+              })}
             </p>
           </div>
 
