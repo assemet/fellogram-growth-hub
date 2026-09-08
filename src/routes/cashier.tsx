@@ -33,6 +33,7 @@ type CustomerState = {
 };
 
 function friendlyError(message: string): string {
+  console.error("cashier error", message);
   if (message.includes("COOLDOWN_ACTIVE")) {
     const minutes = message.split("COOLDOWN_ACTIVE:")[1]?.match(/\d+/)?.[0] ?? "15";
     return t("cashier.cooldown", { count: minutes });
