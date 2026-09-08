@@ -86,10 +86,11 @@ async function loadCustomerState(
   if (!membership) return null;
 
   const rows = (transactions ?? []) as { id: string; type: string; created_at: string; metadata: any }[];
-  const lastStamp = rows.find((r) => r.type === "stamp_awarded");
   const reversedIds = new Set(
     rows.filter((r) => r.type === "stamp_reversed").map((r) => String(r.metadata?.reversed_transaction_id ?? "")),
   );
+  // Reversed stamps don't count: an undone stamp must not block the next one.
+  const lastStamp = rows.find((r) => r.type === "stamp_awarded" && !reversedIds.has(r.id));
   const lastStampAt = lastStamp ? new Date(lastStamp.created_at).getTime() : 0;
   const elapsedMs = lastStampAt ? Date.now() - lastStampAt : Number.MAX_SAFE_INTEGER;
 
@@ -104,7 +105,7 @@ async function loadCustomerState(
     stampBalance: membership.stamp_balance ?? 0,
     stampsRequired: membership.loyalty_programs?.stamps_required ?? 10,
     cooldownMinutesLeft: elapsedMs < 15 * 60 * 1000 ? Math.max(1, Math.ceil((15 * 60 * 1000 - elapsedMs) / 60000)) : 0,
-    canUndo: Boolean(lastStamp) && elapsedMs < 30 * 60 * 1000 && !reversedIds.has(lastStamp!.id),
+    canUndo: Boolean(lastStamp) && elapsedMs < 30 * 60 * 1000,
   };
 }
 
