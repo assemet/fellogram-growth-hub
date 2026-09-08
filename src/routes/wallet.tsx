@@ -5,6 +5,7 @@ import { Store, Sparkles } from "lucide-react";
 
 import { AppHeader } from "@/components/BrandMark";
 import { SplashScreen } from "@/components/SplashScreen";
+import { CustomerQr } from "@/components/CustomerQr";
 import { StampCard } from "@/components/StampCard";
 import { useFellogramAuth } from "@/hooks/useFellogramAuth";
 import { t } from "@/lib/i18n";
@@ -50,6 +51,12 @@ function Wallet() {
       <section className="app-shell">
         <h1 className="mb-3 text-xl font-bold">{t("wallet.title")}</h1>
 
+        {data.profile?.id && (
+          <div className="mb-4">
+            <CustomerQr customerId={data.profile.id} />
+          </div>
+        )}
+
         {cards.length === 0 ? (
           <div className="rounded-3xl border border-dashed border-border bg-card p-8 text-center shadow-[var(--shadow-card)]">
             <Sparkles className="mx-auto mb-3 h-7 w-7 text-primary" />
@@ -78,6 +85,15 @@ function Wallet() {
                 {t("wallet.merchantCta.action")}
               </span>
             </span>
+          </Link>
+        )}
+
+        {(data.staffStoreId || data.ownedStoreId) && (
+          <Link
+            to="/cashier"
+            className="mt-6 block rounded-3xl bg-primary px-4 py-4 text-center font-semibold text-primary-foreground"
+          >
+            {t("cashier.title")}
           </Link>
         )}
 
