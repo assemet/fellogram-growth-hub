@@ -5,14 +5,14 @@
 @custom-variant dark (&:is(.dark *));
 
 /*
- * Fellogram design system — Telegram-native, mobile-first.
- * Brand: ink, Telegram-aware surfaces, violet (loyalty) and teal (growth).
+ * Fellogram design system — precise, Telegram-native, mobile-first.
+ * Cool graphite neutrals frame store-specific colors without competing with them.
  * All colors are oklch semantic tokens. Never hardcode colors in components.
  */
 
 @theme inline {
-  --font-sans: "Nunito", ui-sans-serif, system-ui, sans-serif;
-  --font-display: "Baloo 2", "Nunito", ui-sans-serif, system-ui, sans-serif;
+  --font-sans: "DM Sans", ui-sans-serif, system-ui, sans-serif;
+  --font-display: "Space Grotesk", "DM Sans", ui-sans-serif, system-ui, sans-serif;
 
   --radius-sm: calc(var(--radius) - 4px);
   --radius-md: calc(var(--radius) - 2px);
@@ -53,34 +53,34 @@
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-ring: var(--sidebar-ring);
 
-  --shadow-card: 0 10px 30px -20px oklch(0.25 0.05 275 / 0.34), 0 2px 8px -5px oklch(0.25 0.05 275 / 0.14);
-  --shadow-float: 0 20px 45px -22px oklch(0.28 0.15 285 / 0.4);
+  --shadow-card: 0 16px 32px -24px oklch(0.2 0.025 225 / 0.38), 0 1px 3px oklch(0.2 0.025 225 / 0.12);
+  --shadow-float: 0 24px 50px -28px oklch(0.2 0.04 225 / 0.52);
 }
 
 :root {
-  --radius: 0.75rem;
-  --background: oklch(0.977 0.007 210);
-  --foreground: oklch(0.22 0.06 275);
+  --radius: 0.5rem;
+  --background: oklch(0.966 0.005 220);
+  --foreground: oklch(0.235 0.018 220);
   --card: oklch(1 0 0);
-  --card-foreground: oklch(0.22 0.06 275);
+  --card-foreground: oklch(0.235 0.018 220);
   --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.22 0.06 275);
-  --primary: oklch(0.53 0.22 291);
+  --popover-foreground: oklch(0.235 0.018 220);
+  --primary: oklch(0.47 0.09 220);
   --primary-foreground: oklch(0.99 0.005 285);
-  --secondary: oklch(0.95 0.015 210);
-  --secondary-foreground: oklch(0.32 0.1 285);
-  --muted: oklch(0.95 0.01 210);
-  --muted-foreground: oklch(0.52 0.04 280);
-  --accent: oklch(0.94 0.03 290);
-  --accent-foreground: oklch(0.34 0.12 288);
+  --secondary: oklch(0.93 0.008 220);
+  --secondary-foreground: oklch(0.29 0.025 220);
+  --muted: oklch(0.93 0.006 220);
+  --muted-foreground: oklch(0.41 0.025 220);
+  --accent: oklch(0.9 0.025 215);
+  --accent-foreground: oklch(0.28 0.04 220);
   --growth: oklch(0.68 0.14 173);
   --growth-foreground: oklch(0.2 0.05 200);
   --destructive: oklch(0.6 0.22 22);
   --destructive-foreground: oklch(0.99 0.005 285);
-  --border: oklch(0.9 0.015 210);
-  --input: oklch(0.9 0.015 210);
-  --ring: oklch(0.53 0.22 291);
-  --brand-gradient: linear-gradient(135deg, oklch(0.55 0.22 288), oklch(0.45 0.2 300));
+  --border: oklch(0.84 0.012 220);
+  --input: oklch(0.79 0.014 220);
+  --ring: oklch(0.47 0.09 220);
+  --brand-gradient: linear-gradient(135deg, oklch(0.34 0.045 220), oklch(0.24 0.025 220));
   --brand-foreground: oklch(0.99 0.005 285);
   --sidebar: oklch(0.985 0.005 285);
   --sidebar-foreground: oklch(0.22 0.06 275);
@@ -93,19 +93,19 @@
 }
 
 .dark {
-  --background: oklch(0.16 0.025 245);
+  --background: oklch(0.14 0.012 220);
   --foreground: oklch(0.97 0.008 285);
-  --card: oklch(0.22 0.03 245);
+  --card: oklch(0.2 0.014 220);
   --card-foreground: oklch(0.97 0.008 285);
   --popover: oklch(0.22 0.03 245);
   --popover-foreground: oklch(0.97 0.008 285);
-  --primary: oklch(0.68 0.19 292);
-  --primary-foreground: oklch(0.18 0.05 280);
-  --secondary: oklch(0.27 0.035 245);
+  --primary: oklch(0.73 0.08 210);
+  --primary-foreground: oklch(0.15 0.02 220);
+  --secondary: oklch(0.26 0.016 220);
   --secondary-foreground: oklch(0.97 0.008 285);
-  --muted: oklch(0.27 0.035 245);
-  --muted-foreground: oklch(0.72 0.03 283);
-  --accent: oklch(0.32 0.08 288);
+  --muted: oklch(0.26 0.016 220);
+  --muted-foreground: oklch(0.76 0.018 220);
+  --accent: oklch(0.31 0.04 215);
   --accent-foreground: oklch(0.97 0.008 285);
   --growth: oklch(0.72 0.13 173);
   --growth-foreground: oklch(0.18 0.05 200);
@@ -113,8 +113,8 @@
   --destructive-foreground: oklch(0.99 0.005 285);
   --border: oklch(1 0 0 / 12%);
   --input: oklch(1 0 0 / 16%);
-  --ring: oklch(0.68 0.19 292);
-  --brand-gradient: linear-gradient(135deg, oklch(0.5 0.2 288), oklch(0.36 0.16 300));
+  --ring: oklch(0.73 0.08 210);
+  --brand-gradient: linear-gradient(135deg, oklch(0.3 0.045 220), oklch(0.2 0.025 220));
   --brand-foreground: oklch(0.99 0.005 285);
   --sidebar: oklch(0.22 0.03 245);
   --sidebar-foreground: oklch(0.97 0.008 285);
@@ -152,6 +152,7 @@
     -webkit-tap-highlight-color: transparent;
     min-width: 320px;
     text-align: start;
+    font-synthesis: none;
   }
 
   h1,
@@ -177,8 +178,8 @@
   --card-foreground: var(--store-ink);
   --popover: var(--store-surface);
   --popover-foreground: var(--store-ink);
-  --primary: var(--store-primary);
-  --primary-foreground: var(--store-on-primary);
+  --primary: var(--store-action);
+  --primary-foreground: var(--store-on-action);
   --secondary: color-mix(in srgb, var(--store-accent) 12%, var(--store-surface));
   --secondary-foreground: var(--store-ink);
   --muted: color-mix(in srgb, var(--store-primary) 8%, var(--store-surface));
@@ -189,15 +190,18 @@
   --growth-foreground: var(--store-on-accent);
   --border: color-mix(in srgb, var(--store-ink) 17%, var(--store-surface));
   --input: var(--border);
-  --ring: var(--store-accent);
+  --ring: var(--store-action);
   --brand-gradient: linear-gradient(135deg, var(--store-primary), color-mix(in srgb, var(--store-primary) 72%, var(--store-accent)));
   --brand-foreground: var(--store-on-primary);
   background: var(--background);
   color: var(--foreground);
+  min-height: 100dvh;
 }
-.store-theme > header { background: var(--brand-gradient); color: var(--brand-foreground); border-color: color-mix(in srgb, var(--brand-foreground) 24%, transparent); }
+.store-theme > header { background: color-mix(in srgb, var(--store-surface) 90%, transparent); color: var(--foreground); border-color: var(--border); backdrop-filter: blur(18px); }
 .store-theme > header .text-muted-foreground { color: var(--brand-foreground); opacity: .8; }
-.store-theme > header button { color: var(--brand-foreground); }
+.store-theme > header .text-muted-foreground { color: var(--muted-foreground); opacity: 1; }
+.store-theme > header button { color: var(--foreground); }
+.store-theme :where(input, textarea, select) { background: var(--store-surface); color: var(--store-ink); }
 
 /* Existing card palettes remain available on the default wallet. */
 .loyalty-card[data-card-theme="coffee"], .card-theme-swatch[data-card-theme="coffee"] {
@@ -278,6 +282,42 @@
   padding-inline: 1.25rem;
 }
 
+.app-header {
+  background: color-mix(in oklab, var(--background) 88%, transparent);
+  backdrop-filter: blur(18px);
+}
+
+.wallet-card-list > li + li { margin-top: 1.75rem; }
+.loyalty-card { isolation: isolate; }
+.loyalty-card-header { min-height: 7.5rem; }
+.store-avatar { box-shadow: inset 0 0 0 1px color-mix(in srgb, currentColor 10%, transparent); }
+
+.settings-section {
+  border-top: 1px solid var(--border);
+  padding-top: 1.25rem;
+}
+
+.theme-choice[aria-pressed="true"] {
+  border-color: var(--ring);
+  background: var(--accent);
+  color: var(--accent-foreground);
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--ring) 22%, transparent);
+}
+.theme-choice[aria-pressed="false"] { border-color: var(--border); background: var(--card); }
+.theme-choice[aria-pressed="false"]:hover { border-color: var(--input); background: var(--muted); }
+
+.color-field {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  align-items: center;
+  gap: .75rem;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--card);
+  padding: .75rem;
+}
+.color-field input[type="color"] { width: 3rem; height: 2.5rem; border: 1px solid var(--input); border-radius: calc(var(--radius) - 2px); padding: .2rem; }
+
 @utility touch-action {
   transition: transform 180ms ease, box-shadow 180ms ease, opacity 180ms ease;
   &:active { transform: scale(0.975); }
@@ -302,9 +342,15 @@
   from { opacity: 0; transform: scale(0.94) translateY(12px); }
   to { opacity: 1; transform: scale(1) translateY(0); }
 }
+@keyframes splash-wordmark {
+  0% { opacity: 0; transform: translateY(8px); }
+  24%, 72% { opacity: 1; transform: translateY(0); }
+  100% { opacity: 0; transform: translateY(-4px); }
+}
 @utility animate-arrive { animation: arrive 450ms ease both; }
 @utility animate-stamp-pop { animation: stamp-pop 480ms cubic-bezier(.2,.9,.2,1) both; }
 @utility animate-splash { animation: splash-enter 700ms cubic-bezier(.2,.8,.2,1) both; }
+@utility animate-splash-wordmark { animation: splash-wordmark 1800ms cubic-bezier(.2,.8,.2,1) both; }
 @utility stamp-slot {
   animation: stamp-pop 480ms cubic-bezier(.2,.9,.2,1) both;
 }

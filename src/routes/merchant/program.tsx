@@ -2,7 +2,7 @@ import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useEffect, useState } from "react";
-import { Minus, Plus } from "lucide-react";
+import { Check, Minus, Plus } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 
@@ -132,7 +132,7 @@ function ProgramEditor() {
         </div>
 
         <form
-          className="mt-4 space-y-4"
+          className="mt-5 space-y-6"
           onSubmit={(event) => {
             event.preventDefault();
             if (rewardName.trim().length < 2) {
@@ -142,7 +142,7 @@ function ProgramEditor() {
             mutation.mutate();
           }}
         >
-          <div>
+          <div className="settings-section">
             <label htmlFor="programName" className="text-sm font-semibold">
               {t("program.name")}
             </label>
@@ -154,7 +154,7 @@ function ProgramEditor() {
             />
           </div>
 
-          <fieldset>
+          <fieldset className="settings-section">
             <legend className="text-sm font-semibold">{t("program.stampIcon")}</legend>
             <div className="mt-2 grid grid-cols-3 gap-2">
               {stampIconOptions.map((icon) => (
@@ -166,36 +166,36 @@ function ProgramEditor() {
             </div>
           </fieldset>
 
-          <fieldset>
+          <fieldset className="settings-section">
             <legend className="text-sm font-semibold">{t("program.cardTheme")}</legend>
             <div className="mt-2 grid grid-cols-2 gap-2 sm:grid-cols-3">
               {cardThemes.map((theme) => (
-                <Button key={theme} type="button" variant="outline" aria-pressed={cardTheme === theme} onClick={() => { setCardTheme(theme); setBrandPrimary(null); setBrandAccent(null); setBackgroundTint(null); }} className={`touch-action h-auto min-h-14 justify-start whitespace-normal border-2 px-2.5 py-2 text-start text-xs ${cardTheme === theme ? "border-ring" : ""}`}>
+                <Button key={theme} type="button" variant="outline" aria-pressed={cardTheme === theme} onClick={() => { setCardTheme(theme); setBrandPrimary(null); setBrandAccent(null); setBackgroundTint(null); }} className="theme-choice touch-action relative h-auto min-h-16 justify-start whitespace-normal border px-3 py-2.5 text-start text-xs">
                   <span data-card-theme={theme} className="card-theme-swatch h-7 w-7 shrink-0 rounded-full border border-current/20" aria-hidden="true" />
                   <span>{t(`cardTheme.${theme}` as TranslationKey)}</span>
+                  {cardTheme === theme && <Check className="ms-auto h-4 w-4 shrink-0" />}
                 </Button>
               ))}
             </div>
           </fieldset>
 
-          <fieldset>
+          <fieldset className="settings-section">
             <legend className="text-sm font-semibold">{t("program.brandColors")}</legend>
-            <div className="mt-2 grid grid-cols-3 gap-2">
+            <div className="mt-3 space-y-2">
               {([
                 ["brandPrimary", brandPrimary, setBrandPrimary, brandPalettes[cardTheme].primary],
                 ["brandAccent", brandAccent, setBrandAccent, brandPalettes[cardTheme].accent],
                 ["backgroundTint", backgroundTint, setBackgroundTint, brandPalettes[cardTheme].tint],
               ] as const).map(([key, value, setter, fallback]) => (
-                <label key={key} className="flex min-w-0 flex-col gap-2 text-xs font-semibold">
-                  <span>{t(`program.${key}`)}</span>
-                  <input type="color" aria-label={t(`program.${key}`)} value={value ?? fallback} onChange={(event) => setter(event.target.value)} className="h-11 w-full cursor-pointer rounded-md border border-border bg-card p-1" />
-                  <span className="font-mono text-[11px] text-muted-foreground">{value ?? fallback}</span>
+                <label key={key} className="color-field text-sm font-semibold">
+                  <span className="min-w-0"><span className="block">{t(`program.${key}`)}</span><span className="mt-0.5 block font-mono text-[11px] font-normal text-muted-foreground">{value ?? fallback}</span></span>
+                  <input type="color" aria-label={t(`program.${key}`)} value={value ?? fallback} onChange={(event) => setter(event.target.value)} className="cursor-pointer" />
                 </label>
               ))}
             </div>
           </fieldset>
 
-          <div>
+          <div className="settings-section">
             <span className="text-sm font-semibold">{t("program.stamps")}</span>
             <div className="mt-1 flex items-center gap-3">
               <Button
@@ -244,7 +244,7 @@ function ProgramEditor() {
             </div>
           </div>
 
-          <div>
+          <div className="settings-section">
             <label htmlFor="rewardName" className="text-sm font-semibold">
               {t("program.reward")}
             </label>
@@ -270,10 +270,9 @@ function ProgramEditor() {
             />
           </div>
 
-          <div>
-            <h2 className="mb-2 text-sm font-semibold">{t("program.livePreview")}</h2>
-            <div className="store-theme rounded-md border border-border p-3" style={brandThemeStyle(cardTheme, { brandPrimary, brandAccent, backgroundTint })}>
-              <div className="mb-3 flex items-center justify-between border-b border-border pb-2 text-sm font-bold"><span>{data.store.name}</span><span className="rounded-md bg-primary px-3 py-1 text-xs text-primary-foreground">{t("join.action")}</span></div>
+          <div className="settings-section">
+            <h2 className="mb-3 text-sm font-semibold">{t("program.livePreview")}</h2>
+            <div className="store-theme -mx-2 rounded-lg p-2 sm:mx-0" style={brandThemeStyle(cardTheme, { brandPrimary, brandAccent, backgroundTint })}>
             <ul>
               <StampCard preview card={{
                 id: "preview", storeName: data.store.name, programName: programName || "Loyalty Card",
