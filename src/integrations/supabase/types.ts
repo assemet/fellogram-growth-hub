@@ -74,6 +74,7 @@ export type Database = {
           name: string
           referrals_enabled: boolean
           referrer_bonus_stamps: number
+          stamp_icon: string
           stamps_required: number
           store_id: string
           updated_at: string
@@ -87,6 +88,7 @@ export type Database = {
           name: string
           referrals_enabled?: boolean
           referrer_bonus_stamps?: number
+          stamp_icon?: string
           stamps_required?: number
           store_id: string
           updated_at?: string
@@ -100,6 +102,7 @@ export type Database = {
           name?: string
           referrals_enabled?: boolean
           referrer_bonus_stamps?: number
+          stamp_icon?: string
           stamps_required?: number
           store_id?: string
           updated_at?: string

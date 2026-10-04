@@ -22,6 +22,13 @@
       "when": 1791142919742,
       "tag": "0002_undo_reverts_referral",
       "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1791150143739,
+      "tag": "0003_add_program_stamp_icon",
+      "breakpoints": true
     }
   ]
 }
