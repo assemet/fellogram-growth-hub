@@ -93,17 +93,8 @@ function MerchantDashboard() {
           </Link>
         </div>
 
-        <div className="mt-4 grid grid-cols-2 gap-3">
-          <Metric icon={<Users className="h-4 w-4" />} label={t("merchant.metrics.customers")} value={data.customerCount} />
-          <Metric icon={<Stamp className="h-4 w-4" />} label={t("merchant.metrics.visits")} value={0} />
-          <Metric icon={<Gift className="h-4 w-4" />} label={t("merchant.metrics.rewards")} value={0} />
-          <Metric icon={<TrendingUp className="h-4 w-4" />} label={t("merchant.metrics.referrals")} value={0} />
-        </div>
+        <GrowthAnalytics />
 
-        <div className="mt-4 rounded-3xl border border-dashed border-border p-5 text-center">
-          <p className="text-sm font-semibold">{t("merchant.soon")}</p>
-          <p className="mt-1 text-xs text-muted-foreground">{t("merchant.soon.body")}</p>
-        </div>
 
         <Link to="/wallet" className="mt-6 block text-center text-sm font-semibold text-primary">
           {t("merchant.switchToWallet")}
