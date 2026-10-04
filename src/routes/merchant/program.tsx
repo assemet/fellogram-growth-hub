@@ -6,6 +6,7 @@ import { Minus, Plus } from "lucide-react";
 import { toast } from "sonner";
 
 import { AppHeader } from "@/components/BrandMark";
+import { RewardsManager } from "@/components/RewardsManager";
 import { SplashScreen } from "@/components/SplashScreen";
 import { useFellogramAuth } from "@/hooks/useFellogramAuth";
 import { t } from "@/lib/i18n";
@@ -217,6 +218,8 @@ function ProgramEditor() {
             {mutation.isPending ? t("program.saving") : t("program.save")}
           </button>
         </form>
+
+        <RewardsManager rewards={data.rewards} />
 
         <Link to="/merchant" className="mt-6 block text-center text-sm font-semibold text-primary">
           {t("merchant.title")}

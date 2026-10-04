@@ -174,6 +174,10 @@ export const getMyCards = createServerFn({ method: "POST" })
         (rewards ?? []).find((r) => r.store_id === m.store_id && r.kind === "standard")?.name ??
         (rewards ?? []).find((r) => r.store_id === m.store_id)?.name ??
         null,
+      rewards: (rewards ?? [])
+        .filter((r) => r.store_id === m.store_id)
+        .sort((a, b) => a.stamps_required - b.stamps_required)
+        .map((r) => ({ id: r.id, name: r.name, description: r.description, stampsRequired: r.stamps_required })),
       visits: (visits ?? [])
         .filter((v) => v.store_id === m.store_id)
         .slice(0, 5)
@@ -320,5 +324,68 @@ export const updateProgram = createServerFn({ method: "POST" })
       if (error) throw new Error(error.message);
     }
 
+    return { ok: true };
+  });
+
+/** Customer requests a short-lived, single-use redemption token (5 min). */
+export const requestRedemption = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((data: { rewardId: string }) => {
+    const rewardId = String(data?.rewardId ?? "");
+    if (!/^[0-9a-f-]{36}$/i.test(rewardId)) throw new Error("REWARD_NOT_FOUND");
+    return { rewardId };
+  })
+  .handler(async ({ data, context }) => {
+    const { data: rows, error } = await context.supabase.rpc("create_redemption", { _reward_id: data.rewardId });
+    if (error) throw new Error(error.message);
+    const row = (rows as { redemption_id: string; token: string; expires_at: string }[])[0]!;
+    return { token: row.token, expiresAt: row.expires_at };
+  });
+
+async function ownedStore(supabase: any, userId: string) {
+  const { data: store } = await supabase
+    .from("stores").select("id").eq("owner_id", userId)
+    .order("created_at", { ascending: false }).limit(1).maybeSingle();
+  if (!store) throw new Error("STORE_NOT_FOUND");
+  return store.id as string;
+}
+
+/** Owner creates or edits an extra reward. */
+export const saveReward = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((data: { id?: string; name: string; description?: string; stampsRequired: number }) => {
+    const name = String(data?.name ?? "").trim().slice(0, 80);
+    if (name.length < 2) throw new Error("REWARD_NAME_REQUIRED");
+    return {
+      id: data?.id ? String(data.id) : undefined,
+      name,
+      description: String(data?.description ?? "").trim().slice(0, 300) || null,
+      stampsRequired: Math.min(50, Math.max(1, Math.round(Number(data?.stampsRequired ?? 10)))),
+    };
+  })
+  .handler(async ({ data, context }) => {
+    const storeId = await ownedStore(context.supabase, context.userId);
+    const payload = { name: data.name, description: data.description, stamps_required: data.stampsRequired };
+    if (data.id) {
+      const { error } = await context.supabase.from("rewards").update(payload).eq("id", data.id).eq("store_id", storeId);
+      if (error) throw new Error(error.message);
+    } else {
+      const { data: program } = await context.supabase
+        .from("loyalty_programs").select("id").eq("store_id", storeId).order("created_at").limit(1).maybeSingle();
+      const { error } = await context.supabase
+        .from("rewards").insert({ ...payload, store_id: storeId, program_id: program?.id ?? null, kind: "standard" });
+      if (error) throw new Error(error.message);
+    }
+    return { ok: true };
+  });
+
+/** Owner retires a reward (kept for history, hidden from customers). */
+export const archiveReward = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((data: { id: string }) => ({ id: String(data?.id ?? "") }))
+  .handler(async ({ data, context }) => {
+    const storeId = await ownedStore(context.supabase, context.userId);
+    const { error } = await context.supabase.from("rewards").update({ active: false }).eq("id", data.id).eq("store_id", storeId);
+    if (error) throw new Error(error.message);
     return { ok: true };
   });

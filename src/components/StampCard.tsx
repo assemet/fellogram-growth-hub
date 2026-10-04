@@ -1,4 +1,7 @@
 import { useState } from "react";
+import { useQueryClient } from "@tanstack/react-query";
+
+import { RedeemRewardQr } from "@/components/RedeemRewardQr";
 import { Check, ChevronDown, Gift, Stamp } from "lucide-react";
 
 import { t } from "@/lib/i18n";
@@ -11,6 +14,7 @@ export type StampCardData = {
   stampBalance: number;
   reward: string | null;
   lastVisitAt: string | null;
+  rewards?: { id: string; name: string; description: string | null; stampsRequired: number }[];
   visits: { id: string; type: string; amount: number; createdAt: string }[];
 };
 
@@ -24,6 +28,9 @@ function formatDate(value: string) {
 /** Interactive loyalty card: stamp grid, progress and visit history. */
 export function StampCard({ card }: { card: StampCardData }) {
   const [open, setOpen] = useState(false);
+  const [redeeming, setRedeeming] = useState<{ id: string; name: string } | null>(null);
+  const queryClient = useQueryClient();
+  const rewards = card.rewards ?? [];
   const required = Math.max(1, card.stampsRequired);
   const balance = Math.min(required, Math.max(0, card.stampBalance));
   const complete = balance >= required;
@@ -81,6 +88,47 @@ export function StampCard({ card }: { card: StampCardData }) {
           </p>
         )}
 
+        {rewards.length > 0 && (
+          <div className="mt-4 space-y-2 border-t border-border pt-3">
+            <p className="text-xs font-semibold text-muted-foreground">{t("rewards.title")}</p>
+            {rewards.map((reward) => {
+              const available = card.stampBalance >= reward.stampsRequired;
+              return (
+                <div key={reward.id} className="flex items-center justify-between gap-3 rounded-2xl bg-secondary px-3 py-2">
+                  <div className="min-w-0">
+                    <p className="truncate text-sm font-semibold text-secondary-foreground">{reward.name}</p>
+                    <p className="text-xs text-muted-foreground">
+                      {available
+                        ? `${reward.stampsRequired} · ${t("rewards.available")}`
+                        : `${reward.stampsRequired} · ${t("rewards.locked", { count: reward.stampsRequired - card.stampBalance })}`}
+                    </p>
+                  </div>
+                  {available && (
+                    <button
+                      type="button"
+                      onClick={() => setRedeeming({ id: reward.id, name: reward.name })}
+                      className="shrink-0 rounded-full bg-primary px-3 py-2 text-xs font-bold text-primary-foreground"
+                    >
+                      {t("rewards.redeem")}
+                    </button>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        )}
+
+        {redeeming && (
+          <RedeemRewardQr
+            rewardId={redeeming.id}
+            rewardName={redeeming.name}
+            onClose={() => {
+              setRedeeming(null);
+              queryClient.invalidateQueries({ queryKey: ["my-cards"] });
+            }}
+          />
+        )}
+
         <button
           type="button"
           onClick={() => setOpen((value) => !value)}
@@ -99,7 +147,10 @@ export function StampCard({ card }: { card: StampCardData }) {
               card.visits.map((visit) => (
                 <li key={visit.id} className="flex justify-between text-xs text-muted-foreground">
                   <span>{formatDate(visit.createdAt)}</span>
-                  <span className="font-semibold text-foreground">+{visit.amount}</span>
+                  <span className="font-semibold text-foreground">
+                    {visit.type === "stamp_awarded" ? "+" : "−"}
+                    {visit.amount}
+                  </span>
                 </li>
               ))
             )}
