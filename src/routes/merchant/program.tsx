@@ -257,7 +257,7 @@ function ProgramEditor() {
             />
           </div>
 
-          <div>
+          <div className="settings-section">
             <label htmlFor="rewardDescription" className="text-sm font-semibold">
               {t("program.rewardDescription")}
             </label>
