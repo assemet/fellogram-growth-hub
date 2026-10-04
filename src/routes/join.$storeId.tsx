@@ -18,6 +18,8 @@ export const Route = createFileRoute("/join/$storeId")({
       { title: "Join a loyalty card — Fellogram" },
       { name: "description", content: "Join a store's stamp card and start earning rewards on every visit." },
       { property: "og:title", content: "Join a loyalty card — Fellogram" },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary" },
       { property: "og:description", content: "Collect stamps on every visit and unlock your reward." },
     ],
   }),

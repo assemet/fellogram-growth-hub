@@ -31,7 +31,7 @@ export function watchTelegramTheme() {
   const media = window.matchMedia("(prefers-color-scheme: dark)");
   const sync = () => {
     document.documentElement.classList.toggle("dark", app?.colorScheme === "dark" || (!app?.colorScheme && media.matches));
-    document.documentElement.classList.toggle("telegram-theme", Boolean(app));
+    document.documentElement.classList.toggle("telegram-theme", Boolean(app && getComputedStyle(document.documentElement).getPropertyValue("--tg-theme-bg-color").trim()));
   };
   sync();
   app?.onEvent?.("themeChanged", sync);

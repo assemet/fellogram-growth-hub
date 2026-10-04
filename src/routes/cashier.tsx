@@ -19,6 +19,8 @@ export const Route = createFileRoute("/cashier")({
       { title: "Cashier mode — Fellogram" },
       { name: "description", content: "Staff-only cashier mode: scan a customer and award a stamp in seconds." },
       { property: "og:title", content: "Cashier mode — Fellogram" },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary" },
       { property: "og:description", content: "Fast, staff-only stamping for Fellogram loyalty programs." },
     ],
   }),

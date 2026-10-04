@@ -21,6 +21,8 @@ export const Route = createFileRoute("/merchant/program")({
       { title: "Loyalty program — Fellogram" },
       { name: "description", content: "Choose how many stamps a visit reward takes and what customers win." },
       { property: "og:title", content: "Loyalty program — Fellogram" },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary" },
       { property: "og:description", content: "Design the stamp card your customers collect." },
     ],
   }),

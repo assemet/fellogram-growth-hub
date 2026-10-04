@@ -17,6 +17,8 @@ export const Route = createFileRoute("/merchant/")({
       { title: "Store dashboard — Fellogram" },
       { name: "description", content: "See customers, visits, rewards and referral growth for your store." },
       { property: "og:title", content: "Store dashboard — Fellogram" },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary" },
       { property: "og:description", content: "Is loyalty growing your business? Find out in one screen." },
     ],
   }),

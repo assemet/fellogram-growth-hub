@@ -23,6 +23,8 @@ export const Route = createFileRoute("/merchant/new")({
         content: "Set up your store and stamp-based loyalty program in under a minute.",
       },
       { property: "og:title", content: "Create your store — Fellogram" },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary" },
       {
         property: "og:description",
         content: "Launch a Telegram loyalty program for your business.",

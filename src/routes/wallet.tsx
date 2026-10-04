@@ -18,6 +18,8 @@ export const Route = createFileRoute("/wallet")({
       { title: "My Loyalty — Fellogram" },
       { name: "description", content: "Your loyalty cards, stamp progress and rewards in one place." },
       { property: "og:title", content: "My Loyalty — Fellogram" },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary" },
       { property: "og:description", content: "Track stamps and rewards from your favourite local stores." },
     ],
   }),

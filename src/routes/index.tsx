@@ -21,6 +21,8 @@ export const Route = createFileRoute("/")({
           "Fellogram is a Telegram-native loyalty platform: collect stamps, earn rewards, invite friends and help local businesses grow.",
       },
       { property: "og:title", content: "Fellogram — Turn loyalty into growth" },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary" },
       {
         property: "og:description",
         content: "Telegram-native loyalty and customer growth for small businesses.",
