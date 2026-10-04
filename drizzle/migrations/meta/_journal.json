@@ -8,6 +8,13 @@
       "when": 1791136147177,
       "tag": "0000_reward_redemptions",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1791137044535,
+      "tag": "0001_referrals",
+      "breakpoints": true
     }
   ]
 }
