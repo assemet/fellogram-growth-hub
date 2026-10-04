@@ -1,12 +1,19 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { ArrowRight, ScanLine, Store, Sparkles } from "lucide-react";
+import { LayoutDashboard, MoreHorizontal, ScanLine, Sparkles } from "lucide-react";
 
 import { AppHeader } from "@/components/BrandMark";
 import { SplashScreen } from "@/components/SplashScreen";
 import { CustomerQr } from "@/components/CustomerQr";
 import { StampCard } from "@/components/StampCard";
+import { Button } from "@/components/ui/button";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { useFellogramAuth } from "@/hooks/useFellogramAuth";
 import { t } from "@/lib/i18n";
 import { getMyCards, getMyContext } from "@/lib/store.functions";
@@ -45,10 +52,43 @@ function Wallet() {
   if (state !== "ready" || !data || !cards) return <SplashScreen />;
 
   const firstName = data.profile?.first_name ?? "";
+  const headerAction = data.ownedStoreId ? (
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <Button type="button" variant="ghost" size="sm" className="touch-action px-2 text-muted-foreground">
+          <MoreHorizontal className="h-4 w-4" />
+          <span className="hidden sm:inline">{t("merchant.options")}</span>
+          <span className="sr-only sm:hidden">{t("merchant.options")}</span>
+        </Button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="end" className="w-48">
+        <DropdownMenuItem asChild>
+          <Link to="/cashier">
+            <ScanLine />
+            {t("merchant.switchToCashier")}
+          </Link>
+        </DropdownMenuItem>
+        <DropdownMenuItem asChild>
+          <Link to="/merchant">
+            <LayoutDashboard />
+            {t("merchant.title")}
+          </Link>
+        </DropdownMenuItem>
+      </DropdownMenuContent>
+    </DropdownMenu>
+  ) : data.staffStoreId ? (
+    <Button asChild variant="ghost" size="sm" className="touch-action px-2 text-muted-foreground">
+      <Link to="/cashier">
+        <ScanLine className="h-4 w-4" />
+        <span className="hidden sm:inline">{t("merchant.switchToCashier")}</span>
+        <span className="sr-only sm:hidden">{t("merchant.switchToCashier")}</span>
+      </Link>
+    </Button>
+  ) : undefined;
 
   return (
     <main className="min-h-[100dvh] pb-[calc(3.5rem+env(safe-area-inset-bottom))]">
-      <AppHeader subtitle={firstName ? `Hi, ${firstName}` : t("app.tagline")} />
+      <AppHeader subtitle={firstName ? `Hi, ${firstName}` : t("app.tagline")} action={headerAction} />
 
       <section className="app-shell">
         <h1 className="mb-4 text-2xl font-bold">{t("wallet.title")}</h1>
@@ -73,42 +113,6 @@ function Wallet() {
           </ul>
         )}
 
-        {!data.ownedStoreId && (
-          <Link
-            to="/merchant/new"
-            className="touch-action mt-6 grid grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-3 rounded-lg border border-border bg-card px-4 py-4 text-left shadow-[var(--shadow-card)]"
-          >
-            <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-md bg-accent text-accent-foreground">
-              <Store className="h-5 w-5" />
-            </span>
-            <span className="min-w-0">
-              <span className="block text-sm text-muted-foreground">{t("wallet.merchantCta.title")}</span>
-              <span className="block font-semibold text-secondary-foreground">
-                {t("wallet.merchantCta.action")}
-              </span>
-            </span>
-            <ArrowRight className="h-4 w-4 shrink-0 text-muted-foreground" />
-          </Link>
-        )}
-
-        {(data.staffStoreId || data.ownedStoreId) && (
-          <Link
-            to="/cashier"
-            className="touch-action mt-6 flex items-center justify-center gap-2 rounded-md bg-primary px-4 py-4 text-center font-bold text-primary-foreground"
-          >
-            <ScanLine className="h-5 w-5" />
-            {t("cashier.title")}
-          </Link>
-        )}
-
-        {data.ownedStoreId && (
-          <Link
-            to="/merchant"
-            className="touch-action mt-3 flex items-center justify-center gap-2 rounded-md border border-border bg-card px-4 py-4 text-center font-semibold text-foreground"
-          >
-            {t("merchant.title")}
-          </Link>
-        )}
       </section>
     </main>
   );

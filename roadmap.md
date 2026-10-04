@@ -4,3 +4,8 @@
 - [x] Polish cashier workflow and feedback.
 - [x] Polish merchant analytics and secondary screens.
 - [x] Verify desktop and mobile preview.
+
+# Wallet role-switch cleanup
+- [x] Keep the wallet body customer-only.
+- [x] Move verified staff and owner navigation into the header.
+- [x] Verify customer, staff, and owner wallet states.
