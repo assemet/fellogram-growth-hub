@@ -8,6 +8,9 @@ type TelegramWebApp = {
   initDataUnsafe?: { start_param?: string };
   ready?: () => void;
   expand?: () => void;
+  colorScheme?: "light" | "dark";
+  onEvent?: (event: string, callback: () => void) => void;
+  offEvent?: (event: string, callback: () => void) => void;
 };
 
 function webApp(): TelegramWebApp | undefined {
@@ -19,6 +22,24 @@ export function initTelegram() {
   const app = webApp();
   app?.ready?.();
   app?.expand?.();
+}
+
+/** Keep the app in sync with Telegram's live appearance, or the device preference outside Telegram. */
+export function watchTelegramTheme() {
+  if (typeof window === "undefined") return () => {};
+  const app = webApp();
+  const media = window.matchMedia("(prefers-color-scheme: dark)");
+  const sync = () => {
+    document.documentElement.classList.toggle("dark", app?.colorScheme === "dark" || (!app?.colorScheme && media.matches));
+    document.documentElement.classList.toggle("telegram-theme", Boolean(app));
+  };
+  sync();
+  app?.onEvent?.("themeChanged", sync);
+  media.addEventListener("change", sync);
+  return () => {
+    app?.offEvent?.("themeChanged", sync);
+    media.removeEventListener("change", sync);
+  };
 }
 
 export function getInitData(): string {

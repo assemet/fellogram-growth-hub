@@ -3,7 +3,7 @@ import { useServerFn } from "@tanstack/react-start";
 
 import { supabase } from "@/integrations/supabase/client";
 import { telegramSignIn } from "@/lib/auth.functions";
-import { getInitData, initTelegram, rememberStartParam } from "@/lib/telegram";
+import { getInitData, initTelegram, rememberStartParam, watchTelegramTheme } from "@/lib/telegram";
 
 export type AuthState = "loading" | "ready" | "error";
 
@@ -18,6 +18,7 @@ export function useFellogramAuth() {
 
   useEffect(() => {
     let cancelled = false;
+    const unwatchTheme = watchTelegramTheme();
 
     (async () => {
       try {
@@ -48,6 +49,7 @@ export function useFellogramAuth() {
 
     return () => {
       cancelled = true;
+      unwatchTheme();
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
