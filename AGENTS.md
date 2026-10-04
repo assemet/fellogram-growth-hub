@@ -15,3 +15,4 @@
 - Keep locale selection centralized, persisted, and reflected on the document language and direction; this keeps every screen consistently bilingual.
 - Store merchant logos in private object storage and expose only short-lived signed display URLs; this avoids permanent public asset links.
 - Store card themes as a constrained store-level choice and render merchant previews with the customer card component; this keeps saved cards and previews visually identical.
+- Scope saved store-brand semantic colors to a focused store flow and its merchant preview; keep the multi-store wallet on Telegram defaults to avoid one merchant overriding another.

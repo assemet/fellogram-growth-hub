@@ -2,6 +2,8 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { LayoutDashboard, MoreHorizontal, ScanLine, Sparkles } from "lucide-react";
+import { z } from "zod";
+import { brandThemeStyle } from "@/lib/card-theme";
 
 import { AppHeader } from "@/components/BrandMark";
 import { SplashScreen } from "@/components/SplashScreen";
@@ -20,6 +22,7 @@ import { getMyCards, getMyContext } from "@/lib/store.functions";
 
 export const Route = createFileRoute("/wallet")({
   ssr: false,
+  validateSearch: z.object({ store: z.string().uuid().optional() }),
   head: () => ({
     meta: [
       { title: "My Loyalty — Fellogram" },
@@ -34,6 +37,7 @@ export const Route = createFileRoute("/wallet")({
 });
 
 function Wallet() {
+  const { store: focusedStoreId } = Route.useSearch();
   const { state } = useFellogramAuth();
   const loadContext = useServerFn(getMyContext);
   const loadCards = useServerFn(getMyCards);
@@ -52,6 +56,7 @@ function Wallet() {
   if (state !== "ready" || !data || !cards) return <SplashScreen />;
 
   const firstName = data.profile?.first_name ?? "";
+  const focusedCard = cards.find((card) => card.storeId === focusedStoreId);
   const headerAction = data.ownedStoreId ? (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
@@ -87,11 +92,12 @@ function Wallet() {
   ) : undefined;
 
   return (
-    <main className="min-h-[100dvh] pb-[calc(3.5rem+env(safe-area-inset-bottom))]">
-      <AppHeader subtitle={firstName ? t("wallet.greeting", { name: firstName }) : t("app.tagline")} action={headerAction} />
+    <main className={`${focusedCard ? "store-theme " : ""}min-h-[100dvh] pb-[calc(3.5rem+env(safe-area-inset-bottom))]`} style={focusedCard ? brandThemeStyle(focusedCard.cardTheme, focusedCard) : undefined}>
+      <AppHeader subtitle={focusedCard ? focusedCard.storeName : firstName ? t("wallet.greeting", { name: firstName }) : t("app.tagline")} action={focusedCard ? undefined : headerAction} />
 
       <section className="app-shell">
-        <h1 className="mb-4 text-2xl font-bold">{t("wallet.title")}</h1>
+        {focusedCard && <Link to="/wallet" search={{ store: undefined }} className="mb-4 inline-flex text-sm font-semibold text-primary">← {t("join.viewWallet")}</Link>}
+        <h1 className="mb-4 text-2xl font-bold">{focusedCard ? focusedCard.storeName : t("wallet.title")}</h1>
 
         {data.profile?.id && (
           <div className="mb-4">
@@ -107,8 +113,8 @@ function Wallet() {
           </div>
         ) : (
           <ul className="space-y-4">
-            {cards.map((card) => (
-              <StampCard key={card.id} card={card} />
+            {(focusedCard ? [focusedCard] : cards).map((card) => (
+              <StampCard key={card.id} card={card} focused={Boolean(focusedCard)} />
             ))}
           </ul>
         )}

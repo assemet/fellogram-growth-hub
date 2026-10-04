@@ -20,3 +20,8 @@
 - [x] Save owner-selected card colors and display them in customer wallets.
 - [x] Show live card preview with current logo, icon, program, and color choices.
 - [x] Verify owner saves a theme and the wallet displays it.
+
+# Global store theming
+- [x] Save preset and custom brand colors in Store Settings.
+- [x] Apply store colors to the full join and focused wallet flows while keeping the default wallet Telegram-native.
+- [x] Verify a saved theme in the join and focused wallet views.

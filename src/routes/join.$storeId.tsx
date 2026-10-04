@@ -11,6 +11,7 @@ import { SplashScreen } from "@/components/SplashScreen";
 import { useFellogramAuth } from "@/hooks/useFellogramAuth";
 import { t } from "@/lib/i18n";
 import { getStoreForJoin, joinStore } from "@/lib/store.functions";
+import { brandThemeStyle } from "@/lib/card-theme";
 
 export const Route = createFileRoute("/join/$storeId")({
   ssr: false,
@@ -71,7 +72,7 @@ function JoinStore() {
   const required = data.program?.stamps_required ?? 10;
 
   return (
-    <main className="min-h-[100dvh] pb-14">
+    <main className="store-theme min-h-[100dvh] pb-14" style={brandThemeStyle(data.store.card_theme, { brandPrimary: data.store.brand_primary, brandAccent: data.store.brand_accent, backgroundTint: data.store.background_tint })}>
       <AppHeader subtitle={data.store.name} />
 
       <section className="app-shell">
