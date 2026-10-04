@@ -71,6 +71,8 @@ const en = {
   "analytics.verdict.partial": "Getting there — keep stamping every visit and share invites.",
   "analytics.verdict.none": "No activity yet — stamp your first customer to start measuring.",
   "merchant.switchToWallet": "My loyalty wallet",
+  "merchant.options": "Merchant options",
+  "merchant.switchToCashier": "Switch to Cashier",
 
   "wallet.card.stamps": "{balance} of {required} stamps",
   "wallet.card.reward": "Reward: {reward}",
