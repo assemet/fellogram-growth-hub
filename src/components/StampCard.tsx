@@ -75,7 +75,7 @@ export function StampCard({ card }: { card: StampCardData }) {
                 aria-label={filled ? "stamp collected" : "stamp empty"}
                 className={
                   filled
-                    ? "animate-stamp-pop flex aspect-square items-center justify-center rounded-full border-2 border-primary/25 bg-primary text-primary-foreground shadow-[var(--shadow-card)]"
+                    ? "stamp-slot flex aspect-square items-center justify-center rounded-full border-2 border-primary/25 bg-primary text-primary-foreground shadow-[var(--shadow-card)]"
                     : "flex aspect-square items-center justify-center rounded-full border-2 border-dashed border-border bg-secondary/40 text-muted-foreground"
                 }
               >

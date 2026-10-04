@@ -200,6 +200,9 @@
 @utility animate-arrive { animation: arrive 450ms ease both; }
 @utility animate-stamp-pop { animation: stamp-pop 480ms cubic-bezier(.2,.9,.2,1) both; }
 @utility animate-splash { animation: splash-enter 700ms cubic-bezier(.2,.8,.2,1) both; }
+@utility stamp-slot {
+  animation: stamp-pop 480ms cubic-bezier(.2,.9,.2,1) both;
+}
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; scroll-behavior: auto !important; }
 }
