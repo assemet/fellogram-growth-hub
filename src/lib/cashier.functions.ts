@@ -194,8 +194,9 @@ export const redeemRewardToken = createServerFn({ method: "POST" })
       _store_id: store.storeId,
       _token: data.token,
     });
-    if (error) throw new Error(error.message);
+    // Expected refusals (used/expired/invalid) are returned, not thrown, so they don't surface as crashes.
+    if (error) return { ok: false as const, error: error.message };
     const row = (rows as { customer_id: string; reward_name: string; stamps_deducted: number; stamp_balance: number }[])[0]!;
     const state = await loadCustomerState(context.supabase, store.storeId, row.customer_id);
-    return { rewardName: row.reward_name, stampsDeducted: row.stamps_deducted, customer: state };
+    return { ok: true as const, rewardName: row.reward_name, stampsDeducted: row.stamps_deducted, customer: state };
   });

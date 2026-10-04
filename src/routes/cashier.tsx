@@ -110,7 +110,11 @@ function Cashier() {
   });
 
   const redeem = useMutation({
-    mutationFn: (raw: string) => redeemFn({ data: { code: raw } }),
+    mutationFn: async (raw: string) => {
+      const res = await redeemFn({ data: { code: raw } });
+      if (!res.ok) throw new Error(res.error);
+      return res;
+    },
     onSuccess: (data) => {
       if (data.customer) setCustomer(data.customer);
       setError(null);
