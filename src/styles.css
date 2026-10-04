@@ -81,6 +81,7 @@
   --input: oklch(0.9 0.015 210);
   --ring: oklch(0.53 0.22 291);
   --brand-gradient: linear-gradient(135deg, oklch(0.55 0.22 288), oklch(0.45 0.2 300));
+  --brand-foreground: oklch(0.99 0.005 285);
   --sidebar: oklch(0.985 0.005 285);
   --sidebar-foreground: oklch(0.22 0.06 275);
   --sidebar-primary: oklch(0.53 0.22 291);
@@ -114,6 +115,7 @@
   --input: oklch(1 0 0 / 16%);
   --ring: oklch(0.68 0.19 292);
   --brand-gradient: linear-gradient(135deg, oklch(0.5 0.2 288), oklch(0.36 0.16 300));
+  --brand-foreground: oklch(0.99 0.005 285);
   --sidebar: oklch(0.22 0.03 245);
   --sidebar-foreground: oklch(0.97 0.008 285);
   --sidebar-primary: oklch(0.68 0.19 292);
@@ -126,16 +128,16 @@
 
 /* Telegram provides these properties inside the Mini App; native theme changes update them live. */
 .telegram-theme {
-  --background: var(--tg-theme-secondary-bg-color, var(--tg-theme-bg-color));
-  --foreground: var(--tg-theme-text-color);
-  --card: var(--tg-theme-bg-color);
-  --card-foreground: var(--tg-theme-text-color);
-  --popover: var(--tg-theme-bg-color);
-  --popover-foreground: var(--tg-theme-text-color);
-  --muted-foreground: var(--tg-theme-hint-color);
-  --primary: var(--tg-theme-button-color);
-  --primary-foreground: var(--tg-theme-button-text-color);
-  --ring: var(--tg-theme-button-color);
+  --background: var(--tg-theme-secondary-bg-color, var(--tg-theme-bg-color, oklch(0.977 0.007 210)));
+  --foreground: var(--tg-theme-text-color, oklch(0.22 0.06 275));
+  --card: var(--tg-theme-bg-color, oklch(1 0 0));
+  --card-foreground: var(--tg-theme-text-color, oklch(0.22 0.06 275));
+  --popover: var(--tg-theme-bg-color, oklch(1 0 0));
+  --popover-foreground: var(--tg-theme-text-color, oklch(0.22 0.06 275));
+  --muted-foreground: var(--tg-theme-hint-color, oklch(0.52 0.04 280));
+  --primary: var(--tg-theme-button-color, oklch(0.53 0.22 291));
+  --primary-foreground: var(--tg-theme-button-text-color, oklch(0.99 0.005 285));
+  --ring: var(--tg-theme-button-color, oklch(0.53 0.22 291));
 }
 
 @layer base {
@@ -161,7 +163,7 @@
 
 @utility brand-surface {
   background-image: var(--brand-gradient);
-  color: var(--color-primary-foreground);
+  color: var(--brand-foreground);
 }
 
 @utility app-shell {

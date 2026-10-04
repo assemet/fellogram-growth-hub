@@ -86,7 +86,7 @@ export function StampCard({ card }: { card: StampCardData }) {
         </div>
 
         <div className="mt-4 h-1.5 overflow-hidden rounded-full bg-secondary" role="progressbar" aria-valuenow={balance} aria-valuemin={0} aria-valuemax={required} aria-label="Stamp progress">
-          <div className="h-full rounded-full bg-growth transition-[width] duration-500" style={{ width: `${(balance / required) * 100}%` }} />
+          <div className="h-full rounded-full bg-growth transition-[width] duration-500" style={{ width: `${Math.min(100, (balance / Math.max(1, required)) * 100)}%` }} />
         </div>
         <p className={`mt-3 text-sm font-semibold ${complete ? "text-primary" : "text-foreground"}`}>
           {complete ? t("wallet.card.ready") : t("wallet.card.toGo", { count: remaining })}
