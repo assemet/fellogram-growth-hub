@@ -3,7 +3,7 @@ import { useQueryClient } from "@tanstack/react-query";
 
 import { InviteFriend } from "@/components/InviteFriend";
 import { RedeemRewardQr } from "@/components/RedeemRewardQr";
-import { ChevronDown, Gift, UserPlus } from "lucide-react";
+import { Building2, ChevronDown, Gift, UserPlus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { StampIcon } from "@/components/StampIcon";
 import { brandThemeStyle, resolveCardTheme } from "@/lib/card-theme";
@@ -57,10 +57,12 @@ export function StampCard({ card, preview = false, focused = false }: { card: St
       <div className="loyalty-card-header brand-surface p-5">
         <div className="flex items-start justify-between gap-3">
           <div className="flex min-w-0 items-center gap-3">
-            {card.logoUrl && <img src={card.logoUrl} alt="" className="h-12 w-12 shrink-0 rounded-lg border border-current/15 object-cover" />}
+            <div className="store-avatar flex h-12 w-12 shrink-0 items-center justify-center overflow-hidden rounded-lg border border-current/20 bg-card/15" aria-hidden="true">
+              {card.logoUrl ? <img src={card.logoUrl} alt="" className="h-full w-full object-cover" /> : <Building2 className="h-5 w-5" />}
+            </div>
             <div className="min-w-0">
               <p className="font-display text-xl font-bold leading-tight break-words">{card.storeName}</p>
-              <p className="mt-1 text-xs opacity-80">{card.programName}</p>
+              <p className="mt-1 text-xs font-medium opacity-90">{card.programName}</p>
             </div>
           </div>
           <span className="shrink-0 rounded-md border border-current/20 bg-card/15 px-3 py-1 text-sm font-extrabold backdrop-blur-md">
@@ -145,7 +147,7 @@ export function StampCard({ card, preview = false, focused = false }: { card: St
             type="button"
             onClick={() => setInviting(true)}
             variant="outline"
-            className="loyalty-card-outline touch-action mt-4 w-full"
+            className="loyalty-card-outline touch-action mt-4 h-11 w-full font-bold"
           >
             <UserPlus className="h-4 w-4" />
             {t("referral.invite")}

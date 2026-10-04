@@ -4,16 +4,9 @@ import { Languages } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { getLocale, setLocale, t } from "@/lib/i18n";
 
-export function BrandMark({ size = 40 }: { size?: number }) {
+export function BrandMark() {
   return (
-    <img
-      src="/logo.png"
-      alt={t("app.name")}
-      width={size}
-      height={size}
-      className="rounded-lg object-contain"
-      style={{ width: size, height: size }}
-    />
+    <span className="font-display text-xl font-bold leading-none">{t("app.name")}</span>
   );
 }
 
@@ -23,11 +16,10 @@ export function AppHeader({ subtitle, action }: { subtitle?: string; action?: Re
     window.location.reload();
   };
   return (
-    <header className="app-shell mb-6 grid grid-cols-[minmax(0,1fr)_auto] items-center gap-3 border-b border-border/60 py-3 [padding-top:calc(0.75rem+env(safe-area-inset-top))]">
+    <header className="app-header app-shell mb-7 grid grid-cols-[minmax(0,1fr)_auto] items-center gap-3 border-b border-border py-4 [padding-top:calc(1rem+env(safe-area-inset-top))]">
       <div className="flex min-w-0 items-center gap-3">
-        <BrandMark size={44} />
         <div className="min-w-0">
-          <p className="truncate font-display text-lg leading-none font-bold">{t("app.name")}</p>
+          <BrandMark />
           <p className="truncate text-xs text-muted-foreground">{subtitle ?? t("app.tagline")}</p>
         </div>
       </div>

@@ -158,11 +158,7 @@ function NewStore() {
 
         {step === 2 && (
           <div className="brand-surface animate-arrive rounded-lg p-8 text-center shadow-[var(--shadow-float)]">
-            <img
-              src="/logo.png"
-              alt=""
-              className="mx-auto mb-4 h-20 w-20 rounded-lg bg-card object-contain p-2"
-            />
+            <p className="mb-4 font-display text-3xl font-bold">{t("app.name")}</p>
             <h1 className="text-xl font-bold">{t("onboarding.done.title")}</h1>
             <p className="mt-2 text-sm opacity-90">{t("onboarding.done.body")}</p>
             <Button
