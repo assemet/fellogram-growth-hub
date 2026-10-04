@@ -53,7 +53,7 @@ export function StampCard({ card, preview = false, focused = false }: { card: St
   const remaining = Math.max(0, required - balance);
 
   return (
-    <li data-card-theme={resolveCardTheme(card.cardTheme)} data-custom-brand={card.brandPrimary || card.brandAccent || card.backgroundTint ? "true" : undefined} style={brandThemeStyle(card.cardTheme, card)} className="loyalty-card animate-arrive overflow-hidden rounded-lg border border-border bg-card shadow-[var(--shadow-card)]">
+    <li data-card-theme={resolveCardTheme(card.cardTheme)} data-custom-brand={focused || preview || card.brandPrimary || card.brandAccent || card.backgroundTint ? "true" : undefined} style={brandThemeStyle(card.cardTheme, card)} className="loyalty-card animate-arrive overflow-hidden rounded-lg border border-border bg-card shadow-[var(--shadow-card)]">
       <div className="loyalty-card-header brand-surface p-5">
         <div className="flex items-start justify-between gap-3">
           <div className="flex min-w-0 items-center gap-3">
