@@ -243,13 +243,13 @@
 .card-theme-swatch:not([data-card-theme="classic"]) { background: linear-gradient(135deg, var(--loyalty-top), var(--loyalty-top-end)); }
 .loyalty-card:not([data-card-theme="classic"]) { background: var(--loyalty-bg); color: var(--loyalty-fg); border-color: var(--loyalty-soft); }
 .loyalty-card:not([data-card-theme="classic"]) .loyalty-card-header { background: linear-gradient(135deg, var(--loyalty-top), var(--loyalty-top-end)); color: oklch(0.99 0.005 250); }
-.loyalty-card:not([data-card-theme="classic"]) .loyalty-stamp-filled { background: var(--loyalty-accent); color: var(--loyalty-on-accent); border-color: var(--loyalty-accent); }
+.loyalty-card:not([data-card-theme="classic"]) .loyalty-stamp-filled { background: var(--loyalty-fg); color: var(--loyalty-bg); border-color: var(--loyalty-fg); }
 .loyalty-card:not([data-card-theme="classic"]) .loyalty-stamp-empty { background: var(--loyalty-soft); color: var(--loyalty-muted); border-color: var(--loyalty-muted); }
 .loyalty-card:not([data-card-theme="classic"]) .loyalty-progress-track, .loyalty-card:not([data-card-theme="classic"]) .loyalty-reward-row { background: var(--loyalty-soft); }
 .loyalty-card:not([data-card-theme="classic"]) .loyalty-progress-fill, .loyalty-card:not([data-card-theme="classic"]) .loyalty-card-action { background: var(--loyalty-accent); color: var(--loyalty-on-accent); }
 .loyalty-card:not([data-card-theme="classic"]) .loyalty-status, .loyalty-card:not([data-card-theme="classic"]) .loyalty-reward-name { color: var(--loyalty-fg); }
 .loyalty-card:not([data-card-theme="classic"]) .loyalty-card-link, .loyalty-card:not([data-card-theme="classic"]) .loyalty-card-outline { color: var(--loyalty-accent); }
-.loyalty-card:not([data-card-theme="classic"]) .loyalty-card-outline { border-color: var(--loyalty-accent); background: transparent; }
+.loyalty-card:not([data-card-theme="classic"]) .loyalty-card-outline { border-color: var(--loyalty-fg); background: var(--loyalty-fg); color: var(--loyalty-bg); }
 .loyalty-card:not([data-card-theme="classic"]) .loyalty-card-body .text-muted-foreground { color: var(--loyalty-muted); }
 .loyalty-card:not([data-card-theme="classic"]) .loyalty-card-body .text-foreground { color: var(--loyalty-fg); }
 .loyalty-card:not([data-card-theme="classic"]) .loyalty-card-body .border-border { border-color: var(--loyalty-soft); }
@@ -266,11 +266,11 @@
 }
 .loyalty-card[data-custom-brand="true"] { background: var(--loyalty-bg); color: var(--loyalty-fg); border-color: var(--loyalty-soft); }
 .loyalty-card[data-custom-brand="true"] .loyalty-card-header { background: linear-gradient(135deg, var(--loyalty-top), var(--loyalty-top-end)); color: var(--store-on-primary); }
-.loyalty-card[data-custom-brand="true"] .loyalty-stamp-filled { background: var(--loyalty-accent); color: var(--loyalty-on-accent); border-color: var(--loyalty-accent); }
+.loyalty-card[data-custom-brand="true"] .loyalty-stamp-filled { background: var(--store-action); color: var(--store-on-action); border-color: var(--store-action); }
 .loyalty-card[data-custom-brand="true"] .loyalty-stamp-empty, .loyalty-card[data-custom-brand="true"] .loyalty-progress-track, .loyalty-card[data-custom-brand="true"] .loyalty-reward-row { background: var(--loyalty-soft); color: var(--loyalty-muted); border-color: var(--loyalty-muted); }
 .loyalty-card[data-custom-brand="true"] .loyalty-progress-fill, .loyalty-card[data-custom-brand="true"] .loyalty-card-action { background: var(--loyalty-accent); color: var(--loyalty-on-accent); }
 .loyalty-card[data-custom-brand="true"] .loyalty-card-link, .loyalty-card[data-custom-brand="true"] .loyalty-card-outline { color: var(--loyalty-accent); }
-.loyalty-card[data-custom-brand="true"] .loyalty-card-outline { border-color: var(--loyalty-accent); background: transparent; }
+.loyalty-card[data-custom-brand="true"] .loyalty-card-outline { border-color: var(--store-action); background: var(--store-action); color: var(--store-on-action); }
 .loyalty-card[data-custom-brand="true"] .loyalty-card-body .text-muted-foreground { color: var(--loyalty-muted); }
 .loyalty-card[data-custom-brand="true"] .loyalty-card-body .text-foreground, .loyalty-card[data-custom-brand="true"] .loyalty-reward-name { color: var(--loyalty-fg); }
 
