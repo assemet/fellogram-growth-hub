@@ -151,6 +151,7 @@
     font-family: var(--font-sans);
     -webkit-tap-highlight-color: transparent;
     min-width: 320px;
+    text-align: start;
   }
 
   h1,
@@ -160,6 +161,8 @@
     letter-spacing: 0;
   }
 }
+
+[dir="rtl"] .directional-icon { transform: scaleX(-1); }
 
 @utility brand-surface {
   background-image: var(--brand-gradient);

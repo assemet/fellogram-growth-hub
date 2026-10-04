@@ -5,7 +5,7 @@
 
 type TelegramWebApp = {
   initData?: string;
-  initDataUnsafe?: { start_param?: string };
+  initDataUnsafe?: { start_param?: string; user?: { language_code?: string } };
   ready?: () => void;
   expand?: () => void;
   colorScheme?: "light" | "dark";
@@ -44,6 +44,10 @@ export function watchTelegramTheme() {
 
 export function getInitData(): string {
   return webApp()?.initData ?? "";
+}
+
+export function getTelegramLanguage(): string | null {
+  return webApp()?.initDataUnsafe?.user?.language_code ?? null;
 }
 
 /** Deep-link payload: staff invite code, store join code or referral code. */

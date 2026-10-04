@@ -3,8 +3,9 @@ import { useQueryClient } from "@tanstack/react-query";
 
 import { InviteFriend } from "@/components/InviteFriend";
 import { RedeemRewardQr } from "@/components/RedeemRewardQr";
-import { ChevronDown, Gift, Stamp, UserPlus } from "lucide-react";
+import { ChevronDown, Gift, UserPlus } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { StampIcon } from "@/components/StampIcon";
 
 import { t } from "@/lib/i18n";
 
@@ -20,6 +21,8 @@ export type StampCardData = {
   referralsEnabled?: boolean;
   referrerBonus?: number;
   welcomeBonus?: number;
+  logoUrl?: string | null;
+  stampIcon?: string;
   rewards?: { id: string; name: string; description: string | null; stampsRequired: number }[];
   visits: { id: string; type: string; amount: number; createdAt: string }[];
 };
@@ -47,9 +50,12 @@ export function StampCard({ card }: { card: StampCardData }) {
     <li className="animate-arrive overflow-hidden rounded-lg border border-border bg-card shadow-[var(--shadow-card)]">
       <div className="brand-surface p-5">
         <div className="flex items-start justify-between gap-3">
-          <div className="min-w-0">
-            <p className="font-display text-xl font-bold leading-tight break-words">{card.storeName}</p>
-            <p className="mt-1 text-xs opacity-80">{card.programName}</p>
+          <div className="flex min-w-0 items-center gap-3">
+            {card.logoUrl && <img src={card.logoUrl} alt="" className="h-12 w-12 shrink-0 rounded-lg border border-current/15 object-cover" />}
+            <div className="min-w-0">
+              <p className="font-display text-xl font-bold leading-tight break-words">{card.storeName}</p>
+              <p className="mt-1 text-xs opacity-80">{card.programName}</p>
+            </div>
           </div>
           <span className="shrink-0 rounded-md border border-current/20 bg-card/15 px-3 py-1 text-sm font-extrabold backdrop-blur-md">
             {balance}/{required}
@@ -79,7 +85,7 @@ export function StampCard({ card }: { card: StampCardData }) {
                     : "flex aspect-square items-center justify-center rounded-full border-2 border-dashed border-border bg-secondary/40 text-muted-foreground"
                 }
               >
-                <Stamp className={filled ? "h-5 w-5" : "h-4 w-4 opacity-35"} />
+                <StampIcon name={card.stampIcon} className={filled ? "h-5 w-5" : "h-4 w-4 opacity-35"} />
               </div>
             );
           })}

@@ -3,7 +3,8 @@ import { useServerFn } from "@tanstack/react-start";
 
 import { supabase } from "@/integrations/supabase/client";
 import { telegramSignIn } from "@/lib/auth.functions";
-import { getInitData, initTelegram, rememberStartParam, watchTelegramTheme } from "@/lib/telegram";
+import { getInitData, getTelegramLanguage, initTelegram, rememberStartParam, watchTelegramTheme } from "@/lib/telegram";
+import { initializeLocale } from "@/lib/i18n";
 
 export type AuthState = "loading" | "ready" | "error";
 
@@ -23,6 +24,7 @@ export function useFellogramAuth() {
     (async () => {
       try {
         initTelegram();
+        initializeLocale(getTelegramLanguage());
         rememberStartParam();
 
         const { data } = await supabase.auth.getSession();
