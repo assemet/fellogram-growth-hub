@@ -6,7 +6,8 @@ import { RedeemRewardQr } from "@/components/RedeemRewardQr";
 import { ChevronDown, Gift, UserPlus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { StampIcon } from "@/components/StampIcon";
-import { resolveCardTheme } from "@/lib/card-theme";
+import { brandThemeStyle, resolveCardTheme } from "@/lib/card-theme";
+import { Link } from "@tanstack/react-router";
 
 import { t } from "@/lib/i18n";
 
@@ -25,6 +26,9 @@ export type StampCardData = {
   logoUrl?: string | null;
   stampIcon?: string;
   cardTheme?: string;
+  brandPrimary?: string | null;
+  brandAccent?: string | null;
+  backgroundTint?: string | null;
   rewards?: { id: string; name: string; description: string | null; stampsRequired: number }[];
   visits: { id: string; type: string; amount: number; createdAt: string }[];
 };
@@ -37,7 +41,7 @@ function formatDate(value: string) {
 }
 
 /** Interactive loyalty card: stamp grid, progress and visit history. */
-export function StampCard({ card, preview = false }: { card: StampCardData; preview?: boolean }) {
+export function StampCard({ card, preview = false, focused = false }: { card: StampCardData; preview?: boolean; focused?: boolean }) {
   const [open, setOpen] = useState(false);
   const [redeeming, setRedeeming] = useState<{ id: string; name: string } | null>(null);
   const queryClient = useQueryClient();
@@ -49,7 +53,7 @@ export function StampCard({ card, preview = false }: { card: StampCardData; prev
   const remaining = Math.max(0, required - balance);
 
   return (
-    <li data-card-theme={resolveCardTheme(card.cardTheme)} className="loyalty-card animate-arrive overflow-hidden rounded-lg border border-border bg-card shadow-[var(--shadow-card)]">
+    <li data-card-theme={resolveCardTheme(card.cardTheme)} style={brandThemeStyle(card.cardTheme, card)} className="loyalty-card animate-arrive overflow-hidden rounded-lg border border-border bg-card shadow-[var(--shadow-card)]">
       <div className="loyalty-card-header brand-surface p-5">
         <div className="flex items-start justify-between gap-3">
           <div className="flex min-w-0 items-center gap-3">
@@ -180,6 +184,12 @@ export function StampCard({ card, preview = false }: { card: StampCardData; prev
           {open ? t("wallet.card.hide") : t("wallet.card.history")}
           <ChevronDown className={`h-3.5 w-3.5 transition-transform ${open ? "rotate-180" : ""}`} />
         </Button>}
+
+        {!preview && !focused && card.storeId && (
+          <Button asChild variant="ghost" size="sm" className="loyalty-card-link mt-2 w-full text-primary">
+            <Link to="/wallet" search={{ store: card.storeId }}>{t("wallet.viewStore")}</Link>
+          </Button>
+        )}
 
         {open && (
           <ul className="mt-2 space-y-1 border-t border-border pt-2">

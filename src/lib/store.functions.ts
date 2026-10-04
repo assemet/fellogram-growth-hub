@@ -143,7 +143,7 @@ export const getMyCards = createServerFn({ method: "POST" })
       supabase
         .from("customer_memberships")
         .select(
-          "id, store_id, stamp_balance, last_visit_at, joined_at, stores(id, name, description, logo_url, card_theme), loyalty_programs(id, name, stamps_required, stamp_icon, referrals_enabled, referrer_bonus_stamps, welcome_bonus_stamps)",
+          "id, store_id, stamp_balance, last_visit_at, joined_at, stores(id, name, description, logo_url, card_theme, brand_primary, brand_accent, background_tint), loyalty_programs(id, name, stamps_required, stamp_icon, referrals_enabled, referrer_bonus_stamps, welcome_bonus_stamps)",
         )
         .eq("customer_id", userId)
         .order("joined_at", { ascending: false }),
@@ -177,6 +177,9 @@ export const getMyCards = createServerFn({ method: "POST" })
       storeDescription: m.stores?.description ?? null,
       logoUrl: m.stores?.logo_url ? logoMap.get(m.stores.logo_url) ?? null : null,
       cardTheme: m.stores?.card_theme ?? "classic",
+      brandPrimary: m.stores?.brand_primary ?? null,
+      brandAccent: m.stores?.brand_accent ?? null,
+      backgroundTint: m.stores?.background_tint ?? null,
       programName: m.loyalty_programs?.name ?? "Loyalty card",
       stampIcon: m.loyalty_programs?.stamp_icon ?? "stamp",
       stampsRequired: m.loyalty_programs?.stamps_required ?? 10,
@@ -208,7 +211,7 @@ export const getStoreForJoin = createServerFn({ method: "POST" })
     const { supabase, userId } = context;
     const { data: store } = await supabase
       .from("stores")
-      .select("id, name, description, logo_url")
+      .select("id, name, description, logo_url, card_theme, brand_primary, brand_accent, background_tint")
       .eq("id", data.storeId)
       .eq("active", true)
       .maybeSingle();
@@ -270,6 +273,9 @@ type UpdateProgramInput = {
   rewardDescription?: string;
   stampIcon: string;
   cardTheme: string;
+  brandPrimary?: string | null;
+  brandAccent?: string | null;
+  backgroundTint?: string | null;
 };
 
 /** Owner edits the stamp program and its primary reward. */
@@ -284,6 +290,11 @@ export const updateProgram = createServerFn({ method: "POST" })
     const stampIcon = allowedIcons.includes(String(data?.stampIcon)) ? String(data.stampIcon) : "stamp";
     const allowedThemes = ["classic", "coffee", "purple", "emerald", "midnight", "electric", "sunset"];
     if (!allowedThemes.includes(String(data?.cardTheme))) throw new Error("INVALID_CARD_THEME");
+    const validateColor = (value: unknown) => {
+      if (value == null) return null;
+      if (typeof value !== "string" || !/^#[0-9a-fA-F]{6}$/.test(value)) throw new Error("INVALID_BRAND_COLOR");
+      return value.toLowerCase();
+    };
     return {
       programName,
       rewardName,
@@ -291,6 +302,9 @@ export const updateProgram = createServerFn({ method: "POST" })
       rewardDescription: String(data?.rewardDescription ?? "").trim() || null,
       stampIcon,
       cardTheme: data.cardTheme,
+      brandPrimary: validateColor(data.brandPrimary),
+      brandAccent: validateColor(data.brandAccent),
+      backgroundTint: validateColor(data.backgroundTint),
     };
   })
   .handler(async ({ data, context }) => {
@@ -351,7 +365,7 @@ export const updateProgram = createServerFn({ method: "POST" })
       if (error) throw new Error(error.message);
     }
 
-    const { error: themeError } = await supabase.from("stores").update({ card_theme: data.cardTheme }).eq("id", store.id);
+    const { error: themeError } = await supabase.from("stores").update({ card_theme: data.cardTheme, brand_primary: data.brandPrimary, brand_accent: data.brandAccent, background_tint: data.backgroundTint }).eq("id", store.id);
     if (themeError) throw new Error(themeError.message);
 
     return { ok: true };
