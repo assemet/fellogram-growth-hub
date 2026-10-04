@@ -24,4 +24,4 @@
 # Global store theming
 - [x] Save preset and custom brand colors in Store Settings.
 - [x] Apply store colors to the full join and focused wallet flows while keeping the default wallet Telegram-native.
-- [ ] Verify a saved theme in the join and focused wallet views.
+- [x] Verify a saved theme in the join and focused wallet views.
