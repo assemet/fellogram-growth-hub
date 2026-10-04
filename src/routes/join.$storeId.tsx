@@ -3,6 +3,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { Gift, Stamp } from "lucide-react";
 import { toast } from "sonner";
+import { Button } from "@/components/ui/button";
 
 import { AppHeader } from "@/components/BrandMark";
 import { SplashScreen } from "@/components/SplashScreen";
@@ -54,7 +55,7 @@ function JoinStore() {
     return (
       <main className="min-h-screen">
         <AppHeader />
-        <section className="app-shell rounded-3xl bg-card p-8 text-center shadow-[var(--shadow-card)]">
+        <section className="app-shell rounded-lg bg-card p-8 text-center shadow-[var(--shadow-card)]">
           <p className="font-semibold">{t("join.notFound")}</p>
           <Link to="/wallet" className="mt-4 inline-block text-sm font-semibold text-primary">
             {t("join.viewWallet")}
@@ -67,14 +68,14 @@ function JoinStore() {
   const required = data.program?.stamps_required ?? 10;
 
   return (
-    <main className="min-h-screen pb-14">
+    <main className="min-h-[100dvh] pb-14">
       <AppHeader subtitle={data.store.name} />
 
       <section className="app-shell">
-        <h1 className="text-xl font-bold">{t("join.title")}</h1>
+        <h1 className="text-2xl font-bold">{t("join.title")}</h1>
         <p className="mt-1 text-sm text-muted-foreground">{t("join.subtitle")}</p>
 
-        <div className="mt-4 rounded-3xl bg-card p-5 shadow-[var(--shadow-card)]">
+        <div className="animate-arrive mt-4 rounded-lg border border-border bg-card p-5 shadow-[var(--shadow-card)]">
           <p className="font-display text-lg font-bold">{data.store.name}</p>
           {data.store.description && (
             <p className="mt-1 text-sm text-muted-foreground">{data.store.description}</p>
@@ -92,13 +93,12 @@ function JoinStore() {
           )}
 
           <div
-            className="mt-4 grid gap-2"
-            style={{ gridTemplateColumns: `repeat(${Math.min(required, 5)}, minmax(0, 1fr))` }}
+            className="mt-5 grid grid-cols-5 gap-2"
           >
             {Array.from({ length: required }).map((_, index) => (
               <div
                 key={index}
-                className="flex aspect-square items-center justify-center rounded-2xl border-2 border-dashed border-border"
+                className="flex aspect-square items-center justify-center rounded-full border-2 border-dashed border-border bg-secondary/40"
               >
                 <Stamp className="h-4 w-4 opacity-30" />
               </div>
@@ -117,14 +117,14 @@ function JoinStore() {
             </Link>
           </div>
         ) : (
-          <button
+          <Button
             type="button"
             onClick={() => mutation.mutate()}
             disabled={mutation.isPending}
-            className="mt-5 w-full rounded-full bg-primary px-6 py-4 font-semibold text-primary-foreground disabled:opacity-60"
+            className="touch-action mt-5 h-14 w-full font-bold"
           >
             {mutation.isPending ? t("join.joining") : t("join.action")}
-          </button>
+          </Button>
         )}
       </section>
     </main>

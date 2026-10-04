@@ -56,12 +56,15 @@ function NewStore() {
   if (state !== "ready") return <SplashScreen />;
 
   return (
-    <main className="min-h-screen pb-14">
+    <main className="min-h-[100dvh] pb-14">
       <AppHeader subtitle={t("onboarding.step", { current: step + 1, total: 3 })} />
 
       <section className="app-shell">
+        <div className="mb-6 grid grid-cols-3 gap-1.5" aria-label={t("onboarding.step", { current: step + 1, total: 3 })}>
+          {[0, 1, 2].map((index) => <div key={index} className={`h-1.5 rounded-full transition-colors duration-300 ${index <= step ? "bg-primary" : "bg-secondary"}`} />)}
+        </div>
         {step === 0 && (
-          <div className="rounded-3xl bg-card p-5 shadow-[var(--shadow-card)]">
+          <div className="animate-arrive rounded-lg border border-border bg-card p-5 shadow-[var(--shadow-card)]">
             <h1 className="text-xl font-bold">{t("onboarding.store.title")}</h1>
             <p className="mb-4 text-sm text-muted-foreground">{t("onboarding.store.subtitle")}</p>
 
@@ -83,7 +86,7 @@ function NewStore() {
             />
 
             <Button
-              className="mt-6 w-full rounded-full"
+              className="touch-action mt-6 h-12 w-full"
               disabled={storeName.trim().length < 2}
               onClick={() => setStep(1)}
             >
@@ -93,7 +96,7 @@ function NewStore() {
         )}
 
         {step === 1 && (
-          <div className="rounded-3xl bg-card p-5 shadow-[var(--shadow-card)]">
+          <div className="animate-arrive rounded-lg border border-border bg-card p-5 shadow-[var(--shadow-card)]">
             <h1 className="text-xl font-bold">{t("onboarding.program.title")}</h1>
             <p className="mb-4 text-sm text-muted-foreground">{t("onboarding.program.subtitle")}</p>
 
@@ -126,7 +129,7 @@ function NewStore() {
               className="mt-1"
             />
 
-            <div className="mt-4 rounded-2xl bg-secondary p-3 text-center text-sm font-semibold text-secondary-foreground">
+            <div className="mt-4 rounded-md bg-secondary p-3 text-center text-sm font-semibold text-secondary-foreground">
               {t("onboarding.preview", {
                 count: stampsRequired,
                 reward: rewardName || t("onboarding.program.rewardPlaceholder"),
@@ -134,7 +137,7 @@ function NewStore() {
             </div>
 
             <Button
-              className="mt-5 w-full rounded-full"
+              className="touch-action mt-5 h-12 w-full"
               disabled={rewardName.trim().length < 2 || mutation.isPending}
               onClick={() => mutation.mutate()}
             >
@@ -142,7 +145,7 @@ function NewStore() {
             </Button>
             <Button
               variant="ghost"
-              className="mt-2 w-full rounded-full"
+              className="touch-action mt-2 w-full"
               onClick={() => setStep(0)}
               disabled={mutation.isPending}
             >
@@ -152,17 +155,17 @@ function NewStore() {
         )}
 
         {step === 2 && (
-          <div className="brand-surface rounded-3xl p-8 text-center shadow-[var(--shadow-float)]">
+          <div className="brand-surface animate-arrive rounded-lg p-8 text-center shadow-[var(--shadow-float)]">
             <img
               src="/logo.png"
               alt=""
-              className="mx-auto mb-4 h-20 w-20 rounded-3xl bg-card object-contain p-2"
+              className="mx-auto mb-4 h-20 w-20 rounded-lg bg-card object-contain p-2"
             />
             <h1 className="text-xl font-bold">{t("onboarding.done.title")}</h1>
             <p className="mt-2 text-sm opacity-90">{t("onboarding.done.body")}</p>
             <Button
               variant="secondary"
-              className="mt-6 w-full rounded-full"
+              className="touch-action mt-6 h-12 w-full"
               onClick={() => navigate({ to: "/merchant", replace: true })}
             >
               {t("onboarding.goToDashboard")}

@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { X } from "lucide-react";
+import { Button } from "@/components/ui/button";
 
 import { t } from "@/lib/i18n";
 import { requestRedemption } from "@/lib/store.functions";
@@ -56,16 +57,16 @@ export function RedeemRewardQr({
 
   return (
     <div className="fixed inset-0 z-50 flex items-end justify-center bg-foreground/50 p-4 sm:items-center" role="dialog" aria-modal="true">
-      <div className="w-full max-w-sm rounded-3xl bg-card p-5 text-center shadow-[var(--shadow-card)]">
+      <div className="animate-arrive w-full max-w-sm rounded-lg border border-border bg-card p-5 pb-[calc(1.25rem+env(safe-area-inset-bottom))] text-center shadow-[var(--shadow-float)]">
         <div className="flex items-center justify-between">
           <p className="font-display text-lg font-bold">{rewardName}</p>
-          <button type="button" onClick={onClose} aria-label={t("rewards.close")} className="rounded-full p-1">
+          <Button type="button" variant="ghost" size="icon" onClick={onClose} aria-label={t("rewards.close")}>
             <X className="h-5 w-5" />
-          </button>
+          </Button>
         </div>
         <p className="mt-1 text-xs text-muted-foreground">{t("rewards.showCashier")}</p>
 
-        <div className="mx-auto mt-4 aspect-square w-60 overflow-hidden rounded-2xl bg-background">
+        <div className="mx-auto mt-4 aspect-square w-60 overflow-hidden rounded-md border border-border bg-background">
           {src && !expired && <img src={src} alt="Reward QR" className="h-full w-full" />}
           {(expired || error) && (
             <div className="flex h-full items-center justify-center p-4 text-sm font-semibold text-muted-foreground">
@@ -78,13 +79,13 @@ export function RedeemRewardQr({
           <p className="mt-3 text-sm font-semibold text-primary">{t("rewards.expiresIn", { time })}</p>
         )}
         {(expired || error) && (
-          <button
+          <Button
             type="button"
             onClick={() => setNonce((n) => n + 1)}
-            className="mt-3 w-full rounded-full bg-primary py-3 text-sm font-semibold text-primary-foreground"
+            className="touch-action mt-3 h-12 w-full font-semibold"
           >
             {t("rewards.again")}
-          </button>
+          </Button>
         )}
       </div>
     </div>

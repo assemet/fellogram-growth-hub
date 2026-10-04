@@ -4,6 +4,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { useEffect, useState } from "react";
 import { Minus, Plus } from "lucide-react";
 import { toast } from "sonner";
+import { Button } from "@/components/ui/button";
 
 import { AppHeader } from "@/components/BrandMark";
 import { ReferralSettings } from "@/components/ReferralSettings";
@@ -82,7 +83,7 @@ function ProgramEditor() {
     return (
       <main className="min-h-screen">
         <AppHeader />
-        <section className="app-shell rounded-3xl bg-card p-8 text-center shadow-[var(--shadow-card)]">
+        <section className="app-shell rounded-lg bg-card p-8 text-center shadow-[var(--shadow-card)]">
           <p className="font-semibold">{t("wallet.merchantCta.title")}</p>
           <Link
             to="/merchant/new"
@@ -122,14 +123,14 @@ function ProgramEditor() {
               id="programName"
               value={programName}
               onChange={(event) => setProgramName(event.target.value)}
-              className="mt-1 w-full rounded-2xl border border-border bg-card px-4 py-3 text-sm outline-none focus:border-primary"
+              className="mt-1 w-full rounded-md border border-border bg-card px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-ring"
             />
           </div>
 
           <div>
             <span className="text-sm font-semibold">{t("program.stamps")}</span>
             <div className="mt-1 flex items-center gap-3">
-              <button
+              <Button
                 type="button"
                 aria-label="decrease stamps"
                 onClick={() => {
@@ -139,10 +140,10 @@ function ProgramEditor() {
                     return next;
                   });
                 }}
-                className="flex h-11 w-11 items-center justify-center rounded-2xl bg-secondary text-secondary-foreground"
+                variant="secondary" size="icon" className="touch-action h-11 w-11 shrink-0"
               >
                 <Minus className="h-4 w-4" />
-              </button>
+              </Button>
               <input
                 id="stampsRequired"
                 type="number"
@@ -155,10 +156,10 @@ function ProgramEditor() {
                   setStampsRequired(parsed);
                   setStampsText(String(parsed));
                 }}
-                className="w-20 rounded-2xl border border-border bg-card px-4 py-3 text-center text-sm outline-none focus:border-primary"
+                className="w-20 rounded-md border border-border bg-card px-4 py-3 text-center text-sm outline-none focus:ring-2 focus:ring-ring"
               />
 
-              <button
+              <Button
                 type="button"
                 aria-label="increase stamps"
                 onClick={() => {
@@ -168,10 +169,10 @@ function ProgramEditor() {
                     return next;
                   });
                 }}
-                className="flex h-11 w-11 items-center justify-center rounded-2xl bg-secondary text-secondary-foreground"
+                variant="secondary" size="icon" className="touch-action h-11 w-11 shrink-0"
               >
                 <Plus className="h-4 w-4" />
-              </button>
+              </Button>
             </div>
           </div>
 
@@ -184,7 +185,7 @@ function ProgramEditor() {
               value={rewardName}
               onChange={(event) => setRewardName(event.target.value)}
               placeholder="Free coffee"
-              className="mt-1 w-full rounded-2xl border border-border bg-card px-4 py-3 text-sm outline-none focus:border-primary"
+              className="mt-1 w-full rounded-md border border-border bg-card px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-ring"
             />
           </div>
 
@@ -197,11 +198,11 @@ function ProgramEditor() {
               value={rewardDescription}
               onChange={(event) => setRewardDescription(event.target.value)}
               rows={2}
-              className="mt-1 w-full rounded-2xl border border-border bg-card px-4 py-3 text-sm outline-none focus:border-primary"
+              className="mt-1 w-full rounded-md border border-border bg-card px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-ring"
             />
           </div>
 
-          <div className="brand-surface rounded-3xl p-4">
+          <div className="brand-surface rounded-lg p-4">
             <p className="text-xs opacity-80">{t("merchant.program")}</p>
             <p className="font-display text-lg font-bold">
               {t("program.preview", {
@@ -209,15 +210,22 @@ function ProgramEditor() {
                 reward: rewardName || "—",
               })}
             </p>
+            <div className="mt-4 grid grid-cols-5 gap-2" aria-hidden="true">
+              {Array.from({ length: Math.min(10, Math.max(1, Number(stampsText) || stampsRequired)) }).map((_, index) => (
+                <span key={index} className="flex aspect-square items-center justify-center rounded-full border-2 border-dashed border-current/40 bg-card/15">
+                  <Plus className="h-3 w-3 opacity-60" />
+                </span>
+              ))}
+            </div>
           </div>
 
-          <button
+          <Button
             type="submit"
             disabled={mutation.isPending}
-            className="w-full rounded-full bg-primary px-6 py-4 font-semibold text-primary-foreground disabled:opacity-60"
+            className="touch-action h-14 w-full font-bold"
           >
             {mutation.isPending ? t("program.saving") : t("program.save")}
-          </button>
+          </Button>
         </form>
 
         <RewardsManager rewards={data.rewards} />
