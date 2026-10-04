@@ -29,6 +29,13 @@
       "when": 1791150143739,
       "tag": "0003_add_program_stamp_icon",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1791150168240,
+      "tag": "0004_secure_store_logo_storage",
+      "breakpoints": true
     }
   ]
 }
