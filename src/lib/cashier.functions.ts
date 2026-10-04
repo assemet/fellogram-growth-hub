@@ -171,3 +171,31 @@ export const undoLastStamp = createServerFn({ method: "POST" })
     if (!state) throw new Error("MEMBERSHIP_NOT_FOUND");
     return state;
   });
+
+/** Parses a scanned reward QR (fellogram:r:<token>) into its token. */
+export function parseRewardCode(raw: string): string | null {
+  const value = String(raw ?? "").trim();
+  const token = value.startsWith("fellogram:r:") ? value.slice("fellogram:r:".length) : value;
+  return /^[0-9a-f]{48}$/i.test(token) ? token.toLowerCase() : null;
+}
+
+/** Validate + consume a single-use reward token. All checks run atomically in the database. */
+export const redeemRewardToken = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((data: { code: string }) => {
+    const token = parseRewardCode(data?.code ?? "");
+    if (!token) throw new Error("TOKEN_INVALID");
+    return { token };
+  })
+  .handler(async ({ data, context }) => {
+    const store = await resolveStaffStore(context.supabase, context.userId);
+    if (!store) throw new Error("NOT_STORE_STAFF");
+    const { data: rows, error } = await context.supabase.rpc("redeem_reward", {
+      _store_id: store.storeId,
+      _token: data.token,
+    });
+    if (error) throw new Error(error.message);
+    const row = (rows as { customer_id: string; reward_name: string; stamps_deducted: number; stamp_balance: number }[])[0];
+    const state = await loadCustomerState(context.supabase, store.storeId, row.customer_id);
+    return { rewardName: row.reward_name, stampsDeducted: row.stamps_deducted, customer: state };
+  });
