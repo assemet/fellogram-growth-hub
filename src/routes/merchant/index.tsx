@@ -8,6 +8,7 @@ import { SplashScreen } from "@/components/SplashScreen";
 import { useFellogramAuth } from "@/hooks/useFellogramAuth";
 import { t } from "@/lib/i18n";
 import { getMyStore } from "@/lib/store.functions";
+import { GrowthAnalytics } from "@/components/GrowthAnalytics";
 
 export const Route = createFileRoute("/merchant/")({
   ssr: false,
