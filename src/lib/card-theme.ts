@@ -24,7 +24,7 @@ export const isHexColor = (value: unknown): value is string => typeof value === 
 function brightness(hex: string) {
   const channels = [1, 3, 5].map((start) => parseInt(hex.slice(start, start + 2), 16) / 255);
   const linear = channels.map((channel) => channel <= 0.04045 ? channel / 12.92 : ((channel + 0.055) / 1.055) ** 2.4);
-  return linear[0] * 0.2126 + linear[1] * 0.7152 + linear[2] * 0.0722;
+  return (linear[0] ?? 0) * 0.2126 + (linear[1] ?? 0) * 0.7152 + (linear[2] ?? 0) * 0.0722;
 }
 
 /** Runtime values are validated hex colors; preset and custom colors share the same semantic tokens. */
