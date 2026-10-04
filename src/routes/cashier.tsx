@@ -2,13 +2,13 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useEffect, useRef, useState } from "react";
-import { Camera, Check, ScanLine, Undo2 } from "lucide-react";
+import { Camera, Check, Gift, ScanLine, Undo2 } from "lucide-react";
 
 import { AppHeader } from "@/components/BrandMark";
 import { SplashScreen } from "@/components/SplashScreen";
 import { useFellogramAuth } from "@/hooks/useFellogramAuth";
 import { t } from "@/lib/i18n";
-import { awardStamp, getCashierStore, lookupCustomer, undoLastStamp } from "@/lib/cashier.functions";
+import { awardStamp, getCashierStore, lookupCustomer, redeemRewardToken, undoLastStamp } from "@/lib/cashier.functions";
 
 export const Route = createFileRoute("/cashier")({
   ssr: false,
@@ -39,6 +39,10 @@ function friendlyError(message: string): string {
   }
   if (message.includes("MEMBERSHIP_NOT_FOUND")) return t("cashier.notMember");
   if (message.includes("INVALID_CODE")) return t("cashier.invalidCode");
+  if (message.includes("TOKEN_USED")) return t("cashier.tokenUsed");
+  if (message.includes("TOKEN_EXPIRED")) return t("cashier.tokenExpired");
+  if (message.includes("TOKEN_INVALID")) return t("cashier.tokenInvalid");
+  if (message.includes("NOT_ENOUGH_STAMPS")) return t("rewards.notEnough");
   if (message.includes("NOTHING_TO_UNDO")) return t("cashier.nothingToUndo");
   return t("common.error");
 }
@@ -49,6 +53,8 @@ function Cashier() {
   const findCustomer = useServerFn(lookupCustomer);
   const stamp = useServerFn(awardStamp);
   const undo = useServerFn(undoLastStamp);
+  const redeemFn = useServerFn(redeemRewardToken);
+  const [mode, setMode] = useState<"customer" | "reward">("customer");
 
   const [customer, setCustomer] = useState<CustomerState | null>(null);
   const [code, setCode] = useState("");
@@ -103,7 +109,32 @@ function Cashier() {
     onError: (e: Error) => setError(friendlyError(e.message)),
   });
 
-  const startScanner = async () => {
+  const redeem = useMutation({
+    mutationFn: (raw: string) => redeemFn({ data: { code: raw } }),
+    onSuccess: (data) => {
+      if (data.customer) setCustomer(data.customer);
+      setError(null);
+      setCode("");
+      setMessage(t("cashier.redeemed", { reward: data.rewardName, count: data.stampsDeducted }));
+    },
+    onError: (e: Error) => {
+      setMessage(null);
+      setError(friendlyError(e.message));
+    },
+  });
+
+  // QR prefix decides the action, so either scan button works for either code.
+  const handleCode = (raw: string) => {
+    const value = raw.trim();
+    if (value.startsWith("fellogram:r:") || (mode === "reward" && !value.startsWith("fellogram:c:"))) {
+      redeem.mutate(value);
+    } else {
+      lookup.mutate(value);
+    }
+  };
+
+  const startScanner = async (nextMode: "customer" | "reward" = "customer") => {
+    setMode(nextMode);
     setError(null);
     setScanning(true);
     try {
@@ -114,7 +145,7 @@ function Cashier() {
         (result: { data: string }) => {
           stopScanner();
           setCode(result.data);
-          lookup.mutate(result.data);
+          handleCode(result.data);
         },
         { highlightScanRegion: true, maxScansPerSecond: 5 },
       );
@@ -171,21 +202,31 @@ function Cashier() {
                 </button>
               </>
             ) : (
-              <button
-                type="button"
-                onClick={startScanner}
-                className="flex w-full items-center justify-center gap-2 rounded-full bg-primary py-4 text-base font-bold text-primary-foreground"
-              >
-                <Camera className="h-5 w-5" />
-                {t("cashier.scan")}
-              </button>
+              <div className="space-y-3">
+                <button
+                  type="button"
+                  onClick={() => startScanner("customer")}
+                  className="flex w-full items-center justify-center gap-2 rounded-full bg-primary py-4 text-base font-bold text-primary-foreground"
+                >
+                  <Camera className="h-5 w-5" />
+                  {t("cashier.scan")}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => startScanner("reward")}
+                  className="flex w-full items-center justify-center gap-2 rounded-full border-2 border-primary py-4 text-base font-bold text-primary"
+                >
+                  <Gift className="h-5 w-5" />
+                  {t("cashier.scanReward")}
+                </button>
+              </div>
             )}
 
             <form
               className="mt-5 border-t border-border pt-4"
               onSubmit={(event) => {
                 event.preventDefault();
-                lookup.mutate(code);
+                handleCode(code);
               }}
             >
               <label htmlFor="code" className="text-xs font-semibold text-muted-foreground">
@@ -200,10 +241,14 @@ function Cashier() {
               />
               <button
                 type="submit"
-                disabled={lookup.isPending || code.trim().length === 0}
+                disabled={lookup.isPending || redeem.isPending || code.trim().length === 0}
                 className="mt-3 w-full rounded-full bg-secondary py-3 text-sm font-semibold text-secondary-foreground disabled:opacity-50"
               >
-                {lookup.isPending ? t("cashier.searching") : t("cashier.find")}
+                {lookup.isPending || redeem.isPending
+                  ? t("cashier.searching")
+                  : mode === "reward" || code.trim().startsWith("fellogram:r:")
+                    ? t("cashier.redeem")
+                    : t("cashier.find")}
               </button>
             </form>
           </div>
