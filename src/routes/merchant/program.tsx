@@ -9,7 +9,7 @@ import { Button } from "@/components/ui/button";
 import { AppHeader } from "@/components/BrandMark";
 import { StampIcon, stampIconOptions, type StampIconName } from "@/components/StampIcon";
 import { StampCard } from "@/components/StampCard";
-import { cardThemes, resolveCardTheme, type CardTheme } from "@/lib/card-theme";
+import { brandPalettes, brandThemeStyle, cardThemes, resolveCardTheme, type CardTheme } from "@/lib/card-theme";
 import { StoreLogoSettings } from "@/components/StoreLogoSettings";
 import { ReferralSettings } from "@/components/ReferralSettings";
 import { RewardsManager } from "@/components/RewardsManager";
@@ -53,6 +53,9 @@ function ProgramEditor() {
   const [rewardDescription, setRewardDescription] = useState("");
   const [stampIcon, setStampIcon] = useState<StampIconName>("stamp");
   const [cardTheme, setCardTheme] = useState<CardTheme>("classic");
+  const [brandPrimary, setBrandPrimary] = useState<string | null>(null);
+  const [brandAccent, setBrandAccent] = useState<string | null>(null);
+  const [backgroundTint, setBackgroundTint] = useState<string | null>(null);
   const [previewLogo, setPreviewLogo] = useState<string | null>(null);
 
   useEffect(() => {
@@ -66,6 +69,9 @@ function ProgramEditor() {
     setRewardDescription(reward?.description ?? "");
     setStampIcon((data.program?.stamp_icon as StampIconName) ?? "stamp");
     setCardTheme(resolveCardTheme(data.store.card_theme));
+    setBrandPrimary(data.store.brand_primary);
+    setBrandAccent(data.store.brand_accent);
+    setBackgroundTint(data.store.background_tint);
     setPreviewLogo(data.logoUrl);
   }, [data]);
 
@@ -80,6 +86,9 @@ function ProgramEditor() {
           rewardDescription,
           stampIcon,
           cardTheme,
+          brandPrimary,
+          brandAccent,
+          backgroundTint,
         },
       }),
     onSuccess: async () => {
@@ -161,10 +170,27 @@ function ProgramEditor() {
             <legend className="text-sm font-semibold">{t("program.cardTheme")}</legend>
             <div className="mt-2 grid grid-cols-2 gap-2 sm:grid-cols-3">
               {cardThemes.map((theme) => (
-                <Button key={theme} type="button" variant="outline" aria-pressed={cardTheme === theme} onClick={() => setCardTheme(theme)} className={`touch-action h-auto min-h-14 justify-start whitespace-normal border-2 px-2.5 py-2 text-start text-xs ${cardTheme === theme ? "border-ring" : ""}`}>
+                <Button key={theme} type="button" variant="outline" aria-pressed={cardTheme === theme} onClick={() => { setCardTheme(theme); setBrandPrimary(null); setBrandAccent(null); setBackgroundTint(null); }} className={`touch-action h-auto min-h-14 justify-start whitespace-normal border-2 px-2.5 py-2 text-start text-xs ${cardTheme === theme ? "border-ring" : ""}`}>
                   <span data-card-theme={theme} className="card-theme-swatch h-7 w-7 shrink-0 rounded-full border border-current/20" aria-hidden="true" />
                   <span>{t(`cardTheme.${theme}` as TranslationKey)}</span>
                 </Button>
+              ))}
+            </div>
+          </fieldset>
+
+          <fieldset>
+            <legend className="text-sm font-semibold">{t("program.brandColors")}</legend>
+            <div className="mt-2 grid grid-cols-3 gap-2">
+              {([
+                ["brandPrimary", brandPrimary, setBrandPrimary, brandPalettes[cardTheme].primary],
+                ["brandAccent", brandAccent, setBrandAccent, brandPalettes[cardTheme].accent],
+                ["backgroundTint", backgroundTint, setBackgroundTint, brandPalettes[cardTheme].tint],
+              ] as const).map(([key, value, setter, fallback]) => (
+                <label key={key} className="flex min-w-0 flex-col gap-2 text-xs font-semibold">
+                  <span>{t(`program.${key}`)}</span>
+                  <input type="color" aria-label={t(`program.${key}`)} value={value ?? fallback} onChange={(event) => setter(event.target.value)} className="h-11 w-full cursor-pointer rounded-md border border-border bg-card p-1" />
+                  <span className="font-mono text-[11px] text-muted-foreground">{value ?? fallback}</span>
+                </label>
               ))}
             </div>
           </fieldset>
@@ -246,16 +272,19 @@ function ProgramEditor() {
 
           <div>
             <h2 className="mb-2 text-sm font-semibold">{t("program.livePreview")}</h2>
+            <div className="store-theme rounded-md border border-border p-3" style={brandThemeStyle(cardTheme, { brandPrimary, brandAccent, backgroundTint })}>
+              <div className="mb-3 flex items-center justify-between border-b border-border pb-2 text-sm font-bold"><span>{data.store.name}</span><span className="rounded-md bg-primary px-3 py-1 text-xs text-primary-foreground">{t("join.action")}</span></div>
             <ul>
               <StampCard preview card={{
                 id: "preview", storeName: data.store.name, programName: programName || "Loyalty Card",
                 stampsRequired: Math.min(50, Math.max(1, Math.round(Number(stampsText) || stampsRequired))),
                 stampBalance: Math.min(3, Math.min(50, Math.max(1, Math.round(Number(stampsText) || stampsRequired)))),
                 reward: rewardName || null, lastVisitAt: null, logoUrl: previewLogo,
-                stampIcon, cardTheme, visits: [],
+                stampIcon, cardTheme, brandPrimary, brandAccent, backgroundTint, visits: [],
                 rewards: rewardName ? [{ id: "preview-reward", name: rewardName, description: rewardDescription || null, stampsRequired: Math.min(50, Math.max(1, Math.round(Number(stampsText) || stampsRequired))) }] : [],
               }} />
             </ul>
+            </div>
           </div>
 
           <Button

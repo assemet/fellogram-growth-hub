@@ -1,3 +1,5 @@
+import type { CSSProperties } from "react";
+
 export const cardThemes = ["classic", "coffee", "purple", "emerald", "midnight", "electric", "sunset"] as const;
 export type CardTheme = (typeof cardThemes)[number];
 
@@ -41,5 +43,5 @@ export function brandThemeStyle(theme: string | null | undefined, colors: BrandC
     "--store-on-accent": brightness(accent) > 0.36 ? "#151b22" : "#ffffff",
     "--store-surface": dark ? "#202c40" : "#ffffff",
     "--store-muted-ink": dark ? "#c2cbd8" : "#53616b",
-  } as React.CSSProperties;
+  } as CSSProperties;
 }
