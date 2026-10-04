@@ -8,6 +8,8 @@ import { Button } from "@/components/ui/button";
 
 import { AppHeader } from "@/components/BrandMark";
 import { StampIcon, stampIconOptions, type StampIconName } from "@/components/StampIcon";
+import { StampCard } from "@/components/StampCard";
+import { cardThemes, resolveCardTheme, type CardTheme } from "@/lib/card-theme";
 import { StoreLogoSettings } from "@/components/StoreLogoSettings";
 import { ReferralSettings } from "@/components/ReferralSettings";
 import { RewardsManager } from "@/components/RewardsManager";
@@ -50,6 +52,8 @@ function ProgramEditor() {
   const [rewardName, setRewardName] = useState("");
   const [rewardDescription, setRewardDescription] = useState("");
   const [stampIcon, setStampIcon] = useState<StampIconName>("stamp");
+  const [cardTheme, setCardTheme] = useState<CardTheme>("classic");
+  const [previewLogo, setPreviewLogo] = useState<string | null>(null);
 
   useEffect(() => {
     if (!data) return;
@@ -61,6 +65,8 @@ function ProgramEditor() {
     setRewardName(reward?.name ?? "");
     setRewardDescription(reward?.description ?? "");
     setStampIcon((data.program?.stamp_icon as StampIconName) ?? "stamp");
+    setCardTheme(resolveCardTheme(data.store.card_theme));
+    setPreviewLogo(data.logoUrl);
   }, [data]);
 
 
@@ -73,6 +79,7 @@ function ProgramEditor() {
           rewardName,
           rewardDescription,
           stampIcon,
+          cardTheme,
         },
       }),
     onSuccess: async () => {
@@ -112,7 +119,7 @@ function ProgramEditor() {
         <p className="mt-1 text-sm text-muted-foreground">{t("program.subtitle")}</p>
 
         <div className="mt-4">
-          <StoreLogoSettings logoUrl={data.logoUrl} />
+          <StoreLogoSettings logoUrl={data.logoUrl} onPreviewChange={setPreviewLogo} />
         </div>
 
         <form
@@ -145,6 +152,18 @@ function ProgramEditor() {
                 <Button key={icon} type="button" variant={stampIcon === icon ? "default" : "outline"} className="touch-action h-16 flex-col gap-1" onClick={() => setStampIcon(icon)} aria-pressed={stampIcon === icon}>
                   <StampIcon name={icon} className="h-5 w-5" />
                   <span className="text-xs">{t(`stampIcon.${icon}` as TranslationKey)}</span>
+                </Button>
+              ))}
+            </div>
+          </fieldset>
+
+          <fieldset>
+            <legend className="text-sm font-semibold">{t("program.cardTheme")}</legend>
+            <div className="mt-2 grid grid-cols-2 gap-2 sm:grid-cols-3">
+              {cardThemes.map((theme) => (
+                <Button key={theme} type="button" variant="outline" aria-pressed={cardTheme === theme} onClick={() => setCardTheme(theme)} className={`touch-action h-auto min-h-14 justify-start whitespace-normal border-2 px-2.5 py-2 text-start text-xs ${cardTheme === theme ? "border-ring" : ""}`}>
+                  <span data-card-theme={theme} className="card-theme-swatch h-7 w-7 shrink-0 rounded-full border border-current/20" aria-hidden="true" />
+                  <span>{t(`cardTheme.${theme}` as TranslationKey)}</span>
                 </Button>
               ))}
             </div>
@@ -225,21 +244,18 @@ function ProgramEditor() {
             />
           </div>
 
-          <div className="brand-surface rounded-lg p-4">
-            <p className="text-xs opacity-80">{t("merchant.program")}</p>
-            <p className="font-display text-lg font-bold">
-              {t("program.preview", {
-                count: Math.min(50, Math.max(1, Math.round(Number(stampsText) || stampsRequired))),
-                reward: rewardName || "—",
-              })}
-            </p>
-            <div className="mt-4 grid grid-cols-5 gap-2" aria-hidden="true">
-              {Array.from({ length: Math.min(10, Math.max(1, Number(stampsText) || stampsRequired)) }).map((_, index) => (
-                <span key={index} className="flex aspect-square items-center justify-center rounded-full border-2 border-dashed border-current/40 bg-card/15">
-                  <StampIcon name={stampIcon} className="h-3.5 w-3.5 opacity-70" />
-                </span>
-              ))}
-            </div>
+          <div>
+            <h2 className="mb-2 text-sm font-semibold">{t("program.livePreview")}</h2>
+            <ul>
+              <StampCard preview card={{
+                id: "preview", storeName: data.store.name, programName: programName || "Loyalty Card",
+                stampsRequired: Math.min(50, Math.max(1, Math.round(Number(stampsText) || stampsRequired))),
+                stampBalance: Math.min(3, Math.min(50, Math.max(1, Math.round(Number(stampsText) || stampsRequired)))),
+                reward: rewardName || null, lastVisitAt: null, logoUrl: previewLogo,
+                stampIcon, cardTheme, visits: [],
+                rewards: rewardName ? [{ id: "preview-reward", name: rewardName, description: rewardDescription || null, stampsRequired: Math.min(50, Math.max(1, Math.round(Number(stampsText) || stampsRequired))) }] : [],
+              }} />
+            </ul>
           </div>
 
           <Button

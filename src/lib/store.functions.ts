@@ -143,7 +143,7 @@ export const getMyCards = createServerFn({ method: "POST" })
       supabase
         .from("customer_memberships")
         .select(
-          "id, store_id, stamp_balance, last_visit_at, joined_at, stores(id, name, description, logo_url), loyalty_programs(id, name, stamps_required, stamp_icon, referrals_enabled, referrer_bonus_stamps, welcome_bonus_stamps)",
+          "id, store_id, stamp_balance, last_visit_at, joined_at, stores(id, name, description, logo_url, card_theme), loyalty_programs(id, name, stamps_required, stamp_icon, referrals_enabled, referrer_bonus_stamps, welcome_bonus_stamps)",
         )
         .eq("customer_id", userId)
         .order("joined_at", { ascending: false }),
@@ -176,6 +176,7 @@ export const getMyCards = createServerFn({ method: "POST" })
       storeName: m.stores?.name ?? "Store",
       storeDescription: m.stores?.description ?? null,
       logoUrl: m.stores?.logo_url ? logoMap.get(m.stores.logo_url) ?? null : null,
+      cardTheme: m.stores?.card_theme ?? "classic",
       programName: m.loyalty_programs?.name ?? "Loyalty card",
       stampIcon: m.loyalty_programs?.stamp_icon ?? "stamp",
       stampsRequired: m.loyalty_programs?.stamps_required ?? 10,
@@ -268,6 +269,7 @@ type UpdateProgramInput = {
   rewardName: string;
   rewardDescription?: string;
   stampIcon: string;
+  cardTheme: string;
 };
 
 /** Owner edits the stamp program and its primary reward. */
@@ -280,12 +282,15 @@ export const updateProgram = createServerFn({ method: "POST" })
     if (rewardName.length < 2) throw new Error("REWARD_NAME_REQUIRED");
     const allowedIcons = ["coffee", "stamp", "scissors", "food", "gift", "star"];
     const stampIcon = allowedIcons.includes(String(data?.stampIcon)) ? String(data.stampIcon) : "stamp";
+    const allowedThemes = ["classic", "coffee", "purple", "emerald", "midnight", "electric", "sunset"];
+    if (!allowedThemes.includes(String(data?.cardTheme))) throw new Error("INVALID_CARD_THEME");
     return {
       programName,
       rewardName,
       stampsRequired,
       rewardDescription: String(data?.rewardDescription ?? "").trim() || null,
       stampIcon,
+      cardTheme: data.cardTheme,
     };
   })
   .handler(async ({ data, context }) => {
@@ -345,6 +350,9 @@ export const updateProgram = createServerFn({ method: "POST" })
       });
       if (error) throw new Error(error.message);
     }
+
+    const { error: themeError } = await supabase.from("stores").update({ card_theme: data.cardTheme }).eq("id", store.id);
+    if (themeError) throw new Error(themeError.message);
 
     return { ok: true };
   });

@@ -15,3 +15,8 @@
 - [x] Add secure store-logo upload and display.
 - [x] Add merchant stamp-icon selection and customer-card rendering.
 - [x] Verify mobile/desktop light/dark experiences in both languages.
+
+# Store card theme customizer
+- [x] Save owner-selected card colors and display them in customer wallets.
+- [x] Show live card preview with current logo, icon, program, and color choices.
+- [x] Verify owner saves a theme and the wallet displays it.

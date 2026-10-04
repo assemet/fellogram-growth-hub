@@ -1,0 +1,1 @@
+ALTER TABLE public.stores ADD COLUMN card_theme text NOT NULL DEFAULT 'classic' CONSTRAINT stores_card_theme_check CHECK (card_theme IN ('classic', 'coffee', 'purple', 'emerald', 'midnight', 'electric', 'sunset'));

@@ -36,6 +36,13 @@
       "when": 1791150168240,
       "tag": "0004_secure_store_logo_storage",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1791150862991,
+      "tag": "0005_add_store_card_theme",
+      "breakpoints": true
     }
   ]
 }
