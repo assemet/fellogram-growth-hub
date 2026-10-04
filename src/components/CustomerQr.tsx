@@ -23,10 +23,10 @@ export function CustomerQr({ customerId }: { customerId: string }) {
   }, [customerId]);
 
   return (
-    <div className="rounded-3xl bg-card p-5 text-center shadow-[var(--shadow-card)]">
+    <div className="surface-glass rounded-lg border border-border p-5 text-center shadow-[var(--shadow-card)]">
       <p className="font-display text-base font-bold">{t("qr.title")}</p>
       <p className="mt-1 text-xs text-muted-foreground">{t("qr.subtitle")}</p>
-      <div className="mx-auto mt-4 flex h-48 w-48 items-center justify-center rounded-2xl bg-white p-2">
+      <div className="mx-auto mt-4 flex h-44 w-44 items-center justify-center rounded-md bg-card p-2 ring-1 ring-border">
         {src ? (
           <img src={src} alt={t("qr.title")} className="h-full w-full object-contain" />
         ) : (

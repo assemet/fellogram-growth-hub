@@ -5,6 +5,7 @@ import { toast } from "sonner";
 
 import { t } from "@/lib/i18n";
 import { updateReferralSettings } from "@/lib/store.functions";
+import { Button } from "@/components/ui/button";
 
 type Program = { referrals_enabled: boolean; referrer_bonus_stamps: number; welcome_bonus_stamps: number } | null;
 
@@ -34,10 +35,10 @@ export function ReferralSettings({ program }: { program: Program }) {
     onError: () => toast.error(t("common.error")),
   });
 
-  const field = "w-20 rounded-2xl border border-border bg-background px-3 py-2 text-center text-sm outline-none focus:border-primary";
+  const field = "w-20 rounded-md border border-border bg-background px-3 py-2 text-center text-sm outline-none focus:ring-2 focus:ring-ring";
 
   return (
-    <div className="mt-8 rounded-3xl bg-card p-4 shadow-[var(--shadow-card)]">
+    <div className="mt-8 rounded-lg border border-border bg-card p-4 shadow-[var(--shadow-card)]">
       <h2 className="text-lg font-bold">{t("referral.settings")}</h2>
       <p className="text-sm text-muted-foreground">{t("referral.settingsSub")}</p>
 
@@ -60,14 +61,14 @@ export function ReferralSettings({ program }: { program: Program }) {
         <input type="number" min={0} max={20} value={welcome} onChange={(e) => setWelcome(e.target.value)} disabled={!enabled} className={field} />
       </label>
 
-      <button
+      <Button
         type="button"
         onClick={() => mutation.mutate()}
         disabled={mutation.isPending}
-        className="mt-4 w-full rounded-full bg-secondary py-3 text-sm font-semibold text-secondary-foreground disabled:opacity-60"
+        variant="secondary" className="touch-action mt-4 h-12 w-full font-semibold"
       >
         {t("referral.save")}
-      </button>
+      </Button>
     </div>
   );
 }

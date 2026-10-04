@@ -2,6 +2,7 @@ import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { X } from "lucide-react";
 import { toast } from "sonner";
+import { Button } from "@/components/ui/button";
 
 import { t } from "@/lib/i18n";
 import { getReferralLink } from "@/lib/store.functions";
@@ -43,12 +44,12 @@ export function InviteFriend({
 
   return (
     <div className="fixed inset-0 z-50 flex items-end justify-center bg-foreground/50 p-4 sm:items-center" role="dialog" aria-modal="true">
-      <div className="w-full max-w-sm rounded-3xl bg-card p-5 shadow-[var(--shadow-card)]">
+      <div className="animate-arrive w-full max-w-sm rounded-lg border border-border bg-card p-5 pb-[calc(1.25rem+env(safe-area-inset-bottom))] shadow-[var(--shadow-float)]">
         <div className="flex items-center justify-between">
           <p className="font-display text-lg font-bold">{t("referral.title")}</p>
-          <button type="button" onClick={onClose} aria-label={t("rewards.close")} className="rounded-full p-1">
+          <Button type="button" variant="ghost" size="icon" onClick={onClose} aria-label={t("rewards.close")}>
             <X className="h-5 w-5" />
-          </button>
+          </Button>
         </div>
         <p className="mt-2 text-sm text-muted-foreground">
           {t("referral.body", { referrer: referrerBonus, welcome: welcomeBonus })}
@@ -59,25 +60,25 @@ export function InviteFriend({
         {data && (
           <>
             {!data.link && <p className="mt-4 text-xs text-muted-foreground">{t("referral.noBot")}</p>}
-            <p className="mt-3 break-all rounded-2xl bg-secondary px-3 py-2 font-mono text-xs text-secondary-foreground">
+            <p className="mt-3 break-all rounded-md bg-secondary px-3 py-2 font-mono text-xs text-secondary-foreground">
               {data.link ?? data.param}
             </p>
             {data.link && (
-              <button
+              <Button
                 type="button"
                 onClick={share}
-                className="mt-4 w-full rounded-full bg-primary py-3 text-sm font-bold text-primary-foreground"
+                className="touch-action mt-4 h-12 w-full font-bold"
               >
                 {t("referral.share")}
-              </button>
+              </Button>
             )}
-            <button
+            <Button
               type="button"
               onClick={copy}
-              className="mt-2 w-full rounded-full border border-border py-3 text-sm font-semibold"
+              variant="outline" className="touch-action mt-2 h-12 w-full font-semibold"
             >
               {t("referral.copy")}
-            </button>
+            </Button>
           </>
         )}
       </div>

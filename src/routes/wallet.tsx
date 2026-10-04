@@ -1,7 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { Store, Sparkles } from "lucide-react";
+import { ArrowRight, ScanLine, Store, Sparkles } from "lucide-react";
 
 import { AppHeader } from "@/components/BrandMark";
 import { SplashScreen } from "@/components/SplashScreen";
@@ -18,6 +18,8 @@ export const Route = createFileRoute("/wallet")({
       { title: "My Loyalty — Fellogram" },
       { name: "description", content: "Your loyalty cards, stamp progress and rewards in one place." },
       { property: "og:title", content: "My Loyalty — Fellogram" },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary" },
       { property: "og:description", content: "Track stamps and rewards from your favourite local stores." },
     ],
   }),
@@ -45,11 +47,11 @@ function Wallet() {
   const firstName = data.profile?.first_name ?? "";
 
   return (
-    <main className="min-h-screen pb-14">
-      <AppHeader subtitle={firstName ? `Hi ${firstName} 👋` : t("app.tagline")} />
+    <main className="min-h-[100dvh] pb-[calc(3.5rem+env(safe-area-inset-bottom))]">
+      <AppHeader subtitle={firstName ? `Hi, ${firstName}` : t("app.tagline")} />
 
       <section className="app-shell">
-        <h1 className="mb-3 text-xl font-bold">{t("wallet.title")}</h1>
+        <h1 className="mb-4 text-2xl font-bold">{t("wallet.title")}</h1>
 
         {data.profile?.id && (
           <div className="mb-4">
@@ -58,7 +60,7 @@ function Wallet() {
         )}
 
         {cards.length === 0 ? (
-          <div className="rounded-3xl border border-dashed border-border bg-card p-8 text-center shadow-[var(--shadow-card)]">
+          <div className="rounded-lg border border-dashed border-border bg-card p-8 text-center shadow-[var(--shadow-card)]">
             <Sparkles className="mx-auto mb-3 h-7 w-7 text-primary" />
             <p className="font-semibold">{t("wallet.empty.title")}</p>
             <p className="mt-1 text-sm text-muted-foreground">{t("wallet.empty.body")}</p>
@@ -74,25 +76,27 @@ function Wallet() {
         {!data.ownedStoreId && (
           <Link
             to="/merchant/new"
-            className="mt-6 flex items-center gap-3 rounded-3xl border border-border bg-secondary px-4 py-4 text-left"
+            className="touch-action mt-6 grid grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-3 rounded-lg border border-border bg-card px-4 py-4 text-left shadow-[var(--shadow-card)]"
           >
-            <span className="flex h-10 w-10 items-center justify-center rounded-2xl bg-primary text-primary-foreground">
+            <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-md bg-accent text-accent-foreground">
               <Store className="h-5 w-5" />
             </span>
-            <span>
+            <span className="min-w-0">
               <span className="block text-sm text-muted-foreground">{t("wallet.merchantCta.title")}</span>
               <span className="block font-semibold text-secondary-foreground">
                 {t("wallet.merchantCta.action")}
               </span>
             </span>
+            <ArrowRight className="h-4 w-4 shrink-0 text-muted-foreground" />
           </Link>
         )}
 
         {(data.staffStoreId || data.ownedStoreId) && (
           <Link
             to="/cashier"
-            className="mt-6 block rounded-3xl bg-primary px-4 py-4 text-center font-semibold text-primary-foreground"
+            className="touch-action mt-6 flex items-center justify-center gap-2 rounded-md bg-primary px-4 py-4 text-center font-bold text-primary-foreground"
           >
+            <ScanLine className="h-5 w-5" />
             {t("cashier.title")}
           </Link>
         )}
@@ -100,7 +104,7 @@ function Wallet() {
         {data.ownedStoreId && (
           <Link
             to="/merchant"
-            className="mt-6 block rounded-3xl border border-border bg-secondary px-4 py-4 text-center font-semibold text-secondary-foreground"
+            className="touch-action mt-3 flex items-center justify-center gap-2 rounded-md border border-border bg-card px-4 py-4 text-center font-semibold text-foreground"
           >
             {t("merchant.title")}
           </Link>

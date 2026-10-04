@@ -8,6 +8,7 @@ import { useFellogramAuth } from "@/hooks/useFellogramAuth";
 import { t } from "@/lib/i18n";
 import { getMyStore } from "@/lib/store.functions";
 import { GrowthAnalytics } from "@/components/GrowthAnalytics";
+import { ArrowRight, Settings2 } from "lucide-react";
 
 export const Route = createFileRoute("/merchant/")({
   ssr: false,
@@ -16,31 +17,13 @@ export const Route = createFileRoute("/merchant/")({
       { title: "Store dashboard — Fellogram" },
       { name: "description", content: "See customers, visits, rewards and referral growth for your store." },
       { property: "og:title", content: "Store dashboard — Fellogram" },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary" },
       { property: "og:description", content: "Is loyalty growing your business? Find out in one screen." },
     ],
   }),
   component: MerchantDashboard,
 });
-
-function Metric({
-  icon,
-  label,
-  value,
-}: {
-  icon: React.ReactNode;
-  label: string;
-  value: string | number;
-}) {
-  return (
-    <div className="rounded-3xl bg-card p-4 shadow-[var(--shadow-card)]">
-      <span className="flex h-9 w-9 items-center justify-center rounded-2xl bg-accent text-accent-foreground">
-        {icon}
-      </span>
-      <p className="mt-3 text-2xl font-bold">{value}</p>
-      <p className="text-xs text-muted-foreground">{label}</p>
-    </div>
-  );
-}
 
 function MerchantDashboard() {
   const { state } = useFellogramAuth();
@@ -77,18 +60,19 @@ function MerchantDashboard() {
       <AppHeader subtitle={data.store.name} />
 
       <section className="app-shell">
-        <h1 className="mb-3 text-xl font-bold">{t("merchant.title")}</h1>
+        <h1 className="mb-4 text-2xl font-bold">{t("merchant.title")}</h1>
 
-        <div className="brand-surface rounded-3xl p-5 shadow-[var(--shadow-float)]">
-          <p className="text-xs opacity-80">{t("merchant.program")}</p>
-          <p className="font-display text-lg font-bold">{data.program?.name ?? "—"}</p>
+        <div className="brand-surface animate-arrive rounded-lg p-5 shadow-[var(--shadow-float)]">
+          <p className="text-xs font-bold uppercase opacity-80">{t("merchant.program")}</p>
+          <p className="mt-2 font-display text-2xl font-bold leading-tight">{data.program?.name ?? "—"}</p>
           <p className="mt-1 text-sm opacity-90">
             {t("merchant.stamps", { count: data.program?.stamps_required ?? 0, reward })}
           </p>
           <Link
             to="/merchant/program"
-            className="mt-3 inline-block rounded-full bg-white/20 px-4 py-2 text-xs font-semibold"
+            className="touch-action mt-5 inline-flex items-center gap-2 rounded-md border border-current/25 bg-card/15 px-3 py-2 text-xs font-bold backdrop-blur-sm"
           >
+            <Settings2 className="h-4 w-4" />
             {t("program.edit")}
           </Link>
         </div>
@@ -96,8 +80,8 @@ function MerchantDashboard() {
         <GrowthAnalytics />
 
 
-        <Link to="/wallet" className="mt-6 block text-center text-sm font-semibold text-primary">
-          {t("merchant.switchToWallet")}
+        <Link to="/wallet" className="touch-action mt-6 flex items-center justify-between border-t border-border py-4 text-sm font-semibold text-primary">
+          {t("merchant.switchToWallet")} <ArrowRight className="h-4 w-4" />
         </Link>
       </section>
     </main>

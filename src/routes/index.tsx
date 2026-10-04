@@ -3,6 +3,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { useEffect, useState } from "react";
 
 import { SplashScreen } from "@/components/SplashScreen";
+import { Button } from "@/components/ui/button";
 import { useFellogramAuth } from "@/hooks/useFellogramAuth";
 import { t } from "@/lib/i18n";
 import { toast } from "sonner";
@@ -21,6 +22,8 @@ export const Route = createFileRoute("/")({
           "Fellogram is a Telegram-native loyalty platform: collect stamps, earn rewards, invite friends and help local businesses grow.",
       },
       { property: "og:title", content: "Fellogram — Turn loyalty into growth" },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary" },
       {
         property: "og:description",
         content: "Telegram-native loyalty and customer growth for small businesses.",
@@ -88,12 +91,12 @@ function SplashRouter() {
       <div className="flex min-h-screen flex-col items-center justify-center gap-4 px-8 text-center">
         <img src="/logo.png" alt={t("app.name")} className="h-20 w-20 object-contain" />
         <p className="text-sm text-muted-foreground">{t("auth.failed")}</p>
-        <button
+        <Button
           onClick={() => window.location.reload()}
-          className="rounded-full bg-primary px-5 py-2 text-sm font-semibold text-primary-foreground"
+          className="touch-action"
         >
           {t("auth.retry")}
-        </button>
+        </Button>
       </div>
     );
   }

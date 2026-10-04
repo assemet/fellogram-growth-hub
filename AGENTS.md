@@ -8,3 +8,6 @@
 > Commits you push to the connected branch sync back to Lovable and show up in
 > the editor, so keep the branch in a working state.
 <!-- LOVABLE:END -->
+
+- Keep Telegram appearance synchronized through the browser theme watcher, with device light/dark fallbacks and CSS semantic tokens; this preserves native Mini App colors without changing the verified business flows.
+- Keep visual feedback in shared CSS utilities and existing UI buttons, with reduced-motion support; this makes wallet, cashier, and merchant screens consistent.

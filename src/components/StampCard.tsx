@@ -3,7 +3,8 @@ import { useQueryClient } from "@tanstack/react-query";
 
 import { InviteFriend } from "@/components/InviteFriend";
 import { RedeemRewardQr } from "@/components/RedeemRewardQr";
-import { Check, ChevronDown, Gift, Stamp, UserPlus } from "lucide-react";
+import { ChevronDown, Gift, Stamp, UserPlus } from "lucide-react";
+import { Button } from "@/components/ui/button";
 
 import { t } from "@/lib/i18n";
 
@@ -43,14 +44,14 @@ export function StampCard({ card }: { card: StampCardData }) {
   const remaining = Math.max(0, required - balance);
 
   return (
-    <li className="overflow-hidden rounded-3xl bg-card shadow-[var(--shadow-card)]">
-      <div className="brand-surface p-4">
+    <li className="animate-arrive overflow-hidden rounded-lg border border-border bg-card shadow-[var(--shadow-card)]">
+      <div className="brand-surface p-5">
         <div className="flex items-start justify-between gap-3">
-          <div>
-            <p className="font-display text-lg font-bold leading-tight">{card.storeName}</p>
-            <p className="text-xs opacity-80">{card.programName}</p>
+          <div className="min-w-0">
+            <p className="font-display text-xl font-bold leading-tight break-words">{card.storeName}</p>
+            <p className="mt-1 text-xs opacity-80">{card.programName}</p>
           </div>
-          <span className="rounded-full bg-white/20 px-3 py-1 text-xs font-bold">
+          <span className="shrink-0 rounded-md border border-current/20 bg-card/15 px-3 py-1 text-sm font-extrabold backdrop-blur-md">
             {balance}/{required}
           </span>
         </div>
@@ -62,10 +63,9 @@ export function StampCard({ card }: { card: StampCardData }) {
         )}
       </div>
 
-      <div className="p-4">
+      <div className="p-5">
         <div
-          className="grid gap-2"
-          style={{ gridTemplateColumns: `repeat(${Math.min(required, 5)}, minmax(0, 1fr))` }}
+          className="grid grid-cols-5 gap-2"
         >
           {Array.from({ length: required }).map((_, index) => {
             const filled = index < balance;
@@ -75,17 +75,20 @@ export function StampCard({ card }: { card: StampCardData }) {
                 aria-label={filled ? "stamp collected" : "stamp empty"}
                 className={
                   filled
-                    ? "flex aspect-square items-center justify-center rounded-2xl bg-primary text-primary-foreground"
-                    : "flex aspect-square items-center justify-center rounded-2xl border-2 border-dashed border-border text-muted-foreground"
+                    ? "stamp-slot flex aspect-square items-center justify-center rounded-full border-2 border-primary/25 bg-primary text-primary-foreground shadow-[var(--shadow-card)]"
+                    : "flex aspect-square items-center justify-center rounded-full border-2 border-dashed border-border bg-secondary/40 text-muted-foreground"
                 }
               >
-                {filled ? <Check className="h-4 w-4" /> : <Stamp className="h-4 w-4 opacity-40" />}
+                <Stamp className={filled ? "h-5 w-5" : "h-4 w-4 opacity-35"} />
               </div>
             );
           })}
         </div>
 
-        <p className={`mt-4 text-sm font-semibold ${complete ? "text-accent-foreground" : "text-foreground"}`}>
+        <div className="mt-4 h-1.5 overflow-hidden rounded-full bg-secondary" role="progressbar" aria-valuenow={balance} aria-valuemin={0} aria-valuemax={required} aria-label="Stamp progress">
+          <div className="h-full rounded-full bg-growth transition-[width] duration-500" style={{ width: `${Math.min(100, (balance / Math.max(1, required)) * 100)}%` }} />
+        </div>
+        <p className={`mt-3 text-sm font-semibold ${complete ? "text-primary" : "text-foreground"}`}>
           {complete ? t("wallet.card.ready") : t("wallet.card.toGo", { count: remaining })}
         </p>
         {card.lastVisitAt && (
@@ -100,7 +103,7 @@ export function StampCard({ card }: { card: StampCardData }) {
             {rewards.map((reward) => {
               const available = card.stampBalance >= reward.stampsRequired;
               return (
-                <div key={reward.id} className="flex items-center justify-between gap-3 rounded-2xl bg-secondary px-3 py-2">
+                <div key={reward.id} className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-3 rounded-md bg-secondary px-3 py-3">
                   <div className="min-w-0">
                     <p className="truncate text-sm font-semibold text-secondary-foreground">{reward.name}</p>
                     <p className="text-xs text-muted-foreground">
@@ -110,13 +113,14 @@ export function StampCard({ card }: { card: StampCardData }) {
                     </p>
                   </div>
                   {available && (
-                    <button
+                    <Button
                       type="button"
                       onClick={() => setRedeeming({ id: reward.id, name: reward.name })}
-                      className="shrink-0 rounded-full bg-primary px-3 py-2 text-xs font-bold text-primary-foreground"
+                      size="sm"
+                      className="touch-action shrink-0 text-xs font-bold"
                     >
                       {t("rewards.redeem")}
-                    </button>
+                    </Button>
                   )}
                 </div>
               );
@@ -125,14 +129,15 @@ export function StampCard({ card }: { card: StampCardData }) {
         )}
 
         {card.referralsEnabled && card.storeId && (
-          <button
+          <Button
             type="button"
             onClick={() => setInviting(true)}
-            className="mt-4 flex w-full items-center justify-center gap-2 rounded-full border-2 border-primary py-3 text-sm font-bold text-primary"
+            variant="outline"
+            className="touch-action mt-4 w-full"
           >
             <UserPlus className="h-4 w-4" />
             {t("referral.invite")}
-          </button>
+          </Button>
         )}
 
         {inviting && card.storeId && (
@@ -156,15 +161,17 @@ export function StampCard({ card }: { card: StampCardData }) {
           />
         )}
 
-        <button
+        <Button
           type="button"
           onClick={() => setOpen((value) => !value)}
-          className="mt-3 flex items-center gap-1 text-xs font-semibold text-primary"
+          variant="ghost"
+          size="sm"
+          className="mt-3 -ml-2 text-xs font-semibold text-primary"
           aria-expanded={open}
         >
           {open ? t("wallet.card.hide") : t("wallet.card.history")}
           <ChevronDown className={`h-3.5 w-3.5 transition-transform ${open ? "rotate-180" : ""}`} />
-        </button>
+        </Button>
 
         {open && (
           <ul className="mt-2 space-y-1 border-t border-border pt-2">

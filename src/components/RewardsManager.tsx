@@ -6,6 +6,7 @@ import { toast } from "sonner";
 
 import { t } from "@/lib/i18n";
 import { archiveReward, saveReward } from "@/lib/store.functions";
+import { Button } from "@/components/ui/button";
 
 type Reward = { id: string; name: string; description: string | null; stamps_required: number; active: boolean };
 
@@ -43,13 +44,13 @@ export function RewardsManager({ rewards }: { rewards: Reward[] }) {
   const active = rewards.filter((r) => r.active).sort((a, b) => a.stamps_required - b.stamps_required);
 
   return (
-    <div className="mt-8 rounded-3xl bg-card p-4 shadow-[var(--shadow-card)]">
+    <div className="mt-8 rounded-lg border border-border bg-card p-4 shadow-[var(--shadow-card)]">
       <h2 className="text-lg font-bold">{t("rewards.manage")}</h2>
       <p className="text-sm text-muted-foreground">{t("rewards.manageSub")}</p>
 
       <ul className="mt-3 space-y-2">
         {active.map((r) => (
-          <li key={r.id} className="flex items-center justify-between gap-3 rounded-2xl bg-secondary px-3 py-2">
+          <li key={r.id} className="flex items-center justify-between gap-3 rounded-md bg-secondary px-3 py-2">
             <div className="min-w-0">
               <p className="truncate text-sm font-semibold text-secondary-foreground">{r.name}</p>
               <p className="text-xs text-muted-foreground">
@@ -57,14 +58,14 @@ export function RewardsManager({ rewards }: { rewards: Reward[] }) {
               </p>
             </div>
             {active.length > 1 && (
-              <button
+              <Button
                 type="button"
                 aria-label={t("rewards.remove")}
                 onClick={() => remove.mutate(r.id)}
-                className="rounded-full p-2 text-destructive"
+                variant="ghost" size="icon" className="touch-action shrink-0 text-destructive"
               >
                 <Trash2 className="h-4 w-4" />
-              </button>
+              </Button>
             )}
           </li>
         ))}
@@ -87,7 +88,7 @@ export function RewardsManager({ rewards }: { rewards: Reward[] }) {
             placeholder={t("rewards.name")}
             value={name}
             onChange={(e) => setName(e.target.value)}
-            className="min-w-0 flex-1 rounded-2xl border border-border bg-background px-4 py-3 text-sm outline-none focus:border-primary"
+            className="min-w-0 flex-1 rounded-md border border-border bg-background px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-ring"
           />
           <input
             aria-label={t("rewards.stamps")}
@@ -96,7 +97,7 @@ export function RewardsManager({ rewards }: { rewards: Reward[] }) {
             max={50}
             value={stamps}
             onChange={(e) => setStamps(e.target.value)}
-            className="w-20 rounded-2xl border border-border bg-background px-3 py-3 text-center text-sm outline-none focus:border-primary"
+            className="w-20 rounded-md border border-border bg-background px-3 py-3 text-center text-sm outline-none focus:ring-2 focus:ring-ring"
           />
         </div>
         <input
@@ -104,15 +105,15 @@ export function RewardsManager({ rewards }: { rewards: Reward[] }) {
           placeholder={t("rewards.description")}
           value={description}
           onChange={(e) => setDescription(e.target.value)}
-          className="w-full rounded-2xl border border-border bg-background px-4 py-3 text-sm outline-none focus:border-primary"
+          className="w-full rounded-md border border-border bg-background px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-ring"
         />
-        <button
+        <Button
           type="submit"
           disabled={add.isPending}
-          className="w-full rounded-full bg-secondary py-3 text-sm font-semibold text-secondary-foreground disabled:opacity-60"
+          variant="secondary" className="touch-action h-12 w-full font-semibold"
         >
           {t("rewards.add")}
-        </button>
+        </Button>
       </form>
     </div>
   );

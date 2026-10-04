@@ -8,7 +8,7 @@ export type Locale = "en";
 
 const en = {
   "app.name": "Fellogram",
-  "app.tagline": "Turn loyalty into growth",
+  "app.tagline": "Scan. Reward. Repeat.",
   "app.loading": "Preparing your wallet…",
 
   "auth.verifying": "Verifying your Telegram account…",
