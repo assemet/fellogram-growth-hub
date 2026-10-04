@@ -169,7 +169,37 @@
   color: var(--brand-foreground);
 }
 
-/* Store card palettes are scoped to loyalty cards; Telegram's surrounding UI keeps its native theme. */
+/* Brand tokens are scoped to one store's flow. The multi-store wallet stays Telegram-native. */
+.store-theme {
+  --background: var(--store-tint);
+  --foreground: var(--store-ink);
+  --card: var(--store-surface);
+  --card-foreground: var(--store-ink);
+  --popover: var(--store-surface);
+  --popover-foreground: var(--store-ink);
+  --primary: var(--store-primary);
+  --primary-foreground: var(--store-on-primary);
+  --secondary: color-mix(in srgb, var(--store-accent) 12%, var(--store-surface));
+  --secondary-foreground: var(--store-ink);
+  --muted: color-mix(in srgb, var(--store-primary) 8%, var(--store-surface));
+  --muted-foreground: var(--store-muted-ink);
+  --accent: color-mix(in srgb, var(--store-accent) 17%, var(--store-surface));
+  --accent-foreground: var(--store-ink);
+  --growth: var(--store-accent);
+  --growth-foreground: var(--store-on-accent);
+  --border: color-mix(in srgb, var(--store-ink) 17%, var(--store-surface));
+  --input: var(--border);
+  --ring: var(--store-accent);
+  --brand-gradient: linear-gradient(135deg, var(--store-primary), color-mix(in srgb, var(--store-primary) 72%, var(--store-accent)));
+  --brand-foreground: var(--store-on-primary);
+  background: var(--background);
+  color: var(--foreground);
+}
+.store-theme > header { background: var(--brand-gradient); color: var(--brand-foreground); border-color: color-mix(in srgb, var(--brand-foreground) 24%, transparent); }
+.store-theme > header .text-muted-foreground { color: var(--brand-foreground); opacity: .8; }
+.store-theme > header button { color: var(--brand-foreground); }
+
+/* Existing card palettes remain available on the default wallet. */
 .loyalty-card[data-card-theme="coffee"], .card-theme-swatch[data-card-theme="coffee"] {
   --loyalty-bg: oklch(0.96 0.025 75); --loyalty-fg: oklch(0.26 0.04 55);
   --loyalty-top: oklch(0.39 0.08 52); --loyalty-top-end: oklch(0.29 0.06 45);
@@ -220,6 +250,26 @@
 .loyalty-card:not([data-card-theme="classic"]) .loyalty-card-body .text-muted-foreground { color: var(--loyalty-muted); }
 .loyalty-card:not([data-card-theme="classic"]) .loyalty-card-body .text-foreground { color: var(--loyalty-fg); }
 .loyalty-card:not([data-card-theme="classic"]) .loyalty-card-body .border-border { border-color: var(--loyalty-soft); }
+
+.loyalty-card[data-custom-brand="true"] {
+  --loyalty-bg: var(--store-tint);
+  --loyalty-fg: var(--store-ink);
+  --loyalty-top: var(--store-primary);
+  --loyalty-top-end: color-mix(in srgb, var(--store-primary) 72%, var(--store-accent));
+  --loyalty-accent: var(--store-accent);
+  --loyalty-on-accent: var(--store-on-accent);
+  --loyalty-soft: color-mix(in srgb, var(--store-accent) 15%, var(--store-surface));
+  --loyalty-muted: var(--store-muted-ink);
+}
+.loyalty-card[data-custom-brand="true"] { background: var(--loyalty-bg); color: var(--loyalty-fg); border-color: var(--loyalty-soft); }
+.loyalty-card[data-custom-brand="true"] .loyalty-card-header { background: linear-gradient(135deg, var(--loyalty-top), var(--loyalty-top-end)); color: var(--store-on-primary); }
+.loyalty-card[data-custom-brand="true"] .loyalty-stamp-filled { background: var(--loyalty-accent); color: var(--loyalty-on-accent); border-color: var(--loyalty-accent); }
+.loyalty-card[data-custom-brand="true"] .loyalty-stamp-empty, .loyalty-card[data-custom-brand="true"] .loyalty-progress-track, .loyalty-card[data-custom-brand="true"] .loyalty-reward-row { background: var(--loyalty-soft); color: var(--loyalty-muted); border-color: var(--loyalty-muted); }
+.loyalty-card[data-custom-brand="true"] .loyalty-progress-fill, .loyalty-card[data-custom-brand="true"] .loyalty-card-action { background: var(--loyalty-accent); color: var(--loyalty-on-accent); }
+.loyalty-card[data-custom-brand="true"] .loyalty-card-link, .loyalty-card[data-custom-brand="true"] .loyalty-card-outline { color: var(--loyalty-accent); }
+.loyalty-card[data-custom-brand="true"] .loyalty-card-outline { border-color: var(--loyalty-accent); background: transparent; }
+.loyalty-card[data-custom-brand="true"] .loyalty-card-body .text-muted-foreground { color: var(--loyalty-muted); }
+.loyalty-card[data-custom-brand="true"] .loyalty-card-body .text-foreground, .loyalty-card[data-custom-brand="true"] .loyalty-reward-name { color: var(--loyalty-fg); }
 
 @utility app-shell {
   margin-inline: auto;
