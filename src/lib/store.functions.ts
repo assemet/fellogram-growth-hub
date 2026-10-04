@@ -338,7 +338,7 @@ export const requestRedemption = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     const { data: rows, error } = await context.supabase.rpc("create_redemption", { _reward_id: data.rewardId });
     if (error) throw new Error(error.message);
-    const row = (rows as { redemption_id: string; token: string; expires_at: string }[])[0];
+    const row = (rows as { redemption_id: string; token: string; expires_at: string }[])[0]!;
     return { token: row.token, expiresAt: row.expires_at };
   });
 
