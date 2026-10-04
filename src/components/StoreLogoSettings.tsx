@@ -67,8 +67,9 @@ export function StoreLogoSettings({ logoUrl, onPreviewChange }: { logoUrl: strin
             onChange={(event) => {
               const file = event.target.files?.[0];
               if (!file) return;
-              setPreview(URL.createObjectURL(file));
-              onPreviewChange?.(URL.createObjectURL(file));
+              const temporaryUrl = URL.createObjectURL(file);
+              setPreview(temporaryUrl);
+              onPreviewChange?.(temporaryUrl);
               mutation.mutate(file);
               event.target.value = "";
             }}

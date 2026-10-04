@@ -253,6 +253,7 @@ function ProgramEditor() {
                 stampBalance: Math.min(3, Math.min(50, Math.max(1, Math.round(Number(stampsText) || stampsRequired)))),
                 reward: rewardName || null, lastVisitAt: null, logoUrl: previewLogo,
                 stampIcon, cardTheme, visits: [],
+                rewards: rewardName ? [{ id: "preview-reward", name: rewardName, description: rewardDescription || null, stampsRequired: Math.min(50, Math.max(1, Math.round(Number(stampsText) || stampsRequired))) }] : [],
               }} />
             </ul>
           </div>

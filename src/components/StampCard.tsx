@@ -105,7 +105,7 @@ export function StampCard({ card, preview = false }: { card: StampCardData; prev
           </p>
         )}
 
-        {!preview && rewards.length > 0 && (
+        {rewards.length > 0 && (
           <div className="mt-4 space-y-2 border-t border-border pt-3">
             <p className="text-xs font-semibold text-muted-foreground">{t("rewards.title")}</p>
             {rewards.map((reward) => {
@@ -120,7 +120,7 @@ export function StampCard({ card, preview = false }: { card: StampCardData; prev
                         : `${reward.stampsRequired} · ${t("rewards.locked", { count: reward.stampsRequired - card.stampBalance })}`}
                     </p>
                   </div>
-                  {available && (
+                  {available && !preview && (
                     <Button
                       type="button"
                       onClick={() => setRedeeming({ id: reward.id, name: reward.name })}
