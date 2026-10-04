@@ -88,7 +88,7 @@ function Wallet() {
 
   return (
     <main className="min-h-[100dvh] pb-[calc(3.5rem+env(safe-area-inset-bottom))]">
-      <AppHeader subtitle={firstName ? `Hi, ${firstName}` : t("app.tagline")} action={headerAction} />
+      <AppHeader subtitle={firstName ? t("wallet.greeting", { name: firstName }) : t("app.tagline")} action={headerAction} />
 
       <section className="app-shell">
         <h1 className="mb-4 text-2xl font-bold">{t("wallet.title")}</h1>

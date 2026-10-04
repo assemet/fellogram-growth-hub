@@ -12,7 +12,7 @@ const icons = {
   star: Star,
 };
 
-export function StampIcon({ name = "stamp", className }: { name?: string | null; className?: string }) {
+export function StampIcon({ name = "stamp", className }: { name?: string | null | undefined; className?: string }) {
   const Icon = icons[name as StampIconName] ?? Stamp;
   return <Icon className={className} />;
 }

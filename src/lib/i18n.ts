@@ -16,6 +16,7 @@ const en = {
   "auth.retry": "Try again",
 
   "wallet.title": "My Loyalty",
+  "wallet.greeting": "Hi, {name}",
   "wallet.empty.title": "No loyalty cards yet",
   "wallet.empty.body": "Scan a store's join QR to start collecting stamps.",
   "wallet.merchantCta.title": "Own a business?",
@@ -204,6 +205,7 @@ const ar: Record<TranslationKey, string> = {
   "auth.failed": "تعذر التحقق من جلسة تيليجرام.",
   "auth.retry": "حاول مجددًا",
   "wallet.title": "بطاقات الولاء",
+  "wallet.greeting": "مرحبًا، {name}",
   "wallet.empty.title": "لا توجد بطاقات ولاء بعد",
   "wallet.empty.body": "امسح رمز الانضمام الخاص بالمتجر لبدء جمع الطوابع.",
   "wallet.merchantCta.title": "هل تملك نشاطًا تجاريًا؟",
