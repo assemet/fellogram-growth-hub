@@ -14,3 +14,4 @@
 - Pass role-aware navigation into the shared app header as optional actions; this keeps customer content free of merchant controls.
 - Keep locale selection centralized, persisted, and reflected on the document language and direction; this keeps every screen consistently bilingual.
 - Store merchant logos in private object storage and expose only short-lived signed display URLs; this avoids permanent public asset links.
+- Store card themes as a constrained store-level choice and render merchant previews with the customer card component; this keeps saved cards and previews visually identical.

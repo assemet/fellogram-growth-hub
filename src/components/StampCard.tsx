@@ -6,6 +6,7 @@ import { RedeemRewardQr } from "@/components/RedeemRewardQr";
 import { ChevronDown, Gift, UserPlus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { StampIcon } from "@/components/StampIcon";
+import { resolveCardTheme } from "@/lib/card-theme";
 
 import { t } from "@/lib/i18n";
 
@@ -23,6 +24,7 @@ export type StampCardData = {
   welcomeBonus?: number;
   logoUrl?: string | null;
   stampIcon?: string;
+  cardTheme?: string;
   rewards?: { id: string; name: string; description: string | null; stampsRequired: number }[];
   visits: { id: string; type: string; amount: number; createdAt: string }[];
 };
@@ -35,7 +37,7 @@ function formatDate(value: string) {
 }
 
 /** Interactive loyalty card: stamp grid, progress and visit history. */
-export function StampCard({ card }: { card: StampCardData }) {
+export function StampCard({ card, preview = false }: { card: StampCardData; preview?: boolean }) {
   const [open, setOpen] = useState(false);
   const [redeeming, setRedeeming] = useState<{ id: string; name: string } | null>(null);
   const queryClient = useQueryClient();
@@ -47,8 +49,8 @@ export function StampCard({ card }: { card: StampCardData }) {
   const remaining = Math.max(0, required - balance);
 
   return (
-    <li className="animate-arrive overflow-hidden rounded-lg border border-border bg-card shadow-[var(--shadow-card)]">
-      <div className="brand-surface p-5">
+    <li data-card-theme={resolveCardTheme(card.cardTheme)} className="loyalty-card animate-arrive overflow-hidden rounded-lg border border-border bg-card shadow-[var(--shadow-card)]">
+      <div className="loyalty-card-header brand-surface p-5">
         <div className="flex items-start justify-between gap-3">
           <div className="flex min-w-0 items-center gap-3">
             {card.logoUrl && <img src={card.logoUrl} alt="" className="h-12 w-12 shrink-0 rounded-lg border border-current/15 object-cover" />}
@@ -69,7 +71,7 @@ export function StampCard({ card }: { card: StampCardData }) {
         )}
       </div>
 
-      <div className="p-5">
+      <div className="loyalty-card-body p-5">
         <div
           className="grid grid-cols-5 gap-2"
         >
@@ -81,8 +83,8 @@ export function StampCard({ card }: { card: StampCardData }) {
                 aria-label={filled ? "stamp collected" : "stamp empty"}
                 className={
                   filled
-                    ? "stamp-slot flex aspect-square items-center justify-center rounded-full border-2 border-primary/25 bg-primary text-primary-foreground shadow-[var(--shadow-card)]"
-                    : "flex aspect-square items-center justify-center rounded-full border-2 border-dashed border-border bg-secondary/40 text-muted-foreground"
+                    ? "loyalty-stamp-filled stamp-slot flex aspect-square items-center justify-center rounded-full border-2 border-primary/25 bg-primary text-primary-foreground shadow-[var(--shadow-card)]"
+                    : "loyalty-stamp-empty flex aspect-square items-center justify-center rounded-full border-2 border-dashed border-border bg-secondary/40 text-muted-foreground"
                 }
               >
                 <StampIcon name={card.stampIcon} className={filled ? "h-5 w-5" : "h-4 w-4 opacity-35"} />
@@ -91,27 +93,27 @@ export function StampCard({ card }: { card: StampCardData }) {
           })}
         </div>
 
-        <div className="mt-4 h-1.5 overflow-hidden rounded-full bg-secondary" role="progressbar" aria-valuenow={balance} aria-valuemin={0} aria-valuemax={required} aria-label="Stamp progress">
-          <div className="h-full rounded-full bg-growth transition-[width] duration-500" style={{ width: `${Math.min(100, (balance / Math.max(1, required)) * 100)}%` }} />
+        <div className="loyalty-progress-track mt-4 h-1.5 overflow-hidden rounded-full bg-secondary" role="progressbar" aria-valuenow={balance} aria-valuemin={0} aria-valuemax={required} aria-label="Stamp progress">
+          <div className="loyalty-progress-fill h-full rounded-full bg-growth transition-[width] duration-500" style={{ width: `${Math.min(100, (balance / Math.max(1, required)) * 100)}%` }} />
         </div>
-        <p className={`mt-3 text-sm font-semibold ${complete ? "text-primary" : "text-foreground"}`}>
+        <p className={`loyalty-status mt-3 text-sm font-semibold ${complete ? "text-primary" : "text-foreground"}`}>
           {complete ? t("wallet.card.ready") : t("wallet.card.toGo", { count: remaining })}
         </p>
-        {card.lastVisitAt && (
+        {!preview && card.lastVisitAt && (
           <p className="mt-1 text-xs text-muted-foreground">
             {t("wallet.card.lastVisit", { date: formatDate(card.lastVisitAt) })}
           </p>
         )}
 
-        {rewards.length > 0 && (
+        {!preview && rewards.length > 0 && (
           <div className="mt-4 space-y-2 border-t border-border pt-3">
             <p className="text-xs font-semibold text-muted-foreground">{t("rewards.title")}</p>
             {rewards.map((reward) => {
               const available = card.stampBalance >= reward.stampsRequired;
               return (
-                <div key={reward.id} className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-3 rounded-md bg-secondary px-3 py-3">
+                <div key={reward.id} className="loyalty-reward-row grid grid-cols-[minmax(0,1fr)_auto] items-center gap-3 rounded-md bg-secondary px-3 py-3">
                   <div className="min-w-0">
-                    <p className="truncate text-sm font-semibold text-secondary-foreground">{reward.name}</p>
+                    <p className="loyalty-reward-name truncate text-sm font-semibold text-secondary-foreground">{reward.name}</p>
                     <p className="text-xs text-muted-foreground">
                       {available
                         ? `${reward.stampsRequired} · ${t("rewards.available")}`
@@ -123,7 +125,7 @@ export function StampCard({ card }: { card: StampCardData }) {
                       type="button"
                       onClick={() => setRedeeming({ id: reward.id, name: reward.name })}
                       size="sm"
-                      className="touch-action shrink-0 text-xs font-bold"
+                      className="loyalty-card-action touch-action shrink-0 text-xs font-bold"
                     >
                       {t("rewards.redeem")}
                     </Button>
@@ -134,12 +136,12 @@ export function StampCard({ card }: { card: StampCardData }) {
           </div>
         )}
 
-        {card.referralsEnabled && card.storeId && (
+        {!preview && card.referralsEnabled && card.storeId && (
           <Button
             type="button"
             onClick={() => setInviting(true)}
             variant="outline"
-            className="touch-action mt-4 w-full"
+            className="loyalty-card-outline touch-action mt-4 w-full"
           >
             <UserPlus className="h-4 w-4" />
             {t("referral.invite")}
@@ -167,17 +169,17 @@ export function StampCard({ card }: { card: StampCardData }) {
           />
         )}
 
-        <Button
+        {!preview && <Button
           type="button"
           onClick={() => setOpen((value) => !value)}
           variant="ghost"
           size="sm"
-          className="mt-3 -ml-2 text-xs font-semibold text-primary"
+          className="loyalty-card-link mt-3 -ml-2 text-xs font-semibold text-primary"
           aria-expanded={open}
         >
           {open ? t("wallet.card.hide") : t("wallet.card.history")}
           <ChevronDown className={`h-3.5 w-3.5 transition-transform ${open ? "rotate-180" : ""}`} />
-        </Button>
+        </Button>}
 
         {open && (
           <ul className="mt-2 space-y-1 border-t border-border pt-2">

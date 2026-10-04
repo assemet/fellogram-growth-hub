@@ -9,7 +9,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { t } from "@/lib/i18n";
 import { updateStoreLogo } from "@/lib/store.functions";
 
-export function StoreLogoSettings({ logoUrl }: { logoUrl: string | null }) {
+export function StoreLogoSettings({ logoUrl, onPreviewChange }: { logoUrl: string | null; onPreviewChange?: (url: string | null) => void }) {
   const inputRef = useRef<HTMLInputElement | null>(null);
   const queryClient = useQueryClient();
   const saveLogo = useServerFn(updateStoreLogo);
@@ -43,7 +43,11 @@ export function StoreLogoSettings({ logoUrl }: { logoUrl: string | null }) {
       await queryClient.invalidateQueries({ queryKey: ["my-store"] });
       await queryClient.invalidateQueries({ queryKey: ["my-cards"] });
     },
-    onError: () => toast.error(t("store.logoError")),
+    onError: () => {
+      setPreview(logoUrl);
+      onPreviewChange?.(logoUrl);
+      toast.error(t("store.logoError"));
+    },
   });
 
   return (
@@ -64,6 +68,7 @@ export function StoreLogoSettings({ logoUrl }: { logoUrl: string | null }) {
               const file = event.target.files?.[0];
               if (!file) return;
               setPreview(URL.createObjectURL(file));
+              onPreviewChange?.(URL.createObjectURL(file));
               mutation.mutate(file);
               event.target.value = "";
             }}
@@ -73,7 +78,7 @@ export function StoreLogoSettings({ logoUrl }: { logoUrl: string | null }) {
             {preview ? t("store.logoReplace") : t("store.logoUpload")}
           </Button>
           {preview && (
-            <Button type="button" variant="ghost" className="touch-action w-full text-destructive" disabled={mutation.isPending} onClick={() => { setPreview(null); mutation.mutate(null); }}>
+            <Button type="button" variant="ghost" className="touch-action w-full text-destructive" disabled={mutation.isPending} onClick={() => { setPreview(null); onPreviewChange?.(null); mutation.mutate(null); }}>
               <Trash2 className="h-4 w-4" />
               {t("store.logoRemove")}
             </Button>
