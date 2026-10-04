@@ -13,7 +13,7 @@ import { ReferralSettings } from "@/components/ReferralSettings";
 import { RewardsManager } from "@/components/RewardsManager";
 import { SplashScreen } from "@/components/SplashScreen";
 import { useFellogramAuth } from "@/hooks/useFellogramAuth";
-import { t } from "@/lib/i18n";
+import { t, type TranslationKey } from "@/lib/i18n";
 import { getMyStore, updateProgram } from "@/lib/store.functions";
 
 export const Route = createFileRoute("/merchant/program")({
@@ -144,7 +144,7 @@ function ProgramEditor() {
               {stampIconOptions.map((icon) => (
                 <Button key={icon} type="button" variant={stampIcon === icon ? "default" : "outline"} className="touch-action h-16 flex-col gap-1" onClick={() => setStampIcon(icon)} aria-pressed={stampIcon === icon}>
                   <StampIcon name={icon} className="h-5 w-5" />
-                  <span className="text-xs">{t(`stampIcon.${icon}`)}</span>
+                  <span className="text-xs">{t(`stampIcon.${icon}` as TranslationKey)}</span>
                 </Button>
               ))}
             </div>

@@ -49,7 +49,10 @@ export const getMyStore = createServerFn({ method: "POST" })
         .eq("store_id", store.id),
     ]);
 
-    return { store, program: program ?? null, rewards: rewards ?? [], customerCount: customerCount ?? 0 };
+    const logoUrl = store.logo_url
+      ? (await supabase.storage.from("store-logos").createSignedUrl(store.logo_url, 3600)).data?.signedUrl ?? null
+      : null;
+    return { store, logoUrl, program: program ?? null, rewards: rewards ?? [], customerCount: customerCount ?? 0 };
   });
 
 type CreateStoreInput = {
@@ -140,7 +143,7 @@ export const getMyCards = createServerFn({ method: "POST" })
       supabase
         .from("customer_memberships")
         .select(
-          "id, store_id, stamp_balance, last_visit_at, joined_at, stores(id, name, description, logo_url), loyalty_programs(id, name, stamps_required, referrals_enabled, referrer_bonus_stamps, welcome_bonus_stamps)",
+          "id, store_id, stamp_balance, last_visit_at, joined_at, stores(id, name, description, logo_url), loyalty_programs(id, name, stamps_required, stamp_icon, referrals_enabled, referrer_bonus_stamps, welcome_bonus_stamps)",
         )
         .eq("customer_id", userId)
         .order("joined_at", { ascending: false }),
@@ -161,12 +164,20 @@ export const getMyCards = createServerFn({ method: "POST" })
           .eq("active", true)
       : { data: [] as { id: string; store_id: string; name: string; description: string | null; stamps_required: number; kind: string; active: boolean }[] };
 
+    const logoPaths = (memberships ?? []).flatMap((m) => m.stores?.logo_url ? [m.stores.logo_url] : []);
+    const signedLogos = logoPaths.length
+      ? (await supabase.storage.from("store-logos").createSignedUrls(logoPaths, 3600)).data ?? []
+      : [];
+    const logoMap = new Map(signedLogos.map((item) => [item.path, item.signedUrl]));
+
     return (memberships ?? []).map((m) => ({
       id: m.id,
       storeId: m.store_id,
       storeName: m.stores?.name ?? "Store",
       storeDescription: m.stores?.description ?? null,
+      logoUrl: m.stores?.logo_url ? logoMap.get(m.stores.logo_url) ?? null : null,
       programName: m.loyalty_programs?.name ?? "Loyalty card",
+      stampIcon: m.loyalty_programs?.stamp_icon ?? "stamp",
       stampsRequired: m.loyalty_programs?.stamps_required ?? 10,
       stampBalance: m.stamp_balance ?? 0,
       referralsEnabled: m.loyalty_programs?.referrals_enabled ?? false,
@@ -196,7 +207,7 @@ export const getStoreForJoin = createServerFn({ method: "POST" })
     const { supabase, userId } = context;
     const { data: store } = await supabase
       .from("stores")
-      .select("id, name, description")
+      .select("id, name, description, logo_url")
       .eq("id", data.storeId)
       .eq("active", true)
       .maybeSingle();
@@ -205,7 +216,7 @@ export const getStoreForJoin = createServerFn({ method: "POST" })
     const [{ data: program }, { data: reward }, { data: membership }] = await Promise.all([
       supabase
         .from("loyalty_programs")
-        .select("id, name, stamps_required")
+        .select("id, name, stamps_required, stamp_icon")
         .eq("store_id", store.id)
         .eq("active", true)
         .order("created_at")
@@ -227,8 +238,12 @@ export const getStoreForJoin = createServerFn({ method: "POST" })
         .maybeSingle(),
     ]);
 
+    const logoUrl = store.logo_url
+      ? (await supabase.storage.from("store-logos").createSignedUrl(store.logo_url, 3600)).data?.signedUrl ?? null
+      : null;
     return {
       store,
+      logoUrl,
       program: program ?? null,
       reward: reward ?? null,
       alreadyJoined: Boolean(membership),
@@ -252,6 +267,7 @@ type UpdateProgramInput = {
   stampsRequired: number;
   rewardName: string;
   rewardDescription?: string;
+  stampIcon: string;
 };
 
 /** Owner edits the stamp program and its primary reward. */
@@ -262,11 +278,14 @@ export const updateProgram = createServerFn({ method: "POST" })
     const rewardName = String(data?.rewardName ?? "").trim();
     const stampsRequired = Math.min(50, Math.max(1, Math.round(Number(data?.stampsRequired ?? 10))));
     if (rewardName.length < 2) throw new Error("REWARD_NAME_REQUIRED");
+    const allowedIcons = ["coffee", "stamp", "scissors", "food", "gift", "star"];
+    const stampIcon = allowedIcons.includes(String(data?.stampIcon)) ? String(data.stampIcon) : "stamp";
     return {
       programName,
       rewardName,
       stampsRequired,
       rewardDescription: String(data?.rewardDescription ?? "").trim() || null,
+      stampIcon,
     };
   })
   .handler(async ({ data, context }) => {
@@ -292,7 +311,7 @@ export const updateProgram = createServerFn({ method: "POST" })
 
     const { error: programError } = await supabase
       .from("loyalty_programs")
-      .update({ name: data.programName, stamps_required: data.stampsRequired })
+      .update({ name: data.programName, stamps_required: data.stampsRequired, stamp_icon: data.stampIcon })
       .eq("id", program.id);
     if (programError) throw new Error(programError.message);
 
@@ -327,6 +346,26 @@ export const updateProgram = createServerFn({ method: "POST" })
       if (error) throw new Error(error.message);
     }
 
+    return { ok: true };
+  });
+
+/** Owner attaches a private storage object to the public-facing store profile. */
+export const updateStoreLogo = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((data: { objectPath: string | null }) => {
+    const objectPath = data?.objectPath ? String(data.objectPath) : null;
+    if (objectPath && !/^[0-9a-f-]{36}\/logo-[0-9]+\.[a-z0-9]+$/i.test(objectPath)) throw new Error("INVALID_LOGO");
+    return { objectPath };
+  })
+  .handler(async ({ data, context }) => {
+    const { supabase, userId } = context;
+    if (data.objectPath && !data.objectPath.startsWith(`${userId}/`)) throw new Error("UNAUTHORIZED");
+    const { data: store } = await supabase.from("stores").select("id, logo_url").eq("owner_id", userId).order("created_at", { ascending: false }).limit(1).maybeSingle();
+    if (!store) throw new Error("STORE_NOT_FOUND");
+    const previous = store.logo_url;
+    const { error } = await supabase.from("stores").update({ logo_url: data.objectPath }).eq("id", store.id);
+    if (error) throw new Error(error.message);
+    if (previous && previous !== data.objectPath) await supabase.storage.from("store-logos").remove([previous]);
     return { ok: true };
   });
 
