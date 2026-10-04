@@ -15,6 +15,13 @@
       "when": 1791137044535,
       "tag": "0001_referrals",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1791142919742,
+      "tag": "0002_undo_reverts_referral",
+      "breakpoints": true
     }
   ]
 }

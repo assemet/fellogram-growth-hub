@@ -400,11 +400,11 @@ export const getReferralLink = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     const { data: code, error } = await context.supabase.rpc("get_referral_code", { _store_id: data.storeId });
     if (error) throw new Error(error.message);
-    const bot = (process.env["TELEGRAM_BOT_USERNAME"] ?? "").replace(/^@/, "").trim();
+    const bot = (process.env["TELEGRAM_BOT_USERNAME"] ?? process.env["VITE_TELEGRAM_BOT_USERNAME"] ?? "FellogramBot").replace(/^@/, "").trim();
     const param = `ref_${code}`;
     return {
       code: code as string,
-      link: bot ? `https://t.me/${bot}?startapp=${param}` : null,
+      link: bot ? `https://t.me/${bot}/app?startapp=${param}` : null,
       param,
     };
   });
@@ -443,4 +443,45 @@ export const updateReferralSettings = createServerFn({ method: "POST" })
       .eq("store_id", storeId);
     if (error) throw new Error(error.message);
     return { ok: true };
+  });
+
+/** Owner growth analytics: repeat business + new-customer acquisition. */
+export const getStoreAnalytics = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    const storeId = await ownedStore(context.supabase, context.userId);
+    const sb = context.supabase;
+    const [{ data: members }, { data: txs }, { data: refs }] = await Promise.all([
+      sb.from("customer_memberships").select("customer_id, joined_at").eq("store_id", storeId),
+      sb.from("transactions").select("id, customer_id, type, amount, metadata, created_at").eq("store_id", storeId).limit(10000),
+      sb.from("referrals").select("referred_customer_id, status, created_at").eq("store_id", storeId),
+    ]);
+    const since = Date.now() - 30 * 864e5;
+    const recent = (d: string) => new Date(d).getTime() >= since;
+    const all = txs ?? [];
+    const reversed = new Set(all.filter((x) => x.type === "stamp_reversed").map((x) => (x.metadata as any)?.reversed_transaction_id));
+    const visits = all.filter((x) => x.type === "stamp_awarded" && !reversed.has(x.id));
+    const perCustomer = new Map<string, number>();
+    visits.forEach((v) => perCustomer.set(v.customer_id, (perCustomer.get(v.customer_id) ?? 0) + 1));
+    const customers = members ?? [];
+    const returning = customers.filter((c) => (perCustomer.get(c.customer_id) ?? 0) >= 2).length;
+    const redeemed = all.filter((x) => x.type === "reward_redeemed");
+    const referrals = refs ?? [];
+    const qualified = referrals.filter((r) => r.status !== "pending").length;
+    const newCustomers = customers.filter((c) => recent(c.joined_at)).length;
+    return {
+      customers: customers.length,
+      newCustomers,
+      returning,
+      repeatPct: customers.length ? Math.round((returning / customers.length) * 100) : 0,
+      visits: visits.length,
+      visits30: visits.filter((v) => recent(v.created_at)).length,
+      stamps: visits.reduce((s, v) => s + v.amount, 0),
+      rewardsRedeemed: redeemed.length,
+      rewards30: redeemed.filter((r) => recent(r.created_at)).length,
+      referred: referrals.length,
+      referred30: referrals.filter((r) => recent(r.created_at)).length,
+      qualified,
+      conversionPct: referrals.length ? Math.round((qualified / referrals.length) * 100) : 0,
+    };
   });
