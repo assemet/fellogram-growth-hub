@@ -112,7 +112,7 @@ function Wallet() {
             <p className="mt-1 text-sm text-muted-foreground">{t("wallet.empty.body")}</p>
           </div>
         ) : (
-          <ul className="space-y-4">
+          <ul className="wallet-card-list space-y-7">
             {(focusedCard ? [focusedCard] : cards).map((card) => (
               <StampCard key={card.id} card={card} focused={Boolean(focusedCard)} />
             ))}

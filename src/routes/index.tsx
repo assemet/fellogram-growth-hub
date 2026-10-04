@@ -89,7 +89,7 @@ function SplashRouter() {
   if (failed) {
     return (
       <div className="flex min-h-screen flex-col items-center justify-center gap-4 px-8 text-center">
-        <img src="/logo.png" alt={t("app.name")} className="h-20 w-20 object-contain" />
+        <p className="font-display text-3xl font-bold">{t("app.name")}</p>
         <p className="text-sm text-muted-foreground">{t("auth.failed")}</p>
         <Button
           onClick={() => window.location.reload()}

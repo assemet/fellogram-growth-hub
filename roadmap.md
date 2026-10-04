@@ -25,3 +25,10 @@
 - [x] Save preset and custom brand colors in Store Settings.
 - [x] Apply store colors to the full join and focused wallet flows while keeping the default wallet Telegram-native.
 - [x] Verify a saved theme in the join and focused wallet views.
+
+# Professional design-system overhaul
+- [x] Replace platform logo imagery with text-only branding and splash motion.
+- [x] Apply focused store colors to the full viewport with contrast-safe actions.
+- [x] Reorganize merchant theme controls and live preview.
+- [x] Strengthen multi-store card headers, placeholders, and spacing.
+- [x] Verify mobile and desktop light/dark layouts.
