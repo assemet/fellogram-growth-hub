@@ -305,9 +305,6 @@ export const updateProgram = createServerFn({ method: "POST" })
       .maybeSingle();
     if (!store) throw new Error("STORE_NOT_FOUND");
 
-    const { error: themeError } = await supabase.from("stores").update({ card_theme: data.cardTheme }).eq("id", store.id);
-    if (themeError) throw new Error(themeError.message);
-
     const { data: program } = await supabase
       .from("loyalty_programs")
       .select("id")
@@ -353,6 +350,9 @@ export const updateProgram = createServerFn({ method: "POST" })
       });
       if (error) throw new Error(error.message);
     }
+
+    const { error: themeError } = await supabase.from("stores").update({ card_theme: data.cardTheme }).eq("id", store.id);
+    if (themeError) throw new Error(themeError.message);
 
     return { ok: true };
   });

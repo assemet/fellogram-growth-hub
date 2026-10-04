@@ -169,6 +169,58 @@
   color: var(--brand-foreground);
 }
 
+/* Store card palettes are scoped to loyalty cards; Telegram's surrounding UI keeps its native theme. */
+.loyalty-card[data-card-theme="coffee"], .card-theme-swatch[data-card-theme="coffee"] {
+  --loyalty-bg: oklch(0.96 0.025 75); --loyalty-fg: oklch(0.26 0.04 55);
+  --loyalty-top: oklch(0.39 0.08 52); --loyalty-top-end: oklch(0.29 0.06 45);
+  --loyalty-accent: oklch(0.51 0.1 57); --loyalty-on-accent: oklch(0.99 0.005 75);
+  --loyalty-soft: oklch(0.89 0.04 72); --loyalty-muted: oklch(0.43 0.04 55);
+}
+.loyalty-card[data-card-theme="purple"], .card-theme-swatch[data-card-theme="purple"] {
+  --loyalty-bg: oklch(0.97 0.016 304); --loyalty-fg: oklch(0.27 0.055 304);
+  --loyalty-top: oklch(0.41 0.16 302); --loyalty-top-end: oklch(0.31 0.13 295);
+  --loyalty-accent: oklch(0.5 0.18 300); --loyalty-on-accent: oklch(0.99 0.005 304);
+  --loyalty-soft: oklch(0.91 0.04 304); --loyalty-muted: oklch(0.45 0.05 304);
+}
+.loyalty-card[data-card-theme="emerald"], .card-theme-swatch[data-card-theme="emerald"] {
+  --loyalty-bg: oklch(0.96 0.018 162); --loyalty-fg: oklch(0.23 0.045 165);
+  --loyalty-top: oklch(0.42 0.105 167); --loyalty-top-end: oklch(0.31 0.075 172);
+  --loyalty-accent: oklch(0.47 0.12 165); --loyalty-on-accent: oklch(0.99 0.005 165);
+  --loyalty-soft: oklch(0.88 0.045 160); --loyalty-muted: oklch(0.41 0.04 165);
+}
+.loyalty-card[data-card-theme="midnight"], .card-theme-swatch[data-card-theme="midnight"] {
+  --loyalty-bg: oklch(0.2 0.024 250); --loyalty-fg: oklch(0.96 0.01 230);
+  --loyalty-top: oklch(0.29 0.045 255); --loyalty-top-end: oklch(0.15 0.025 250);
+  --loyalty-accent: oklch(0.78 0.115 189); --loyalty-on-accent: oklch(0.17 0.03 250);
+  --loyalty-soft: oklch(0.31 0.03 250); --loyalty-muted: oklch(0.75 0.02 230);
+}
+.loyalty-card[data-card-theme="electric"], .card-theme-swatch[data-card-theme="electric"] {
+  --loyalty-bg: oklch(0.96 0.016 240); --loyalty-fg: oklch(0.24 0.05 260);
+  --loyalty-top: oklch(0.47 0.18 258); --loyalty-top-end: oklch(0.32 0.15 267);
+  --loyalty-accent: oklch(0.46 0.2 258); --loyalty-on-accent: oklch(0.99 0.005 240);
+  --loyalty-soft: oklch(0.89 0.045 240); --loyalty-muted: oklch(0.43 0.05 260);
+}
+.loyalty-card[data-card-theme="sunset"], .card-theme-swatch[data-card-theme="sunset"] {
+  --loyalty-bg: oklch(0.97 0.025 63); --loyalty-fg: oklch(0.28 0.05 35);
+  --loyalty-top: oklch(0.57 0.17 38); --loyalty-top-end: oklch(0.41 0.15 24);
+  --loyalty-accent: oklch(0.52 0.17 33); --loyalty-on-accent: oklch(0.99 0.005 75);
+  --loyalty-soft: oklch(0.91 0.055 65); --loyalty-muted: oklch(0.43 0.05 35);
+}
+.card-theme-swatch[data-card-theme="classic"] { background: var(--brand-gradient); }
+.card-theme-swatch:not([data-card-theme="classic"]) { background: linear-gradient(135deg, var(--loyalty-top), var(--loyalty-top-end)); }
+.loyalty-card:not([data-card-theme="classic"]) { background: var(--loyalty-bg); color: var(--loyalty-fg); border-color: var(--loyalty-soft); }
+.loyalty-card:not([data-card-theme="classic"]) .loyalty-card-header { background: linear-gradient(135deg, var(--loyalty-top), var(--loyalty-top-end)); color: oklch(0.99 0.005 250); }
+.loyalty-card:not([data-card-theme="classic"]) .loyalty-stamp-filled { background: var(--loyalty-accent); color: var(--loyalty-on-accent); border-color: var(--loyalty-accent); }
+.loyalty-card:not([data-card-theme="classic"]) .loyalty-stamp-empty { background: var(--loyalty-soft); color: var(--loyalty-muted); border-color: var(--loyalty-muted); }
+.loyalty-card:not([data-card-theme="classic"]) .loyalty-progress-track, .loyalty-card:not([data-card-theme="classic"]) .loyalty-reward-row { background: var(--loyalty-soft); }
+.loyalty-card:not([data-card-theme="classic"]) .loyalty-progress-fill, .loyalty-card:not([data-card-theme="classic"]) .loyalty-card-action { background: var(--loyalty-accent); color: var(--loyalty-on-accent); }
+.loyalty-card:not([data-card-theme="classic"]) .loyalty-status, .loyalty-card:not([data-card-theme="classic"]) .loyalty-reward-name { color: var(--loyalty-fg); }
+.loyalty-card:not([data-card-theme="classic"]) .loyalty-card-link, .loyalty-card:not([data-card-theme="classic"]) .loyalty-card-outline { color: var(--loyalty-accent); }
+.loyalty-card:not([data-card-theme="classic"]) .loyalty-card-outline { border-color: var(--loyalty-accent); background: transparent; }
+.loyalty-card:not([data-card-theme="classic"]) .loyalty-card-body .text-muted-foreground { color: var(--loyalty-muted); }
+.loyalty-card:not([data-card-theme="classic"]) .loyalty-card-body .text-foreground { color: var(--loyalty-fg); }
+.loyalty-card:not([data-card-theme="classic"]) .loyalty-card-body .border-border { border-color: var(--loyalty-soft); }
+
 @utility app-shell {
   margin-inline: auto;
   width: 100%;
