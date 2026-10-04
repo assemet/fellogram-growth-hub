@@ -74,7 +74,10 @@ export function RewardsManager({ rewards }: { rewards: Reward[] }) {
         className="mt-4 space-y-2 border-t border-border pt-4"
         onSubmit={(e) => {
           e.preventDefault();
-          if (name.trim().length < 2) return toast.error(t("common.error"));
+          if (name.trim().length < 2) {
+            toast.error(t("common.error"));
+            return;
+          }
           add.mutate();
         }}
       >
