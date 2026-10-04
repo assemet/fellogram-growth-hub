@@ -1,8 +1,9 @@
 import { useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 
+import { InviteFriend } from "@/components/InviteFriend";
 import { RedeemRewardQr } from "@/components/RedeemRewardQr";
-import { Check, ChevronDown, Gift, Stamp } from "lucide-react";
+import { Check, ChevronDown, Gift, Stamp, UserPlus } from "lucide-react";
 
 import { t } from "@/lib/i18n";
 
@@ -14,6 +15,10 @@ export type StampCardData = {
   stampBalance: number;
   reward: string | null;
   lastVisitAt: string | null;
+  storeId?: string;
+  referralsEnabled?: boolean;
+  referrerBonus?: number;
+  welcomeBonus?: number;
   rewards?: { id: string; name: string; description: string | null; stampsRequired: number }[];
   visits: { id: string; type: string; amount: number; createdAt: string }[];
 };
@@ -30,6 +35,7 @@ export function StampCard({ card }: { card: StampCardData }) {
   const [open, setOpen] = useState(false);
   const [redeeming, setRedeeming] = useState<{ id: string; name: string } | null>(null);
   const queryClient = useQueryClient();
+  const [inviting, setInviting] = useState(false);
   const rewards = card.rewards ?? [];
   const required = Math.max(1, card.stampsRequired);
   const balance = Math.min(required, Math.max(0, card.stampBalance));
@@ -118,6 +124,27 @@ export function StampCard({ card }: { card: StampCardData }) {
           </div>
         )}
 
+        {card.referralsEnabled && card.storeId && (
+          <button
+            type="button"
+            onClick={() => setInviting(true)}
+            className="mt-4 flex w-full items-center justify-center gap-2 rounded-full border-2 border-primary py-3 text-sm font-bold text-primary"
+          >
+            <UserPlus className="h-4 w-4" />
+            {t("referral.invite")}
+          </button>
+        )}
+
+        {inviting && card.storeId && (
+          <InviteFriend
+            storeId={card.storeId}
+            storeName={card.storeName}
+            referrerBonus={card.referrerBonus ?? 0}
+            welcomeBonus={card.welcomeBonus ?? 0}
+            onClose={() => setInviting(false)}
+          />
+        )}
+
         {redeeming && (
           <RedeemRewardQr
             rewardId={redeeming.id}
@@ -148,7 +175,7 @@ export function StampCard({ card }: { card: StampCardData }) {
                 <li key={visit.id} className="flex justify-between text-xs text-muted-foreground">
                   <span>{formatDate(visit.createdAt)}</span>
                   <span className="font-semibold text-foreground">
-                    {visit.type === "stamp_awarded" ? "+" : "−"}
+                    {visit.type === "stamp_awarded" || visit.type === "referral_reward" ? "+" : "−"}
                     {visit.amount}
                   </span>
                 </li>

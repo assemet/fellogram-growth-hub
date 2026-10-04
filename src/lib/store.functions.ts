@@ -140,7 +140,7 @@ export const getMyCards = createServerFn({ method: "POST" })
       supabase
         .from("customer_memberships")
         .select(
-          "id, store_id, stamp_balance, last_visit_at, joined_at, stores(id, name, description, logo_url), loyalty_programs(id, name, stamps_required)",
+          "id, store_id, stamp_balance, last_visit_at, joined_at, stores(id, name, description, logo_url), loyalty_programs(id, name, stamps_required, referrals_enabled, referrer_bonus_stamps, welcome_bonus_stamps)",
         )
         .eq("customer_id", userId)
         .order("joined_at", { ascending: false }),
@@ -169,6 +169,9 @@ export const getMyCards = createServerFn({ method: "POST" })
       programName: m.loyalty_programs?.name ?? "Loyalty card",
       stampsRequired: m.loyalty_programs?.stamps_required ?? 10,
       stampBalance: m.stamp_balance ?? 0,
+      referralsEnabled: m.loyalty_programs?.referrals_enabled ?? false,
+      referrerBonus: m.loyalty_programs?.referrer_bonus_stamps ?? 0,
+      welcomeBonus: m.loyalty_programs?.welcome_bonus_stamps ?? 0,
       lastVisitAt: m.last_visit_at,
       reward:
         (rewards ?? []).find((r) => r.store_id === m.store_id && r.kind === "standard")?.name ??
@@ -386,6 +389,58 @@ export const archiveReward = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     const storeId = await ownedStore(context.supabase, context.userId);
     const { error } = await context.supabase.from("rewards").update({ active: false }).eq("id", data.id).eq("store_id", storeId);
+    if (error) throw new Error(error.message);
+    return { ok: true };
+  });
+
+/** Customer's personal invite link for one store (stable per customer + store). */
+export const getReferralLink = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((data: { storeId: string }) => ({ storeId: String(data?.storeId ?? "") }))
+  .handler(async ({ data, context }) => {
+    const { data: code, error } = await context.supabase.rpc("get_referral_code", { _store_id: data.storeId });
+    if (error) throw new Error(error.message);
+    const bot = (process.env["TELEGRAM_BOT_USERNAME"] ?? "").replace(/^@/, "").trim();
+    const param = `ref_${code}`;
+    return {
+      code: code as string,
+      link: bot ? `https://t.me/${bot}?startapp=${param}` : null,
+      param,
+    };
+  });
+
+/** Attribute a referral when a new customer opens the app from an invite link. */
+export const acceptReferral = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((data: { param: string }) => {
+    const code = String(data?.param ?? "").trim().replace(/^ref_/, "").toLowerCase();
+    if (!/^[0-9a-f]{12}$/.test(code)) throw new Error("REFERRAL_INVALID");
+    return { code };
+  })
+  .handler(async ({ data, context }) => {
+    const { data: rows, error } = await context.supabase.rpc("accept_referral", { _code: data.code });
+    if (error) return { status: "invalid" as const, storeId: null };
+    const row = (rows as { store_id: string; status: string }[])[0];
+    return { status: (row?.status ?? "invalid") as "pending" | "self" | "already_member" | "disabled" | "invalid", storeId: row?.store_id ?? null };
+  });
+
+/** Owner configures referral rules. */
+export const updateReferralSettings = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((data: { enabled: boolean; referrerBonus: number; welcomeBonus: number }) => {
+    const clamp = (v: unknown) => Math.min(20, Math.max(0, Math.round(Number(v ?? 0)) || 0));
+    return { enabled: Boolean(data?.enabled), referrerBonus: clamp(data?.referrerBonus), welcomeBonus: clamp(data?.welcomeBonus) };
+  })
+  .handler(async ({ data, context }) => {
+    const storeId = await ownedStore(context.supabase, context.userId);
+    const { error } = await context.supabase
+      .from("loyalty_programs")
+      .update({
+        referrals_enabled: data.enabled,
+        referrer_bonus_stamps: data.referrerBonus,
+        welcome_bonus_stamps: data.welcomeBonus,
+      })
+      .eq("store_id", storeId);
     if (error) throw new Error(error.message);
     return { ok: true };
   });

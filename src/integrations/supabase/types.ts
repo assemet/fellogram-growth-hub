@@ -73,9 +73,11 @@ export type Database = {
           id: string
           name: string
           referrals_enabled: boolean
+          referrer_bonus_stamps: number
           stamps_required: number
           store_id: string
           updated_at: string
+          welcome_bonus_stamps: number
         }
         Insert: {
           active?: boolean
@@ -84,9 +86,11 @@ export type Database = {
           id?: string
           name: string
           referrals_enabled?: boolean
+          referrer_bonus_stamps?: number
           stamps_required?: number
           store_id: string
           updated_at?: string
+          welcome_bonus_stamps?: number
         }
         Update: {
           active?: boolean
@@ -95,9 +99,11 @@ export type Database = {
           id?: string
           name?: string
           referrals_enabled?: boolean
+          referrer_bonus_stamps?: number
           stamps_required?: number
           store_id?: string
           updated_at?: string
+          welcome_bonus_stamps?: number
         }
         Relationships: [
           {
@@ -186,6 +192,38 @@ export type Database = {
           },
           {
             foreignKeyName: "redemptions_store_id_fkey"
+            columns: ["store_id"]
+            isOneToOne: false
+            referencedRelation: "stores"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      referral_links: {
+        Row: {
+          code: string
+          created_at: string
+          customer_id: string
+          id: string
+          store_id: string
+        }
+        Insert: {
+          code: string
+          created_at?: string
+          customer_id: string
+          id?: string
+          store_id: string
+        }
+        Update: {
+          code?: string
+          created_at?: string
+          customer_id?: string
+          id?: string
+          store_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "referral_links_store_id_fkey"
             columns: ["store_id"]
             isOneToOne: false
             referencedRelation: "stores"
@@ -419,6 +457,13 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      accept_referral: {
+        Args: { _code: string }
+        Returns: {
+          status: string
+          store_id: string
+        }[]
+      }
       award_stamp: {
         Args: { _amount?: number; _customer_id: string; _store_id: string }
         Returns: {
@@ -436,6 +481,7 @@ export type Database = {
           token: string
         }[]
       }
+      get_referral_code: { Args: { _store_id: string }; Returns: string }
       is_store_member: {
         Args: { _store_id: string; _user_id: string }
         Returns: boolean
