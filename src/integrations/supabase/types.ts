@@ -428,6 +428,14 @@ export type Database = {
           transaction_id: string
         }[]
       }
+      create_redemption: {
+        Args: { _reward_id: string }
+        Returns: {
+          expires_at: string
+          redemption_id: string
+          token: string
+        }[]
+      }
       is_store_member: {
         Args: { _store_id: string; _user_id: string }
         Returns: boolean
@@ -437,6 +445,16 @@ export type Database = {
         Returns: boolean
       }
       join_store_program: { Args: { _store_id: string }; Returns: string }
+      redeem_reward: {
+        Args: { _store_id: string; _token: string }
+        Returns: {
+          customer_id: string
+          redemption_id: string
+          reward_name: string
+          stamp_balance: number
+          stamps_deducted: number
+        }[]
+      }
       undo_last_stamp: {
         Args: { _customer_id: string; _store_id: string }
         Returns: {
