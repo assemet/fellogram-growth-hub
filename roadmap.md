@@ -8,4 +8,4 @@
 # Wallet role-switch cleanup
 - [x] Keep the wallet body customer-only.
 - [x] Move verified staff and owner navigation into the header.
-- [ ] Verify customer, staff, and owner wallet states.
+- [x] Verify customer, staff, and owner wallet states.
