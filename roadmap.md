@@ -19,4 +19,4 @@
 # Store card theme customizer
 - [x] Save owner-selected card colors and display them in customer wallets.
 - [x] Show live card preview with current logo, icon, program, and color choices.
-- [ ] Verify owner saves a theme and the wallet displays it.
+- [x] Verify owner saves a theme and the wallet displays it.
