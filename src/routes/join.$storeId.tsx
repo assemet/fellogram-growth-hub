@@ -1,9 +1,10 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { Gift, Stamp } from "lucide-react";
+import { Gift } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
+import { StampIcon } from "@/components/StampIcon";
 
 import { AppHeader } from "@/components/BrandMark";
 import { SplashScreen } from "@/components/SplashScreen";
@@ -78,13 +79,16 @@ function JoinStore() {
         <p className="mt-1 text-sm text-muted-foreground">{t("join.subtitle")}</p>
 
         <div className="animate-arrive mt-4 rounded-lg border border-border bg-card p-5 shadow-[var(--shadow-card)]">
-          <p className="font-display text-lg font-bold">{data.store.name}</p>
+          <div className="flex items-center gap-3">
+            {data.logoUrl && <img src={data.logoUrl} alt="" className="h-14 w-14 rounded-lg border border-border object-cover" />}
+            <p className="font-display text-lg font-bold">{data.store.name}</p>
+          </div>
           {data.store.description && (
             <p className="mt-1 text-sm text-muted-foreground">{data.store.description}</p>
           )}
 
           <p className="mt-4 flex items-center gap-2 text-sm font-semibold">
-            <Stamp className="h-4 w-4 text-primary" />
+            <StampIcon name={data.program?.stamp_icon} className="h-4 w-4 text-primary" />
             {t("program.preview", { count: required, reward: data.reward?.name ?? "—" })}
           </p>
           {data.reward?.description && (
@@ -102,7 +106,7 @@ function JoinStore() {
                 key={index}
                 className="flex aspect-square items-center justify-center rounded-full border-2 border-dashed border-border bg-secondary/40"
               >
-                <Stamp className="h-4 w-4 opacity-30" />
+                <StampIcon name={data.program?.stamp_icon} className="h-4 w-4 opacity-30" />
               </div>
             ))}
           </div>

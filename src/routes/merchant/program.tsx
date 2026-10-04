@@ -7,6 +7,8 @@ import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 
 import { AppHeader } from "@/components/BrandMark";
+import { StampIcon, stampIconOptions, type StampIconName } from "@/components/StampIcon";
+import { StoreLogoSettings } from "@/components/StoreLogoSettings";
 import { ReferralSettings } from "@/components/ReferralSettings";
 import { RewardsManager } from "@/components/RewardsManager";
 import { SplashScreen } from "@/components/SplashScreen";
@@ -47,6 +49,7 @@ function ProgramEditor() {
   const [stampsText, setStampsText] = useState("10");
   const [rewardName, setRewardName] = useState("");
   const [rewardDescription, setRewardDescription] = useState("");
+  const [stampIcon, setStampIcon] = useState<StampIconName>("stamp");
 
   useEffect(() => {
     if (!data) return;
@@ -57,6 +60,7 @@ function ProgramEditor() {
     const reward = data.rewards.find((r) => r.kind === "standard") ?? data.rewards[0];
     setRewardName(reward?.name ?? "");
     setRewardDescription(reward?.description ?? "");
+    setStampIcon((data.program?.stamp_icon as StampIconName) ?? "stamp");
   }, [data]);
 
 
@@ -68,6 +72,7 @@ function ProgramEditor() {
           stampsRequired: Math.min(50, Math.max(1, Math.round(Number(stampsText) || stampsRequired))),
           rewardName,
           rewardDescription,
+          stampIcon,
         },
       }),
     onSuccess: async () => {
@@ -106,6 +111,10 @@ function ProgramEditor() {
         <h1 className="text-xl font-bold">{t("program.title")}</h1>
         <p className="mt-1 text-sm text-muted-foreground">{t("program.subtitle")}</p>
 
+        <div className="mt-4">
+          <StoreLogoSettings logoUrl={data.logoUrl} />
+        </div>
+
         <form
           className="mt-4 space-y-4"
           onSubmit={(event) => {
@@ -128,6 +137,18 @@ function ProgramEditor() {
               className="mt-1 w-full rounded-md border border-border bg-card px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-ring"
             />
           </div>
+
+          <fieldset>
+            <legend className="text-sm font-semibold">{t("program.stampIcon")}</legend>
+            <div className="mt-2 grid grid-cols-3 gap-2">
+              {stampIconOptions.map((icon) => (
+                <Button key={icon} type="button" variant={stampIcon === icon ? "default" : "outline"} className="touch-action h-16 flex-col gap-1" onClick={() => setStampIcon(icon)} aria-pressed={stampIcon === icon}>
+                  <StampIcon name={icon} className="h-5 w-5" />
+                  <span className="text-xs">{t(`stampIcon.${icon}`)}</span>
+                </Button>
+              ))}
+            </div>
+          </fieldset>
 
           <div>
             <span className="text-sm font-semibold">{t("program.stamps")}</span>
@@ -215,7 +236,7 @@ function ProgramEditor() {
             <div className="mt-4 grid grid-cols-5 gap-2" aria-hidden="true">
               {Array.from({ length: Math.min(10, Math.max(1, Number(stampsText) || stampsRequired)) }).map((_, index) => (
                 <span key={index} className="flex aspect-square items-center justify-center rounded-full border-2 border-dashed border-current/40 bg-card/15">
-                  <Plus className="h-3 w-3 opacity-60" />
+                  <StampIcon name={stampIcon} className="h-3.5 w-3.5 opacity-70" />
                 </span>
               ))}
             </div>
