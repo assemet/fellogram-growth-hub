@@ -374,6 +374,7 @@ export type Database = {
       stores: {
         Row: {
           active: boolean
+          card_theme: string
           created_at: string
           description: string | null
           id: string
@@ -384,6 +385,7 @@ export type Database = {
         }
         Insert: {
           active?: boolean
+          card_theme?: string
           created_at?: string
           description?: string | null
           id?: string
@@ -394,6 +396,7 @@ export type Database = {
         }
         Update: {
           active?: boolean
+          card_theme?: string
           created_at?: string
           description?: string | null
           id?: string
