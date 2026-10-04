@@ -374,6 +374,9 @@ export type Database = {
       stores: {
         Row: {
           active: boolean
+          background_tint: string | null
+          brand_accent: string | null
+          brand_primary: string | null
           card_theme: string
           created_at: string
           description: string | null
@@ -385,6 +388,9 @@ export type Database = {
         }
         Insert: {
           active?: boolean
+          background_tint?: string | null
+          brand_accent?: string | null
+          brand_primary?: string | null
           card_theme?: string
           created_at?: string
           description?: string | null
@@ -396,6 +402,9 @@ export type Database = {
         }
         Update: {
           active?: boolean
+          background_tint?: string | null
+          brand_accent?: string | null
+          brand_primary?: string | null
           card_theme?: string
           created_at?: string
           description?: string | null

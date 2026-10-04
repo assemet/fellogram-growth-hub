@@ -43,6 +43,13 @@
       "when": 1791150862991,
       "tag": "0005_add_store_card_theme",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1791151362386,
+      "tag": "0006_add_store_brand_colors",
+      "breakpoints": true
     }
   ]
 }
