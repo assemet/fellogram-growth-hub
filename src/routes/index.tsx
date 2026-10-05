@@ -3,7 +3,6 @@ import { useServerFn } from "@tanstack/react-start";
 import { useEffect, useState } from "react";
 
 import { SplashScreen } from "@/components/SplashScreen";
-import { Button } from "@/components/ui/button";
 import { useFellogramAuth } from "@/hooks/useFellogramAuth";
 import { t } from "@/lib/i18n";
 import { toast } from "sonner";
@@ -38,10 +37,9 @@ function SplashRouter() {
   const navigate = useNavigate();
   const loadContext = useServerFn(getMyContext);
   const accept = useServerFn(acceptReferral);
-  const [failed, setFailed] = useState(false);
+  const [attempt, setAttempt] = useState(0);
 
   useEffect(() => {
-    if (state === "error") setFailed(true);
     if (state !== "ready") return;
 
     let cancelled = false;
@@ -76,7 +74,8 @@ function SplashRouter() {
         }
       } catch (error) {
         console.error(error);
-        if (!cancelled) setFailed(true);
+        // Never block on an error screen: retry quietly.
+        if (!cancelled) setTimeout(() => setAttempt((n) => n + 1), 1500);
       }
     })();
 
@@ -84,22 +83,7 @@ function SplashRouter() {
       cancelled = true;
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [state]);
-
-  if (failed) {
-    return (
-      <div className="flex min-h-screen flex-col items-center justify-center gap-4 px-8 text-center">
-        <p className="font-display text-3xl font-bold">{t("app.name")}</p>
-        <p className="text-sm text-muted-foreground">{t("auth.failed")}</p>
-        <Button
-          onClick={() => window.location.reload()}
-          className="touch-action"
-        >
-          {t("auth.retry")}
-        </Button>
-      </div>
-    );
-  }
+  }, [state, attempt]);
 
   return <SplashScreen message={state === "loading" ? t("auth.verifying") : t("app.loading")} />;
 }

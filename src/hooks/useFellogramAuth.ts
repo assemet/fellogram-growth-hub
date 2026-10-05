@@ -3,14 +3,24 @@ import { useServerFn } from "@tanstack/react-start";
 
 import { supabase } from "@/integrations/supabase/client";
 import { telegramSignIn } from "@/lib/auth.functions";
-import { getInitData, getTelegramLanguage, initTelegram, rememberStartParam, watchTelegramTheme } from "@/lib/telegram";
+import {
+  getInitData,
+  getTelegramLanguage,
+  getUnsafeTelegramUserId,
+  initTelegram,
+  rememberStartParam,
+  watchTelegramTheme,
+} from "@/lib/telegram";
 import { initializeLocale } from "@/lib/i18n";
 
-export type AuthState = "loading" | "ready" | "error";
+export type AuthState = "loading" | "ready";
+
+const DEMO_TELEGRAM_ID = 100000001;
 
 /**
- * Ensures a Telegram-backed session exists. Runs once per app load: the raw
- * initData goes to the server, the server returns a normal user session.
+ * Ensures a session exists without ever showing an error screen. Inside
+ * Telegram the signed launch data is verified server-side; elsewhere the
+ * shared demo account is used. Transient failures retry automatically.
  */
 export function useFellogramAuth() {
   const signIn = useServerFn(telegramSignIn);
@@ -19,17 +29,25 @@ export function useFellogramAuth() {
 
   useEffect(() => {
     let cancelled = false;
+    initTelegram();
     const unwatchTheme = watchTelegramTheme();
+    initializeLocale(getTelegramLanguage());
+    rememberStartParam();
 
-    (async () => {
+    const attempt = async (tries: number): Promise<void> => {
       try {
-        initTelegram();
-        initializeLocale(getTelegramLanguage());
-        rememberStartParam();
-
+        const launchUserId = getUnsafeTelegramUserId();
         const { data } = await supabase.auth.getSession();
-        if (data.session) {
-          if (!cancelled) setState("ready");
+        const sessionTgId = Number(data.session?.user.user_metadata?.['telegram_user_id'] ?? NaN);
+        // Reuse the session unless Telegram launched us as a different person
+        // (e.g. a leftover demo session inside the Telegram app).
+        const sessionMatches =
+          data.session && (launchUserId === null || sessionTgId === launchUserId);
+        if (sessionMatches) {
+          if (!cancelled) {
+            setPreviewMode(sessionTgId === DEMO_TELEGRAM_ID);
+            setState("ready");
+          }
           return;
         }
 
@@ -44,10 +62,13 @@ export function useFellogramAuth() {
           setState("ready");
         }
       } catch (error) {
-        console.error("Fellogram sign-in failed", error);
-        if (!cancelled) setState("error");
+        console.error("Fellogram sign-in failed, retrying", error);
+        if (cancelled) return;
+        await new Promise((resolve) => setTimeout(resolve, Math.min(4000, 800 * (tries + 1))));
+        if (!cancelled) return attempt(tries + 1);
       }
-    })();
+    };
+    void attempt(0);
 
     return () => {
       cancelled = true;

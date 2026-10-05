@@ -17,3 +17,4 @@
 - Store card themes as a constrained store-level choice and render merchant previews with the customer card component; this keeps saved cards and previews visually identical.
 - Scope saved store-brand semantic colors to every surface in a focused store flow and its merchant preview; keep the multi-store wallet on Telegram defaults so one merchant never overrides another.
 - Use text-only Fellogram branding in shared app chrome and loading states; this keeps merchant logos distinct from the platform identity.
+- Accept a Telegram identity only after server-side initData signature verification; anything unverifiable signs into the shared demo account so the app never blocks and real users can't be impersonated.

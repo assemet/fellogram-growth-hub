@@ -119,6 +119,8 @@ function RootShell({ children }: { children: ReactNode }) {
   return (
     <html lang="en">
       <head>
+        {/* Must load before the app so Telegram's session data is available on mount. */}
+        <script src="https://telegram.org/js/telegram-web-app.js" />
         <HeadContent />
       </head>
       <body>
