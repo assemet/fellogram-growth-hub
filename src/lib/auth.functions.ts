@@ -63,13 +63,14 @@ export const telegramSignIn = createServerFn({ method: "POST" })
     const botToken = process.env["TELEGRAM_BOT_TOKEN"];
     const serviceKey = process.env["SUPABASE_SERVICE_ROLE_KEY"]!;
 
-    let tgUser: TelegramUser | null = null;
+    // Real Telegram identities are only ever accepted after signature checks.
+    // Anything unverifiable (plain browser, missing token, bad data) gets the
+    // shared demo account instead of an error — never the claimed identity.
+    let tgUser: TelegramUser | null =
+      botToken && data.initData ? verifyInitData(data.initData, botToken) : null;
     let previewMode = false;
-
-    if (botToken) {
-      tgUser = data.initData ? verifyInitData(data.initData, botToken) : null;
-      if (!tgUser) throw new Error("INVALID_TELEGRAM_INIT_DATA");
-    } else {
+    if (!tgUser) {
+      if (data.initData) console.warn("Telegram initData could not be verified; using demo account");
       previewMode = true;
       tgUser = { id: 100000001, first_name: "Preview", username: "preview_user" };
     }

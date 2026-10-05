@@ -42,8 +42,33 @@ export function watchTelegramTheme() {
   };
 }
 
+const INIT_DATA_KEY = "fellogram.tgInitData";
+
+/** Signed launch data: from the WebApp SDK, or Telegram's launch URL hash as a fallback. */
 export function getInitData(): string {
-  return webApp()?.initData ?? "";
+  const fromApp = webApp()?.initData;
+  if (fromApp) return fromApp;
+  if (typeof window === "undefined") return "";
+  const fromHash = new URLSearchParams(window.location.hash.slice(1)).get("tgWebAppData");
+  if (fromHash) {
+    window.sessionStorage.setItem(INIT_DATA_KEY, fromHash);
+    return fromHash;
+  }
+  return window.sessionStorage.getItem(INIT_DATA_KEY) ?? "";
+}
+
+/** Unverified Telegram user id — only used to detect a stale session, never for identity. */
+export function getUnsafeTelegramUserId(): number | null {
+  const fromApp = (webApp()?.initDataUnsafe?.user as { id?: number } | undefined)?.id;
+  if (typeof fromApp === "number") return fromApp;
+  const raw = getInitData();
+  if (!raw) return null;
+  try {
+    const user = JSON.parse(new URLSearchParams(raw).get("user") ?? "null") as { id?: number } | null;
+    return typeof user?.id === "number" ? user.id : null;
+  } catch {
+    return null;
+  }
 }
 
 export function getTelegramLanguage(): string | null {
