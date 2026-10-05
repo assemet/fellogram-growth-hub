@@ -38,7 +38,7 @@ export function useFellogramAuth() {
       try {
         const launchUserId = getUnsafeTelegramUserId();
         const { data } = await supabase.auth.getSession();
-        const sessionTgId = Number(data.session?.user.user_metadata?.telegram_user_id ?? NaN);
+        const sessionTgId = Number(data.session?.user.user_metadata?.['telegram_user_id'] ?? NaN);
         // Reuse the session unless Telegram launched us as a different person
         // (e.g. a leftover demo session inside the Telegram app).
         const sessionMatches =
