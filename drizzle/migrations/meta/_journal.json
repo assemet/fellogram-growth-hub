@@ -50,6 +50,13 @@
       "when": 1791151362386,
       "tag": "0006_add_store_brand_colors",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1791151962386,
+      "tag": "0007_stamp_icon_library",
+      "breakpoints": true
     }
   ]
 }

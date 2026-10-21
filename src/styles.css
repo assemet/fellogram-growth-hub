@@ -6,7 +6,7 @@
 
 /*
  * Fellogram design system — precise, Telegram-native, mobile-first.
- * Cool graphite neutrals frame store-specific colors without competing with them.
+ * Violet + navy + teal (from the logo) frame store-specific colors without competing with them.
  * All colors are oklch semantic tokens. Never hardcode colors in components.
  */
 
@@ -53,34 +53,35 @@
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-ring: var(--sidebar-ring);
 
-  --shadow-card: 0 16px 32px -24px oklch(0.2 0.025 225 / 0.38), 0 1px 3px oklch(0.2 0.025 225 / 0.12);
-  --shadow-float: 0 24px 50px -28px oklch(0.2 0.04 225 / 0.52);
+  --shadow-card: 0 16px 32px -24px oklch(0.3 0.12 285 / 0.35), 0 1px 3px oklch(0.3 0.1 285 / 0.1);
+  --shadow-float: 0 24px 50px -28px oklch(0.35 0.18 285 / 0.5);
 }
 
 :root {
-  --radius: 0.5rem;
-  --background: oklch(0.966 0.005 220);
-  --foreground: oklch(0.235 0.018 220);
+  --radius: 0.75rem;
+  /* Palette taken from the Fellogram logo: vivid violet, navy ink, teal growth accent. */
+  --background: oklch(0.975 0.008 295);
+  --foreground: oklch(0.24 0.06 280);
   --card: oklch(1 0 0);
-  --card-foreground: oklch(0.235 0.018 220);
+  --card-foreground: oklch(0.24 0.06 280);
   --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.235 0.018 220);
-  --primary: oklch(0.47 0.09 220);
-  --primary-foreground: oklch(0.99 0.005 285);
-  --secondary: oklch(0.93 0.008 220);
-  --secondary-foreground: oklch(0.29 0.025 220);
-  --muted: oklch(0.93 0.006 220);
-  --muted-foreground: oklch(0.41 0.025 220);
-  --accent: oklch(0.9 0.025 215);
-  --accent-foreground: oklch(0.28 0.04 220);
-  --growth: oklch(0.68 0.14 173);
-  --growth-foreground: oklch(0.2 0.05 200);
+  --popover-foreground: oklch(0.24 0.06 280);
+  --primary: oklch(0.52 0.24 286);
+  --primary-foreground: oklch(0.99 0.004 290);
+  --secondary: oklch(0.945 0.025 292);
+  --secondary-foreground: oklch(0.3 0.09 285);
+  --muted: oklch(0.955 0.015 292);
+  --muted-foreground: oklch(0.47 0.04 285);
+  --accent: oklch(0.925 0.05 292);
+  --accent-foreground: oklch(0.3 0.12 286);
+  --growth: oklch(0.71 0.12 178);
+  --growth-foreground: oklch(0.2 0.05 190);
   --destructive: oklch(0.6 0.22 22);
   --destructive-foreground: oklch(0.99 0.005 285);
-  --border: oklch(0.84 0.012 220);
-  --input: oklch(0.79 0.014 220);
-  --ring: oklch(0.47 0.09 220);
-  --brand-gradient: linear-gradient(135deg, oklch(0.34 0.045 220), oklch(0.24 0.025 220));
+  --border: oklch(0.9 0.02 292);
+  --input: oklch(0.85 0.025 292);
+  --ring: oklch(0.52 0.24 286);
+  --brand-gradient: linear-gradient(135deg, oklch(0.55 0.24 290) 0%, oklch(0.42 0.21 280) 62%, oklch(0.5 0.13 220) 115%);
   --brand-foreground: oklch(0.99 0.005 285);
   --sidebar: oklch(0.985 0.005 285);
   --sidebar-foreground: oklch(0.22 0.06 275);
@@ -93,28 +94,28 @@
 }
 
 .dark {
-  --background: oklch(0.14 0.012 220);
-  --foreground: oklch(0.97 0.008 285);
-  --card: oklch(0.2 0.014 220);
-  --card-foreground: oklch(0.97 0.008 285);
-  --popover: oklch(0.22 0.03 245);
-  --popover-foreground: oklch(0.97 0.008 285);
-  --primary: oklch(0.73 0.08 210);
-  --primary-foreground: oklch(0.15 0.02 220);
-  --secondary: oklch(0.26 0.016 220);
-  --secondary-foreground: oklch(0.97 0.008 285);
-  --muted: oklch(0.26 0.016 220);
-  --muted-foreground: oklch(0.76 0.018 220);
-  --accent: oklch(0.31 0.04 215);
-  --accent-foreground: oklch(0.97 0.008 285);
-  --growth: oklch(0.72 0.13 173);
+  --background: oklch(0.17 0.03 285);
+  --foreground: oklch(0.97 0.01 290);
+  --card: oklch(0.22 0.04 285);
+  --card-foreground: oklch(0.97 0.01 290);
+  --popover: oklch(0.24 0.045 285);
+  --popover-foreground: oklch(0.97 0.01 290);
+  --primary: oklch(0.74 0.16 290);
+  --primary-foreground: oklch(0.17 0.05 285);
+  --secondary: oklch(0.28 0.04 285);
+  --secondary-foreground: oklch(0.97 0.01 290);
+  --muted: oklch(0.27 0.035 285);
+  --muted-foreground: oklch(0.76 0.03 290);
+  --accent: oklch(0.33 0.07 288);
+  --accent-foreground: oklch(0.97 0.01 290);
+  --growth: oklch(0.76 0.13 178);
   --growth-foreground: oklch(0.18 0.05 200);
   --destructive: oklch(0.68 0.19 22);
   --destructive-foreground: oklch(0.99 0.005 285);
   --border: oklch(1 0 0 / 12%);
   --input: oklch(1 0 0 / 16%);
-  --ring: oklch(0.73 0.08 210);
-  --brand-gradient: linear-gradient(135deg, oklch(0.3 0.045 220), oklch(0.2 0.025 220));
+  --ring: oklch(0.74 0.16 290);
+  --brand-gradient: linear-gradient(135deg, oklch(0.46 0.22 290), oklch(0.33 0.17 280) 65%, oklch(0.4 0.1 220));
   --brand-foreground: oklch(0.99 0.005 285);
   --sidebar: oklch(0.22 0.03 245);
   --sidebar-foreground: oklch(0.97 0.008 285);
@@ -135,10 +136,10 @@
   --popover: var(--tg-theme-bg-color, oklch(1 0 0));
   --popover-foreground: var(--tg-theme-text-color, oklch(0.22 0.06 275));
   --muted-foreground: var(--tg-theme-hint-color, oklch(0.52 0.04 280));
-  --primary: var(--tg-theme-button-color, oklch(0.53 0.22 291));
-  --primary-foreground: var(--tg-theme-button-text-color, oklch(0.99 0.005 285));
-  --ring: var(--tg-theme-button-color, oklch(0.53 0.22 291));
 }
+/* Surfaces and text follow the user's Telegram theme; buttons and links keep the Fellogram violet
+   (Telegram's own button color would make every app look the same). */
+.telegram-theme.dark { --primary: oklch(0.74 0.16 290); --primary-foreground: oklch(0.17 0.05 285); }
 
 @layer base {
   * {
@@ -355,4 +356,35 @@
 }
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; scroll-behavior: auto !important; }
+}
+
+/* ---------- Splash ---------- */
+.splash-bg {
+  background-image: radial-gradient(70% 45% at 50% 0%, oklch(1 0 0 / 0.2), transparent 70%), var(--brand-gradient);
+  color: oklch(0.99 0.005 285);
+}
+.splash-tile {
+  display: grid;
+  place-items: center;
+  width: 7rem;
+  height: 7rem;
+  border-radius: 1.75rem;
+  background: oklch(1 0 0);
+  box-shadow: 0 24px 48px -20px oklch(0.2 0.1 285 / 0.6), 0 0 0 1px oklch(1 0 0 / 0.5);
+}
+.splash-tile img { width: 5.75rem; height: 5.75rem; object-fit: contain; }
+.splash-dots { display: flex; gap: 0.6rem; }
+.splash-dot {
+  width: 0.7rem;
+  height: 0.7rem;
+  border-radius: 9999px;
+  background: oklch(1 0 0 / 0.28);
+  animation: splash-dot 2400ms ease-in-out infinite;
+  animation-delay: calc(var(--i) * 260ms - var(--phase, 0ms));
+}
+@keyframes splash-dot {
+  0%, 6% { background: oklch(1 0 0 / 0.28); transform: scale(1); }
+  16% { background: var(--growth); transform: scale(1.35); }
+  26%, 86% { background: var(--growth); transform: scale(1); }
+  96%, 100% { background: oklch(1 0 0 / 0.28); transform: scale(1); }
 }

@@ -89,11 +89,15 @@ export function StampCard({ card, preview = false, focused = false }: { card: St
                 aria-label={filled ? "stamp collected" : "stamp empty"}
                 className={
                   filled
-                    ? "loyalty-stamp-filled stamp-slot flex aspect-square items-center justify-center rounded-full border-2 border-primary/25 bg-primary text-primary-foreground shadow-[var(--shadow-card)]"
-                    : "loyalty-stamp-empty flex aspect-square items-center justify-center rounded-full border-2 border-dashed border-border bg-secondary/40 text-muted-foreground"
+                    ? "loyalty-stamp-filled stamp-slot flex aspect-square items-center justify-center overflow-hidden rounded-full border-2 border-primary/25 bg-primary text-primary-foreground shadow-[var(--shadow-card)]"
+                    : "loyalty-stamp-empty flex aspect-square items-center justify-center overflow-hidden rounded-full border-2 border-dashed border-border bg-secondary/40 text-muted-foreground"
                 }
               >
-                <StampIcon name={card.stampIcon} className={filled ? "h-5 w-5" : "h-4 w-4 opacity-35"} />
+                {card.stampIcon === "logo" && card.logoUrl ? (
+                  <StampIcon name="logo" logoUrl={card.logoUrl} dim={!filled} className="h-full w-full" />
+                ) : (
+                  <StampIcon name={card.stampIcon} className={filled ? "h-5 w-5" : "h-4 w-4 opacity-35"} />
+                )}
               </div>
             );
           })}

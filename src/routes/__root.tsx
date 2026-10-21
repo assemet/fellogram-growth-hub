@@ -129,10 +129,16 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
 
 function RootShell({ children }: { children: ReactNode }) {
   return (
-    <html lang="en">
+    <html lang="en" suppressHydrationWarning>
       <head>
         {/* Must load before the app so Telegram's session data is available on mount. */}
         <script src="https://telegram.org/js/telegram-web-app.js" />
+        {/* Set language/direction before first paint so Arabic never flashes as LTR English. */}
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `try{var l=localStorage.getItem('fellogram.locale');if(l!=='ar'&&l!=='en'){var w=window.Telegram&&Telegram.WebApp&&Telegram.WebApp.initDataUnsafe&&Telegram.WebApp.initDataUnsafe.user;var n=(w&&w.language_code)||navigator.language||'';l=n.toLowerCase().indexOf('ar')===0?'ar':'en'}document.documentElement.lang=l;document.documentElement.dir=l==='ar'?'rtl':'ltr'}catch(e){}`,
+          }}
+        />
         <HeadContent />
       </head>
       <body>

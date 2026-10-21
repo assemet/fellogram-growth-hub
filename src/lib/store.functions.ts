@@ -1,4 +1,5 @@
 import { createServerFn } from "@tanstack/react-start";
+import { isStampIconId, STAMP_LOGO_ID } from "@/lib/stamp-icons";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 
 /** Role + profile context used for splash routing. */
@@ -286,8 +287,8 @@ export const updateProgram = createServerFn({ method: "POST" })
     const rewardName = String(data?.rewardName ?? "").trim();
     const stampsRequired = Math.min(50, Math.max(1, Math.round(Number(data?.stampsRequired ?? 10))));
     if (rewardName.length < 2) throw new Error("REWARD_NAME_REQUIRED");
-    const allowedIcons = ["coffee", "stamp", "scissors", "food", "gift", "star"];
-    const stampIcon = allowedIcons.includes(String(data?.stampIcon)) ? String(data.stampIcon) : "stamp";
+    const requestedIcon = String(data?.stampIcon);
+    const stampIcon = isStampIconId(requestedIcon) || requestedIcon === STAMP_LOGO_ID ? requestedIcon : "stamp";
     const allowedThemes = ["classic", "coffee", "purple", "emerald", "midnight", "electric", "sunset"];
     if (!allowedThemes.includes(String(data?.cardTheme))) throw new Error("INVALID_CARD_THEME");
     const validateColor = (value: unknown) => {
@@ -312,7 +313,7 @@ export const updateProgram = createServerFn({ method: "POST" })
 
     const { data: store } = await supabase
       .from("stores")
-      .select("id")
+      .select("id, logo_url")
       .eq("owner_id", userId)
       .order("created_at", { ascending: false })
       .limit(1)
@@ -328,11 +329,18 @@ export const updateProgram = createServerFn({ method: "POST" })
       .maybeSingle();
     if (!program) throw new Error("PROGRAM_NOT_FOUND");
 
+    // "Use my logo as the stamp" only makes sense once a logo exists.
+    const stampIcon = data.stampIcon === STAMP_LOGO_ID && !store.logo_url ? "stamp" : data.stampIcon;
+
     const { error: programError } = await supabase
       .from("loyalty_programs")
-      .update({ name: data.programName, stamps_required: data.stampsRequired, stamp_icon: data.stampIcon })
+      .update({ name: data.programName, stamps_required: data.stampsRequired, stamp_icon: stampIcon })
       .eq("id", program.id);
-    if (programError) throw new Error(programError.message);
+    if (programError) {
+      // 23514 = check_violation: the database still has the original 6-icon constraint.
+      if (programError.code === "23514") throw new Error("STAMP_ICON_MIGRATION_REQUIRED");
+      throw new Error(programError.message);
+    }
 
     const { data: reward } = await supabase
       .from("rewards")

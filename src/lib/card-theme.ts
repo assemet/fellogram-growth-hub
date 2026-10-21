@@ -10,7 +10,7 @@ export function resolveCardTheme(value: string | null | undefined): CardTheme {
 export type BrandColors = { brandPrimary?: string | null; brandAccent?: string | null; backgroundTint?: string | null };
 
 export const brandPalettes: Record<CardTheme, { primary: string; accent: string; tint: string }> = {
-  classic: { primary: "#6941a4", accent: "#227f77", tint: "#f5f6f8" },
+  classic: { primary: "#683ce9", accent: "#2abaa1", tint: "#f6f4ff" },
   coffee: { primary: "#67432f", accent: "#a87845", tint: "#f7f1e9" },
   purple: { primary: "#63378c", accent: "#9655b5", tint: "#f6f0fa" },
   emerald: { primary: "#146b54", accent: "#328e74", tint: "#edf7f1" },

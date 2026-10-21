@@ -85,5 +85,5 @@ function SplashRouter() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [state, attempt]);
 
-  return <SplashScreen message={state === "loading" ? t("auth.verifying") : t("app.loading")} />;
+  return <SplashScreen />;
 }
