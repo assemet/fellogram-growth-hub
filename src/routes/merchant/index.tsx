@@ -8,6 +8,7 @@ import { useFellogramAuth } from "@/hooks/useFellogramAuth";
 import { t } from "@/lib/i18n";
 import { getMyStore } from "@/lib/store.functions";
 import { GrowthAnalytics } from "@/components/GrowthAnalytics";
+import { StoreJoinShare } from "@/components/StoreJoinShare";
 import { ArrowRight, Settings2 } from "lucide-react";
 
 export const Route = createFileRoute("/merchant/")({
@@ -76,6 +77,8 @@ function MerchantDashboard() {
             {t("program.edit")}
           </Link>
         </div>
+
+        <StoreJoinShare storeName={data.store.name} rewardName={reward} stampsRequired={data.program?.stamps_required ?? 10} />
 
         <GrowthAnalytics />
 

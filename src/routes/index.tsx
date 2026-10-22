@@ -8,6 +8,7 @@ import { t } from "@/lib/i18n";
 import { toast } from "sonner";
 
 import { acceptReferral, getMyContext } from "@/lib/store.functions";
+import { parseStoreCode } from "@/lib/join-code";
 import { clearPendingStartParam, readPendingStartParam } from "@/lib/telegram";
 
 export const Route = createFileRoute("/")({
@@ -46,6 +47,15 @@ function SplashRouter() {
     (async () => {
       try {
         const pending = readPendingStartParam();
+        if (pending?.startsWith("join_")) {
+          // Store QR/link: go straight to that store's join screen.
+          clearPendingStartParam();
+          const storeId = parseStoreCode(pending);
+          if (storeId) {
+            navigate({ to: "/join/$storeId", params: { storeId }, replace: true });
+            return;
+          }
+        }
         if (pending?.startsWith("ref_")) {
           clearPendingStartParam();
           const res = await accept({ data: { param: pending } }).catch(() => ({ status: "invalid" as const }));

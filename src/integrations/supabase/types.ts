@@ -506,6 +506,7 @@ export type Database = {
         Returns: boolean
       }
       join_store_program: { Args: { _store_id: string }; Returns: string }
+      staff_enroll_customer: { Args: { _store_id: string; _customer_id: string }; Returns: string }
       redeem_reward: {
         Args: { _store_id: string; _token: string }
         Returns: {

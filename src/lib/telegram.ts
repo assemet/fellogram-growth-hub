@@ -11,6 +11,9 @@ type TelegramWebApp = {
   colorScheme?: "light" | "dark";
   onEvent?: (event: string, callback: () => void) => void;
   offEvent?: (event: string, callback: () => void) => void;
+  openTelegramLink?: (url: string) => void;
+  showScanQrPopup?: (params: { text?: string }, callback?: (text: string) => boolean | void) => void;
+  closeScanQrPopup?: () => void;
 };
 
 function webApp(): TelegramWebApp | undefined {
@@ -100,4 +103,31 @@ export function readPendingStartParam(): string | null {
 
 export function clearPendingStartParam() {
   if (typeof window !== "undefined") window.localStorage.removeItem(PENDING_KEY);
+}
+
+/** Opens Telegram's share sheet for a link, falling back to a new tab outside Telegram. */
+export function shareViaTelegram(link: string, text: string) {
+  const url = `https://t.me/share/url?url=${encodeURIComponent(link)}&text=${encodeURIComponent(text)}`;
+  const app = webApp();
+  if (app?.openTelegramLink) app.openTelegramLink(url);
+  else if (typeof window !== "undefined") window.open(url, "_blank", "noopener");
+}
+
+/**
+ * Telegram's built-in QR scanner. Returns false when unavailable (older clients, plain browser).
+ * `onText` returns true to close the scanner, false to keep scanning.
+ */
+export function openTelegramQrScanner(promptText: string, onText: (text: string) => boolean): boolean {
+  const app = webApp();
+  if (!app?.showScanQrPopup) return false;
+  try {
+    app.showScanQrPopup({ text: promptText }, (text) => {
+      const done = onText(text);
+      if (done) app.closeScanQrPopup?.();
+      return done;
+    });
+    return true;
+  } catch {
+    return false;
+  }
 }

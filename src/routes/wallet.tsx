@@ -1,13 +1,15 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { LayoutDashboard, MoreHorizontal, ScanLine, Sparkles, Store } from "lucide-react";
+import { LayoutDashboard, MoreHorizontal, ScanLine } from "lucide-react";
 import { z } from "zod";
 import { brandThemeStyle } from "@/lib/card-theme";
 
 import { AppHeader } from "@/components/BrandMark";
 import { SplashScreen } from "@/components/SplashScreen";
-import { CustomerQr } from "@/components/CustomerQr";
+import { MyQrDialog } from "@/components/MyQrDialog";
+import { StoreScanButton } from "@/components/StoreScanButton";
+import { WalletEmptyState } from "@/components/WalletEmptyState";
 import { StampCard } from "@/components/StampCard";
 import { Button } from "@/components/ui/button";
 import {
@@ -97,20 +99,13 @@ function Wallet() {
 
       <section className="app-shell">
         {focusedCard && <Link to="/wallet" search={{ store: undefined }} className="mb-4 inline-flex text-sm font-semibold text-primary">← {t("join.viewWallet")}</Link>}
-        <h1 className="mb-4 text-2xl font-bold">{focusedCard ? focusedCard.storeName : t("wallet.title")}</h1>
-
-        {data.profile?.id && (
-          <div className="mb-4">
-            <CustomerQr customerId={data.profile.id} />
-          </div>
-        )}
+        <div className="mb-4 flex items-center justify-between gap-3">
+          <h1 className="min-w-0 truncate text-2xl font-bold">{focusedCard ? focusedCard.storeName : t("wallet.title")}</h1>
+          {cards.length > 0 && data.profile?.id && <MyQrDialog customerId={data.profile.id} />}
+        </div>
 
         {cards.length === 0 ? (
-          <div className="rounded-lg border border-dashed border-border bg-card p-8 text-center shadow-[var(--shadow-card)]">
-            <Sparkles className="mx-auto mb-3 h-7 w-7 text-primary" />
-            <p className="font-semibold">{t("wallet.empty.title")}</p>
-            <p className="mt-1 text-sm text-muted-foreground">{t("wallet.empty.body")}</p>
-          </div>
+          <WalletEmptyState />
         ) : (
           <ul className="wallet-card-list space-y-7">
             {(focusedCard ? [focusedCard] : cards).map((card) => (
@@ -118,17 +113,13 @@ function Wallet() {
             ))}
           </ul>
         )}
-{!focusedCard && !data.ownedStoreId && !data.staffStoreId && (
-  <div className="mt-6 flex items-center justify-between gap-3 rounded-lg border border-border bg-card px-4 py-3">
-    <div className="flex items-center gap-3">
-      <Store className="h-5 w-5 shrink-0 text-muted-foreground" />
-      <p className="text-sm font-semibold">{t("wallet.merchantCta.title")}</p>
-    </div>
-    <Button asChild variant="outline" size="sm" className="touch-action shrink-0">
-      <Link to="/merchant/new">{t("wallet.merchantCta.action")}</Link>
-    </Button>
-  </div>
-)}
+{!focusedCard && cards.length > 0 && <StoreScanButton variant="outline" label={t("wallet.addCard")} className="mt-6 w-full" />}
+
+        {!focusedCard && !data.ownedStoreId && !data.staffStoreId && (
+          <Link to="/merchant/new" className="mt-8 block text-center text-sm font-semibold text-muted-foreground underline-offset-4 hover:text-primary hover:underline">
+            {t("wallet.merchantCta.link")}
+          </Link>
+        )}
       </section>
     </main>
   );

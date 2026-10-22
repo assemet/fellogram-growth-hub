@@ -2,7 +2,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useEffect, useRef, useState } from "react";
-import { Camera, Check, Gift, ScanLine, Undo2 } from "lucide-react";
+import { Camera, Check, Gift, ScanLine, Undo2, UserPlus } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 
@@ -10,7 +10,7 @@ import { AppHeader } from "@/components/BrandMark";
 import { SplashScreen } from "@/components/SplashScreen";
 import { useFellogramAuth } from "@/hooks/useFellogramAuth";
 import { t } from "@/lib/i18n";
-import { awardStamp, getCashierStore, lookupCustomer, redeemRewardToken, undoLastStamp } from "@/lib/cashier.functions";
+import { awardStamp, enrollCustomer, getCashierStore, lookupCustomer, redeemRewardToken, undoLastStamp } from "@/lib/cashier.functions";
 
 export const Route = createFileRoute("/cashier")({
   ssr: false,
@@ -28,6 +28,7 @@ export const Route = createFileRoute("/cashier")({
 });
 
 type CustomerState = {
+  newCustomer?: false;
   customerId: string;
   name: string;
   stampBalance: number;
@@ -42,7 +43,7 @@ function friendlyError(message: string): string {
     return t("cashier.cooldown", { count: minutes });
   }
   if (message.includes("MEMBERSHIP_NOT_FOUND")) return t("cashier.notMember");
-  if (message.includes("INVALID_CODE")) return t("cashier.invalidCode");
+  if (message.includes("INVALID_CODE") || message.includes("CUSTOMER_NOT_FOUND")) return t("cashier.invalidCode");
   if (message.includes("TOKEN_USED")) return t("cashier.tokenUsed");
   if (message.includes("TOKEN_EXPIRED")) return t("cashier.tokenExpired");
   if (message.includes("TOKEN_INVALID")) return t("cashier.tokenInvalid");
@@ -58,9 +59,11 @@ function Cashier() {
   const stamp = useServerFn(awardStamp);
   const undo = useServerFn(undoLastStamp);
   const redeemFn = useServerFn(redeemRewardToken);
+  const enrollFn = useServerFn(enrollCustomer);
   const [mode, setMode] = useState<"customer" | "reward">("customer");
 
   const [customer, setCustomer] = useState<CustomerState | null>(null);
+  const [newCustomerId, setNewCustomerId] = useState<string | null>(null);
   const [code, setCode] = useState("");
   const [message, setMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -86,9 +89,28 @@ function Cashier() {
   const lookup = useMutation({
     mutationFn: (raw: string) => findCustomer({ data: { code: raw } }),
     onSuccess: (data) => {
-      setCustomer(data);
       setError(null);
       setMessage(null);
+      if (data.newCustomer) {
+        // Valid customer QR but no card here yet: offer to create it on the spot.
+        setCustomer(null);
+        setNewCustomerId(data.customerId);
+        return;
+      }
+      setNewCustomerId(null);
+      setCustomer(data);
+    },
+    onError: (e: Error) => setError(friendlyError(e.message)),
+  });
+
+  const enroll = useMutation({
+    mutationFn: (customerId: string) => enrollFn({ data: { customerId } }),
+    onSuccess: (data) => {
+      setCustomer(data);
+      setNewCustomerId(null);
+      setError(null);
+      setMessage(t("cashier.enrolled"));
+      toast.success(t("cashier.enrolled"));
     },
     onError: (e: Error) => setError(friendlyError(e.message)),
   });
@@ -198,7 +220,7 @@ function Cashier() {
           <h1 className="text-2xl font-bold">{t("cashier.title")}</h1>
           <span className="shrink-0 rounded-md bg-growth/15 px-2.5 py-1 text-xs font-bold text-foreground">{store.storeName}</span>
         </div>
-        {!customer && (
+        {!customer && !newCustomerId && (
           <div className="animate-arrive rounded-lg border border-border bg-card p-5 shadow-[var(--shadow-card)]">
             <div className={scanning ? "overflow-hidden rounded-md bg-foreground" : "hidden"}>
               {/* eslint-disable-next-line jsx-a11y/media-has-caption */}
@@ -269,6 +291,37 @@ function Cashier() {
                     : t("cashier.find")}
               </Button>
             </form>
+          </div>
+        )}
+
+        {newCustomerId && !customer && (
+          <div className="animate-arrive rounded-lg border border-border bg-card p-5 text-center shadow-[var(--shadow-card)]">
+            <span className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-accent">
+              <UserPlus className="h-6 w-6 text-primary" />
+            </span>
+            <p className="mt-2 font-display text-xl font-bold">{t("cashier.newCustomer.title")}</p>
+            <p className="mt-1 text-sm text-muted-foreground">{t("cashier.newCustomer.body")}</p>
+            <Button
+              type="button"
+              onClick={() => enroll.mutate(newCustomerId)}
+              disabled={enroll.isPending}
+              className="touch-action mt-6 h-16 w-full gap-2 text-lg font-bold shadow-[var(--shadow-float)]"
+            >
+              <Check className="h-5 w-5" />
+              {enroll.isPending ? t("cashier.awarding") : t("cashier.newCustomer.action")}
+            </Button>
+            <Button
+              type="button"
+              onClick={() => {
+                setNewCustomerId(null);
+                setCode("");
+                setError(null);
+              }}
+              variant="ghost"
+              className="touch-action mt-4 w-full text-sm font-semibold text-primary"
+            >
+              {t("cashier.reset")}
+            </Button>
           </div>
         )}
 

@@ -121,8 +121,9 @@ export const lookupCustomer = createServerFn({ method: "POST" })
     const store = await resolveStaffStore(context.supabase, context.userId);
     if (!store) throw new Error("NOT_STORE_STAFF");
     const state = await loadCustomerState(context.supabase, store.storeId, data.customerId);
-    if (!state) throw new Error("MEMBERSHIP_NOT_FOUND");
-    return state;
+    // No card yet: let the cashier create it at the counter instead of sending the customer away.
+    if (!state) return { newCustomer: true as const, customerId: data.customerId };
+    return { newCustomer: false as const, ...state };
   });
 
 /** Award a stamp. Cooldown + staff logging are enforced in the database. */
@@ -199,4 +200,34 @@ export const redeemRewardToken = createServerFn({ method: "POST" })
     const row = (rows as { customer_id: string; reward_name: string; stamps_deducted: number; stamp_balance: number }[])[0]!;
     const state = await loadCustomerState(context.supabase, store.storeId, row.customer_id);
     return { ok: true as const, rewardName: row.reward_name, stampsDeducted: row.stamps_deducted, customer: state };
+  });
+
+/** Creates the customer's card at this store and adds the first stamp in one step. */
+export const enrollCustomer = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((data: { customerId: string }) => {
+    const customerId = parseCustomerCode(data?.customerId ?? "");
+    if (!customerId) throw new Error("INVALID_CODE");
+    return { customerId };
+  })
+  .handler(async ({ data, context }) => {
+    const store = await resolveStaffStore(context.supabase, context.userId);
+    if (!store) throw new Error("NOT_STORE_STAFF");
+
+    const { error: enrollError } = await context.supabase.rpc("staff_enroll_customer", {
+      _store_id: store.storeId,
+      _customer_id: data.customerId,
+    });
+    if (enrollError) throw new Error(enrollError.message);
+
+    const { error: awardError } = await context.supabase.rpc("award_stamp", {
+      _store_id: store.storeId,
+      _customer_id: data.customerId,
+      _amount: 1,
+    });
+    if (awardError) throw new Error(awardError.message);
+
+    const state = await loadCustomerState(context.supabase, store.storeId, data.customerId);
+    if (!state) throw new Error("MEMBERSHIP_NOT_FOUND");
+    return state;
   });

@@ -463,6 +463,23 @@ export const archiveReward = createServerFn({ method: "POST" })
   });
 
 /** Customer's personal invite link for one store (stable per customer + store). */
+/** Owner's public join link for the store: print it as a QR at the counter or share it. */
+export const getStoreJoinLink = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    const { data: store } = await context.supabase
+      .from("stores")
+      .select("id")
+      .eq("owner_id", context.userId)
+      .order("created_at", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+    if (!store) throw new Error("STORE_NOT_FOUND");
+    const bot = (process.env["TELEGRAM_BOT_USERNAME"] ?? process.env["VITE_TELEGRAM_BOT_USERNAME"] ?? "FellogramBot").replace(/^@/, "").trim();
+    const param = `join_${store.id}`;
+    return { storeId: store.id as string, param, link: `https://t.me/${bot}/app?startapp=${param}` };
+  });
+
 export const getReferralLink = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((data: { storeId: string }) => ({ storeId: String(data?.storeId ?? "") }))
