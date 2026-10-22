@@ -254,12 +254,12 @@ function ProgramEditor() {
                 />
               </div>
 
-              <fieldset className="settings-section">
+              <fieldset className="settings-section min-w-0">
                 <legend className="text-sm font-semibold">{t("program.stampIcon")}</legend>
                 <StampIconPicker value={stampIcon} onChange={setStampIcon} logoUrl={previewLogo} />
               </fieldset>
 
-              <fieldset className="settings-section">
+              <fieldset className="settings-section min-w-0">
                 <legend className="text-sm font-semibold">{t("program.cardTheme")}</legend>
                 <div className="mt-3 flex flex-wrap gap-3">
                   {cardThemes.map((theme) => (

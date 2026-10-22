@@ -146,8 +146,15 @@
     border-color: var(--color-border);
   }
 
+  /* Browsers give <fieldset> min-width: min-content, which lets a long non-wrapping row
+     (e.g. the icon category chips) widen the whole page. */
+  fieldset {
+    min-width: 0;
+  }
+
   body {
     background-color: var(--color-background);
+    overflow-x: clip;
     color: var(--color-foreground);
     font-family: var(--font-sans);
     -webkit-tap-highlight-color: transparent;

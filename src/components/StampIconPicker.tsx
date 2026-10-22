@@ -29,7 +29,7 @@ export function StampIconPicker({
   const logoSelected = value === STAMP_LOGO_ID;
 
   return (
-    <div className="mt-3 space-y-3">
+    <div className="mt-3 min-w-0 space-y-3">
       <button
         type="button"
         disabled={!logoUrl}
