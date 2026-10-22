@@ -210,13 +210,26 @@ export const getStoreForJoin = createServerFn({ method: "POST" })
   .inputValidator((data: { storeId: string }) => ({ storeId: String(data?.storeId ?? "") }))
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context;
-    const { data: store } = await supabase
+    // select("*") keeps working on databases that miss an optional styling column, and a
+    // failing query is reported instead of being mistaken for "store not found".
+    const { data: found, error: storeError } = await supabase
       .from("stores")
-      .select("id, name, description, logo_url, card_theme, brand_primary, brand_accent, background_tint")
+      .select("*")
       .eq("id", data.storeId)
       .eq("active", true)
       .maybeSingle();
-    if (!store) return null;
+    if (storeError) throw new Error(`STORE_LOOKUP_FAILED: ${storeError.message}`);
+    if (!found) return null;
+    const store = {
+      id: found.id,
+      name: found.name,
+      description: found.description,
+      logo_url: found.logo_url,
+      card_theme: found.card_theme ?? "classic",
+      brand_primary: found.brand_primary ?? null,
+      brand_accent: found.brand_accent ?? null,
+      background_tint: found.background_tint ?? null,
+    };
 
     const [{ data: program }, { data: reward }, { data: membership }] = await Promise.all([
       supabase

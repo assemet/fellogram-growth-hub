@@ -37,10 +37,11 @@ function JoinStore() {
   const loadStore = useServerFn(getStoreForJoin);
   const join = useServerFn(joinStore);
 
-  const { data, isLoading } = useQuery({
+  const { data, isLoading, error } = useQuery({
     queryKey: ["join-store", storeId],
     queryFn: () => loadStore({ data: { storeId } }),
     enabled: state === "ready",
+    retry: 1,
   });
 
   const mutation = useMutation({
@@ -61,6 +62,11 @@ function JoinStore() {
         <AppHeader />
         <section className="app-shell rounded-lg bg-card p-8 text-center shadow-[var(--shadow-card)]">
           <p className="font-semibold">{t("join.notFound")}</p>
+          {error && (
+            <p dir="ltr" className="mt-3 break-all rounded-md bg-muted px-3 py-2 text-start font-mono text-[11px] text-muted-foreground">
+              {String((error as Error).message ?? error)}
+            </p>
+          )}
           <Link to="/wallet" className="mt-4 inline-block text-sm font-semibold text-primary">
             {t("join.viewWallet")}
           </Link>
