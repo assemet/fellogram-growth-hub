@@ -140,12 +140,10 @@ export const getMyCards = createServerFn({ method: "POST" })
   .handler(async ({ context }) => {
     const { supabase, userId } = context;
 
-    const [{ data: memberships }, { data: visits }] = await Promise.all([
+    const [{ data: memberships, error: membershipsError }, { data: visits }] = await Promise.all([
       supabase
         .from("customer_memberships")
-        .select(
-          "id, store_id, stamp_balance, last_visit_at, joined_at, stores(id, name, description, logo_url, card_theme, brand_primary, brand_accent, background_tint), loyalty_programs(id, name, stamps_required, stamp_icon, referrals_enabled, referrer_bonus_stamps, welcome_bonus_stamps)",
-        )
+        .select("id, store_id, stamp_balance, last_visit_at, joined_at, stores(*), loyalty_programs(*)")
         .eq("customer_id", userId)
         .order("joined_at", { ascending: false }),
       supabase
@@ -155,6 +153,9 @@ export const getMyCards = createServerFn({ method: "POST" })
         .order("created_at", { ascending: false })
         .limit(50),
     ]);
+
+    // A failed query used to look like "no cards yet"; report it instead.
+    if (membershipsError) throw new Error(`CARDS_LOOKUP_FAILED: ${membershipsError.message}`);
 
     const storeIds = (memberships ?? []).map((m) => m.store_id);
     const { data: rewards } = storeIds.length
@@ -231,10 +232,10 @@ export const getStoreForJoin = createServerFn({ method: "POST" })
       background_tint: found.background_tint ?? null,
     };
 
-    const [{ data: program }, { data: reward }, { data: membership }] = await Promise.all([
+    const [{ data: programRow }, { data: reward }, { data: membership }] = await Promise.all([
       supabase
         .from("loyalty_programs")
-        .select("id, name, stamps_required, stamp_icon")
+        .select("*")
         .eq("store_id", store.id)
         .eq("active", true)
         .order("created_at")
@@ -262,7 +263,14 @@ export const getStoreForJoin = createServerFn({ method: "POST" })
     return {
       store,
       logoUrl,
-      program: program ?? null,
+      program: programRow
+        ? {
+            id: programRow.id,
+            name: programRow.name,
+            stamps_required: programRow.stamps_required,
+            stamp_icon: programRow.stamp_icon ?? "stamp",
+          }
+        : null,
       reward: reward ?? null,
       alreadyJoined: Boolean(membership),
     };

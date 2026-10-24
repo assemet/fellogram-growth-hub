@@ -64,6 +64,13 @@
       "when": 1791152562386,
       "tag": "0008_staff_enroll_customer",
       "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1791153162386,
+      "tag": "0009_sync_store_styling_columns",
+      "breakpoints": true
     }
   ]
 }

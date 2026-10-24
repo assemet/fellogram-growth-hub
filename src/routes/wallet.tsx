@@ -49,11 +49,35 @@ function Wallet() {
     queryFn: () => loadContext(),
     enabled: state === "ready",
   });
-  const { data: cards } = useQuery({
+  const { data: cards, error: cardsError, refetch } = useQuery({
     queryKey: ["my-cards"],
     queryFn: () => loadCards(),
     enabled: state === "ready",
+    retry: 1,
   });
+
+  if (cardsError) {
+    return (
+      <main className="min-h-[100dvh] pb-14">
+        <AppHeader />
+        <section className="app-shell">
+          <div className="rounded-lg border border-border bg-card p-6 text-center shadow-[var(--shadow-card)]">
+            <p className="font-semibold">{t("wallet.error.title")}</p>
+            <p dir="ltr" className="mt-3 break-all rounded-md bg-muted px-3 py-2 text-start font-mono text-[11px] text-muted-foreground">
+              {String((cardsError as Error).message ?? cardsError)}
+            </p>
+            <button
+              type="button"
+              onClick={() => refetch()}
+              className="touch-action mt-4 rounded-full bg-primary px-6 py-3 text-sm font-semibold text-primary-foreground"
+            >
+              {t("wallet.error.retry")}
+            </button>
+          </div>
+        </section>
+      </main>
+    );
+  }
 
   if (state !== "ready" || !data || !cards) return <SplashScreen />;
 
