@@ -98,7 +98,7 @@ function Wallet() {
       <AppHeader subtitle={focusedCard ? focusedCard.storeName : firstName ? t("wallet.greeting", { name: firstName }) : t("app.tagline")} action={focusedCard ? undefined : headerAction} />
 
       <section className="app-shell">
-        {focusedCard && <Link to="/wallet" search={{ store: undefined }} className="mb-4 inline-flex text-sm font-semibold text-primary">← {t("join.viewWallet")}</Link>}
+        {focusedCard && <Link to="/wallet" search={{ store: undefined }} className="mb-4 inline-flex text-sm font-semibold text-primary">← {t("wallet.allCards")}</Link>}
         <div className="mb-4 flex items-center justify-between gap-3">
           <h1 className="min-w-0 truncate text-2xl font-bold">{focusedCard ? focusedCard.storeName : t("wallet.title")}</h1>
           {cards.length > 0 && data.profile?.id && <MyQrDialog customerId={data.profile.id} />}

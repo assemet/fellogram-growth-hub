@@ -309,6 +309,7 @@ const en = {
   "join.poster.headline": "Scan to join {store}",
   "join.poster.reward": "Collect {count} stamps, get {reward}",
   "join.poster.powered": "Powered by Fellogram",
+  "wallet.allCards": "All my cards",
 } satisfies Record<string, string>;
 
 export type TranslationKey = keyof typeof en;
@@ -607,6 +608,7 @@ const ar: Record<TranslationKey, string> = {
   "join.poster.headline": "امسح للانضمام إلى {store}",
   "join.poster.reward": "اجمع {count} طوابع واحصل على {reward}",
   "join.poster.powered": "بدعم من فيلوغرام",
+  "wallet.allCards": "كل بطاقاتي",
 };
 
 const dictionaries: Record<Locale, Record<TranslationKey, string>> = { en, ar };

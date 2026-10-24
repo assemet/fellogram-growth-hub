@@ -2,6 +2,7 @@ import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { Gift } from "lucide-react";
+import { useEffect } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { StampIcon } from "@/components/StampIcon";
@@ -49,12 +50,18 @@ function JoinStore() {
     onSuccess: async () => {
       toast.success(t("join.success"));
       await queryClient.invalidateQueries({ queryKey: ["my-cards"] });
-      navigate({ to: "/wallet", replace: true });
+      navigate({ to: "/wallet", search: { store: storeId }, replace: true });
     },
     onError: () => toast.error(t("common.error")),
   });
 
-  if (state !== "ready" || isLoading) return <SplashScreen />;
+  // Scanning a store you already belong to should open your card, not an empty preview.
+  const alreadyJoined = data?.alreadyJoined === true;
+  useEffect(() => {
+    if (alreadyJoined) navigate({ to: "/wallet", search: { store: storeId }, replace: true });
+  }, [alreadyJoined, navigate, storeId]);
+
+  if (state !== "ready" || isLoading || alreadyJoined) return <SplashScreen />;
 
   if (!data) {
     return (
