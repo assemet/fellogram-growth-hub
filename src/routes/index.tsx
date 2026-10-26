@@ -9,6 +9,7 @@ import { t } from "@/lib/i18n";
 import { toast } from "sonner";
 
 import { acceptReferral, getMyContext } from "@/lib/store.functions";
+import { acceptInvite } from "@/lib/team.functions";
 import { parseStoreCode } from "@/lib/join-code";
 import { clearPendingStartParam, readPendingStartParam } from "@/lib/telegram";
 
@@ -39,6 +40,7 @@ function SplashRouter() {
   const navigate = useNavigate();
   const loadContext = useServerFn(getMyContext);
   const accept = useServerFn(acceptReferral);
+  const acceptStaff = useServerFn(acceptInvite);
   const [attempt, setAttempt] = useState(0);
   const [failure, setFailure] = useState<unknown>(null);
 
@@ -56,6 +58,27 @@ function SplashRouter() {
           if (storeId) {
             navigate({ to: "/join/$storeId", params: { storeId }, replace: true });
             return;
+          }
+        }
+        if (pending?.startsWith("staff_")) {
+          // Cashier invitation from the owner: join the team, then go straight to cashier mode.
+          clearPendingStartParam();
+          try {
+            await acceptStaff({ data: { token: pending.slice("staff_".length) } });
+            if (cancelled) return;
+            toast.success(t("team.accepted"));
+            navigate({ to: "/cashier", replace: true });
+            return;
+          } catch (inviteError) {
+            const message = String((inviteError as Error)?.message ?? "");
+            toast.error(
+              message.includes("INVITE_USED")
+                ? t("team.used")
+                : message.includes("INVITE_EXPIRED")
+                  ? t("team.expired")
+                  : t("team.invalid"),
+            );
+            // fall through to normal routing
           }
         }
         if (pending?.startsWith("ref_")) {
