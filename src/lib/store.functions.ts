@@ -1,4 +1,5 @@
 import { createServerFn } from "@tanstack/react-start";
+import { miniAppLink } from "@/lib/bot-link";
 import { check, throwIfError } from "@/lib/db";
 import { isStampIconId, STAMP_LOGO_ID } from "@/lib/stamp-icons";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
@@ -508,9 +509,8 @@ export const getStoreJoinLink = createServerFn({ method: "POST" })
       .limit(1)
       .maybeSingle(), "STORE_LOOKUP_FAILED");
     if (!store) throw new Error("STORE_NOT_FOUND");
-    const bot = (process.env["TELEGRAM_BOT_USERNAME"] ?? process.env["VITE_TELEGRAM_BOT_USERNAME"] ?? "FellogramBot").replace(/^@/, "").trim();
     const param = `join_${store.id}`;
-    return { storeId: store.id as string, param, link: `https://t.me/${bot}/app?startapp=${param}` };
+    return { storeId: store.id as string, param, link: miniAppLink(param) };
   });
 
 export const getReferralLink = createServerFn({ method: "POST" })
@@ -519,11 +519,10 @@ export const getReferralLink = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     const { data: code, error } = await context.supabase.rpc("get_referral_code", { _store_id: data.storeId });
     if (error) throw new Error(error.message);
-    const bot = (process.env["TELEGRAM_BOT_USERNAME"] ?? process.env["VITE_TELEGRAM_BOT_USERNAME"] ?? "FellogramBot").replace(/^@/, "").trim();
     const param = `ref_${code}`;
     return {
       code: code as string,
-      link: bot ? `https://t.me/${bot}/app?startapp=${param}` : null,
+      link: miniAppLink(param),
       param,
     };
   });

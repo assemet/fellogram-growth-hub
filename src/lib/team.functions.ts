@@ -1,6 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { miniAppLink } from "@/lib/bot-link";
 import { check, throwIfError, type Db } from "@/lib/db";
 import { loadNames } from "@/lib/people";
 
@@ -17,8 +18,7 @@ async function ownedStore(supabase: Db, userId: string): Promise<{ id: string; n
 }
 
 function inviteLink(token: string) {
-  const bot = (process.env["TELEGRAM_BOT_USERNAME"] ?? process.env["VITE_TELEGRAM_BOT_USERNAME"] ?? "FellogramBot").replace(/^@/, "").trim();
-  return `https://t.me/${bot}/app?startapp=staff_${token}`;
+  return miniAppLink(`staff_${token}`);
 }
 
 /** Owner: current cashiers and open (unused, unexpired) invitation links. */
