@@ -11,7 +11,8 @@ import { QueryError } from "@/components/QueryError";
 import { SplashScreen } from "@/components/SplashScreen";
 import { useFellogramAuth } from "@/hooks/useFellogramAuth";
 import { t } from "@/lib/i18n";
-import { awardStamp, enrollCustomer, getCashierStore, lookupCustomer, redeemRewardToken, undoLastStamp } from "@/lib/cashier.functions";
+import { awardStamp, enrollCustomer, getCashierStore, lookupCustomer, redeemRewardToken, searchCustomers, undoLastStamp } from "@/lib/cashier.functions";
+import { notify, primeAudio } from "@/lib/feedback";
 
 export const Route = createFileRoute("/cashier")({
   ssr: false,
@@ -61,6 +62,7 @@ function Cashier() {
   const undo = useServerFn(undoLastStamp);
   const redeemFn = useServerFn(redeemRewardToken);
   const enrollFn = useServerFn(enrollCustomer);
+  const searchFn = useServerFn(searchCustomers);
   const [mode, setMode] = useState<"customer" | "reward">("customer");
 
   const [customer, setCustomer] = useState<CustomerState | null>(null);
@@ -69,6 +71,13 @@ function Cashier() {
   const [message, setMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [scanning, setScanning] = useState(false);
+  const [autoStamp, setAutoStamp] = useState(true);
+  const [justStamped, setJustStamped] = useState(false);
+  const [returnIn, setReturnIn] = useState<number | null>(null);
+  const [nameInput, setNameInput] = useState("");
+  const [nameQuery, setNameQuery] = useState("");
+  const autoStampRef = useRef(true);
+  const viaCameraRef = useRef(false);
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const scannerRef = useRef<{ stop: () => void; destroy: () => void } | null>(null);
 
@@ -87,6 +96,48 @@ function Cashier() {
 
   useEffect(() => () => stopScanner(), []);
 
+  // Auto-stamp preference is remembered on this device.
+  useEffect(() => {
+    try {
+      if (window.localStorage.getItem("fellogram.autoStamp") === "0") setAutoStamp(false);
+    } catch {
+      /* storage unavailable: keep the default */
+    }
+  }, []);
+  autoStampRef.current = autoStamp;
+
+  const toggleAutoStamp = (value: boolean) => {
+    setAutoStamp(value);
+    try {
+      window.localStorage.setItem("fellogram.autoStamp", value ? "1" : "0");
+    } catch {
+      /* ignore */
+    }
+  };
+
+  // After a successful auto-stamp, return to the scanner on its own so the queue keeps moving.
+  useEffect(() => {
+    if (returnIn === null) return;
+    if (returnIn <= 0) {
+      nextCustomer(true);
+      return;
+    }
+    const id = setTimeout(() => setReturnIn((n) => (n === null ? null : n - 1)), 1000);
+    return () => clearTimeout(id);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [returnIn]);
+
+  // Name search for the manual lookup (no more typing long ids).
+  useEffect(() => {
+    const id = setTimeout(() => setNameQuery(nameInput.trim()), 300);
+    return () => clearTimeout(id);
+  }, [nameInput]);
+  const { data: nameResults, isFetching: searchingNames } = useQuery({
+    queryKey: ["cashier-search", nameQuery],
+    queryFn: () => searchFn({ data: { q: nameQuery } }),
+    enabled: state === "ready" && nameQuery.length >= 2,
+  });
+
   const lookup = useMutation({
     mutationFn: (raw: string) => findCustomer({ data: { code: raw } }),
     onSuccess: (data) => {
@@ -100,8 +151,18 @@ function Cashier() {
       }
       setNewCustomerId(null);
       setCustomer(data);
+      setJustStamped(false);
+      if (data.cooldownMinutesLeft > 0) {
+        notify("warning");
+      } else if (autoStampRef.current) {
+        // Scan → stamp → done: no extra tap needed.
+        award.mutate(data.customerId);
+      }
     },
-    onError: (e: Error) => setError(friendlyError(e.message)),
+    onError: (e: Error) => {
+      notify("error");
+      setError(friendlyError(e.message));
+    },
   });
 
   const enroll = useMutation({
@@ -111,9 +172,14 @@ function Cashier() {
       setNewCustomerId(null);
       setError(null);
       setMessage(t("cashier.enrolled"));
-      toast.success(t("cashier.enrolled"));
+      setJustStamped(true);
+      notify("success");
+      if (autoStampRef.current) setReturnIn(4);
     },
-    onError: (e: Error) => setError(friendlyError(e.message)),
+    onError: (e: Error) => {
+      notify("error");
+      setError(friendlyError(e.message));
+    },
   });
 
   const award = useMutation({
@@ -121,10 +187,15 @@ function Cashier() {
     onSuccess: (data) => {
       setCustomer(data);
       setError(null);
-      setMessage(t("cashier.awarded"));
-      toast.success(t("cashier.awarded"));
+      setMessage(null);
+      setJustStamped(true);
+      notify("success");
+      if (autoStampRef.current) setReturnIn(4);
     },
-    onError: (e: Error) => setError(friendlyError(e.message)),
+    onError: (e: Error) => {
+      notify("error");
+      setError(friendlyError(e.message));
+    },
   });
 
   const reverse = useMutation({
@@ -132,10 +203,16 @@ function Cashier() {
     onSuccess: (data) => {
       setCustomer(data);
       setError(null);
+      setJustStamped(false);
+      setReturnIn(null);
       setMessage(t("cashier.undone"));
+      notify("warning");
       toast.message(t("cashier.undone"));
     },
-    onError: (e: Error) => setError(friendlyError(e.message)),
+    onError: (e: Error) => {
+      notify("error");
+      setError(friendlyError(e.message));
+    },
   });
 
   const redeem = useMutation({
@@ -147,20 +224,23 @@ function Cashier() {
     onSuccess: (data) => {
       if (data.customer) setCustomer(data.customer);
       setError(null);
+      setJustStamped(false);
+      notify("success");
       setCode("");
       setMessage(t("cashier.redeemed", { reward: data.rewardName, count: data.stampsDeducted }));
       toast.success(t("cashier.redeemed", { reward: data.rewardName, count: data.stampsDeducted }));
     },
     onError: (e: Error) => {
+      notify("error");
       setMessage(null);
       setError(friendlyError(e.message));
     },
   });
 
   // QR prefix decides the action, so either scan button works for either code.
-  const handleCode = (raw: string) => {
+  const handleCode = (raw: string, forcedMode: "customer" | "reward" = mode) => {
     const value = raw.trim();
-    if (value.startsWith("fellogram:r:") || (mode === "reward" && !value.startsWith("fellogram:c:"))) {
+    if (value.startsWith("fellogram:r:") || (forcedMode === "reward" && !value.startsWith("fellogram:c:"))) {
       redeem.mutate(value);
     } else {
       lookup.mutate(value);
@@ -171,15 +251,22 @@ function Cashier() {
     setMode(nextMode);
     setError(null);
     setScanning(true);
+    viaCameraRef.current = true;
+    primeAudio();
     try {
       const QrScanner = (await import("qr-scanner")).default;
-      if (!videoRef.current) return;
+      // When restarting automatically the video element is re-mounting: wait for it.
+      for (let i = 0; i < 20 && !videoRef.current; i += 1) await new Promise((resolve) => setTimeout(resolve, 50));
+      if (!videoRef.current) {
+        setScanning(false);
+        return;
+      }
       const scanner = new QrScanner(
         videoRef.current,
         (result: { data: string }) => {
           stopScanner();
           setCode(result.data);
-          handleCode(result.data);
+          handleCode(result.data, nextMode);
         },
         { highlightScanRegion: true, maxScansPerSecond: 5 },
       );
@@ -190,6 +277,18 @@ function Cashier() {
       stopScanner();
       setError(t("cashier.cameraError"));
     }
+  };
+
+  const nextCustomer = (restartScanner = false) => {
+    setCustomer(null);
+    setNewCustomerId(null);
+    setCode("");
+    setNameInput("");
+    setMessage(null);
+    setError(null);
+    setJustStamped(false);
+    setReturnIn(null);
+    if (restartScanner && viaCameraRef.current) void startScanner("customer");
   };
 
   if (storeError) return <QueryError error={storeError} onRetry={() => refetchStore()} />;
@@ -263,10 +362,62 @@ function Cashier() {
               </div>
             )}
 
+            <label className="mt-4 flex min-h-11 cursor-pointer items-center gap-3 text-sm font-semibold">
+              <input
+                type="checkbox"
+                checked={autoStamp}
+                onChange={(event) => toggleAutoStamp(event.target.checked)}
+                className="h-5 w-5 shrink-0 accent-[var(--primary)]"
+              />
+              {t("cashier.autoStamp")}
+            </label>
+
+            <div className="mt-3 border-t border-border pt-4">
+              <label htmlFor="nameSearch" className="text-xs font-semibold text-muted-foreground">
+                {t("cashier.search")}
+              </label>
+              <input
+                id="nameSearch"
+                type="search"
+                value={nameInput}
+                onChange={(event) => setNameInput(event.target.value)}
+                onKeyDown={(event) => {
+                  if (event.key === "Enter") event.preventDefault();
+                }}
+                placeholder={t("cashier.searchPlaceholder")}
+                className="mt-2 w-full rounded-md border border-border bg-background px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
+              />
+              {nameQuery.length >= 2 && !searchingNames && nameResults && nameResults.results.length === 0 && (
+                <p className="mt-2 text-xs text-muted-foreground">{t("cashier.searchNone")}</p>
+              )}
+              {nameResults && nameResults.results.length > 0 && nameQuery.length >= 2 && (
+                <ul className="mt-2 space-y-1">
+                  {nameResults.results.map((person) => (
+                    <li key={person.customerId}>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          viaCameraRef.current = false;
+                          lookup.mutate(person.customerId);
+                        }}
+                        className="touch-action flex w-full items-center justify-between gap-3 rounded-md border border-border bg-background px-3 py-3 text-start text-sm"
+                      >
+                        <span className="min-w-0 truncate font-semibold">{person.name ?? (person.username ? `@${person.username}` : t("customers.anonymous"))}</span>
+                        <span className="shrink-0 text-xs font-bold text-muted-foreground">
+                          {person.balance}/{person.required}
+                        </span>
+                      </button>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </div>
+
             <form
               className="mt-5 border-t border-border pt-4"
               onSubmit={(event) => {
                 event.preventDefault();
+                viaCameraRef.current = false;
                 handleCode(code);
               }}
             >
@@ -314,11 +465,7 @@ function Cashier() {
             </Button>
             <Button
               type="button"
-              onClick={() => {
-                setNewCustomerId(null);
-                setCode("");
-                setError(null);
-              }}
+              onClick={() => nextCustomer()}
               variant="ghost"
               className="touch-action mt-4 w-full text-sm font-semibold text-primary"
             >
@@ -331,23 +478,44 @@ function Cashier() {
           <div className="animate-arrive rounded-lg border border-border bg-card p-5 text-center shadow-[var(--shadow-card)]">
             <span className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-accent"><ScanLine className="h-6 w-6 text-primary" /></span>
             <p className="mt-2 font-display text-xl font-bold">{customer.name}</p>
+            {justStamped && (
+              <div className="mt-4 rounded-md bg-growth/15 px-4 py-5" role="status" aria-live="polite">
+                <span className="animate-stamp-pop mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-growth text-growth-foreground">
+                  <Check className="h-9 w-9" />
+                </span>
+                <p className="mt-3 font-display text-2xl font-bold">
+                  {t("cashier.stampedBig", { balance: customer.stampBalance, required: customer.stampsRequired })}
+                </p>
+              </div>
+            )}
             <p className="mt-1 text-sm text-muted-foreground">
               {t("cashier.balance", { balance: customer.stampBalance, required: customer.stampsRequired })}
             </p>
-            <div className="mt-4 h-2 overflow-hidden rounded-full bg-secondary" role="progressbar" aria-label="Customer stamp progress" aria-valuenow={customer.stampBalance} aria-valuemin={0} aria-valuemax={customer.stampsRequired}>
+            <div className="mt-4 h-2 overflow-hidden rounded-full bg-secondary" role="progressbar" aria-label={t("cashier.progressLabel")} aria-valuenow={customer.stampBalance} aria-valuemin={0} aria-valuemax={customer.stampsRequired}>
               <div className="h-full rounded-full bg-growth transition-[width] duration-500" style={{ width: `${Math.min(100, customer.stampBalance / Math.max(1, customer.stampsRequired) * 100)}%` }} />
             </div>
             {ready && <p className="mt-2 text-sm font-semibold text-primary">{t("cashier.rewardReady")}</p>}
 
-            <Button
-              type="button"
-              onClick={() => award.mutate(customer.customerId)}
-              disabled={award.isPending || customer.cooldownMinutesLeft > 0}
-              className="touch-action mt-6 h-16 w-full gap-2 text-lg font-bold shadow-[var(--shadow-float)]"
-            >
-              <Check className="h-5 w-5" />
-              {award.isPending ? t("cashier.awarding") : t("cashier.award")}
-            </Button>
+            {!justStamped && (
+              <Button
+                type="button"
+                onClick={() => award.mutate(customer.customerId)}
+                disabled={award.isPending || customer.cooldownMinutesLeft > 0}
+                className="touch-action mt-6 h-16 w-full gap-2 text-lg font-bold shadow-[var(--shadow-float)]"
+              >
+                <Check className="h-5 w-5" />
+                {award.isPending ? t("cashier.awarding") : t("cashier.award")}
+              </Button>
+            )}
+
+            {returnIn !== null && (
+              <div className="mt-4 flex items-center justify-between gap-3 text-sm text-muted-foreground">
+                <span>{t("cashier.backIn", { count: returnIn })}</span>
+                <Button type="button" variant="ghost" size="sm" className="touch-action font-semibold" onClick={() => setReturnIn(null)}>
+                  {t("cashier.keepOpen")}
+                </Button>
+              </div>
+            )}
 
             {customer.cooldownMinutesLeft > 0 && (
               <p className="mt-2 text-xs font-semibold text-muted-foreground">
@@ -358,7 +526,10 @@ function Cashier() {
             {customer.canUndo && (
               <Button
                 type="button"
-                onClick={() => reverse.mutate(customer.customerId)}
+                onClick={() => {
+                  setReturnIn(null);
+                  reverse.mutate(customer.customerId);
+                }}
                 disabled={reverse.isPending}
                 variant="outline"
                 className="touch-action mt-3 h-12 w-full gap-2 font-semibold"
@@ -370,12 +541,7 @@ function Cashier() {
 
             <Button
               type="button"
-              onClick={() => {
-                setCustomer(null);
-                setCode("");
-                setMessage(null);
-                setError(null);
-              }}
+              onClick={() => nextCustomer(true)}
               variant="ghost"
               className="touch-action mt-4 w-full text-sm font-semibold text-primary"
             >

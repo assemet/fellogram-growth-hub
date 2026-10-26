@@ -14,6 +14,7 @@ type TelegramWebApp = {
   openTelegramLink?: (url: string) => void;
   showScanQrPopup?: (params: { text?: string }, callback?: (text: string) => boolean | void) => void;
   closeScanQrPopup?: () => void;
+  HapticFeedback?: { notificationOccurred?: (type: "success" | "error" | "warning") => void };
 };
 
 function webApp(): TelegramWebApp | undefined {
@@ -129,5 +130,14 @@ export function openTelegramQrScanner(promptText: string, onText: (text: string)
     return true;
   } catch {
     return false;
+  }
+}
+
+/** Native haptic pulse inside Telegram; silently does nothing elsewhere. */
+export function telegramHaptic(kind: "success" | "error" | "warning") {
+  try {
+    webApp()?.HapticFeedback?.notificationOccurred?.(kind);
+  } catch {
+    /* haptics are best-effort */
   }
 }

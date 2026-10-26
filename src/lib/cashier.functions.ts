@@ -1,5 +1,6 @@
 import { createServerFn } from "@tanstack/react-start";
 import { check, throwIfError } from "@/lib/db";
+import { loadNames, matchesPerson } from "@/lib/people";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -236,4 +237,37 @@ export const enrollCustomer = createServerFn({ method: "POST" })
     const state = await loadCustomerState(context.supabase, store.storeId, data.customerId);
     if (!state) throw new Error("MEMBERSHIP_NOT_FOUND");
     return state;
+  });
+
+/** Find this store's customers by name/@username, so the cashier never has to type an id. */
+export const searchCustomers = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((data: { q: string }) => ({ q: String(data?.q ?? "").trim().slice(0, 60) }))
+  .handler(async ({ data, context }) => {
+    if (data.q.length < 2) return { results: [] as { customerId: string; name: string | null; username: string | null; balance: number; required: number }[] };
+    const store = await resolveStaffStore(context.supabase, context.userId);
+    if (!store) throw new Error("NOT_STORE_STAFF");
+
+    const { data: rows } = check(
+      await context.supabase
+        .from("customer_memberships")
+        .select("customer_id, stamp_balance, loyalty_programs(stamps_required)")
+        .eq("store_id", store.storeId)
+        .order("last_visit_at", { ascending: false, nullsFirst: false })
+        .limit(300),
+      "CUSTOMERS_LOOKUP_FAILED",
+    );
+    const members = (rows ?? []) as { customer_id: string; stamp_balance: number | null; loyalty_programs: { stamps_required: number } | null }[];
+    const names = await loadNames(context.supabase, members.map((m) => m.customer_id));
+    const results = members
+      .filter((m) => matchesPerson(names.get(m.customer_id), data.q))
+      .slice(0, 8)
+      .map((m) => ({
+        customerId: m.customer_id,
+        name: names.get(m.customer_id)?.name ?? null,
+        username: names.get(m.customer_id)?.username ?? null,
+        balance: m.stamp_balance ?? 0,
+        required: m.loyalty_programs?.stamps_required ?? 10,
+      }));
+    return { results };
   });
