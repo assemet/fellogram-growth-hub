@@ -10,7 +10,7 @@ import { t } from "@/lib/i18n";
 import { getMyStore } from "@/lib/store.functions";
 import { GrowthAnalytics } from "@/components/GrowthAnalytics";
 import { StoreJoinShare } from "@/components/StoreJoinShare";
-import { ArrowRight, Settings2 } from "lucide-react";
+import { ArrowRight, ChevronRight, Settings2, UserPlus, Users } from "lucide-react";
 
 export const Route = createFileRoute("/merchant/")({
   ssr: false,
@@ -81,6 +81,30 @@ function MerchantDashboard() {
         </div>
 
         <StoreJoinShare storeName={data.store.name} rewardName={reward} stampsRequired={data.program?.stamps_required ?? 10} />
+
+        <div className="mt-5 space-y-3">
+          {(
+            [
+              { to: "/merchant/customers", icon: Users, title: t("dash.customers"), hint: t("dash.customers.hint") },
+              { to: "/merchant/team", icon: UserPlus, title: t("dash.team"), hint: t("dash.team.hint") },
+            ] as const
+          ).map((tile) => (
+            <Link
+              key={tile.to}
+              to={tile.to}
+              className="touch-action animate-arrive flex items-center gap-3 rounded-lg border border-border bg-card p-4 shadow-[var(--shadow-card)]"
+            >
+              <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-accent text-accent-foreground" aria-hidden="true">
+                <tile.icon className="h-5 w-5" />
+              </span>
+              <span className="min-w-0 flex-1">
+                <span className="block text-sm font-bold">{tile.title}</span>
+                <span className="block text-xs text-muted-foreground">{tile.hint}</span>
+              </span>
+              <ChevronRight className="h-5 w-5 shrink-0 text-muted-foreground rtl:rotate-180" aria-hidden="true" />
+            </Link>
+          ))}
+        </div>
 
         <GrowthAnalytics />
 
