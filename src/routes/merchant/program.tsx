@@ -14,6 +14,7 @@ import { brandPalettes, cardThemes, resolveCardTheme, type CardTheme } from "@/l
 import { StoreLogoSettings } from "@/components/StoreLogoSettings";
 import { ReferralSettings } from "@/components/ReferralSettings";
 import { RewardsManager } from "@/components/RewardsManager";
+import { QueryError } from "@/components/QueryError";
 import { SplashScreen } from "@/components/SplashScreen";
 import { useFellogramAuth } from "@/hooks/useFellogramAuth";
 import { t, type TranslationKey } from "@/lib/i18n";
@@ -58,7 +59,7 @@ function ProgramEditor() {
   const loadStore = useServerFn(getMyStore);
   const save = useServerFn(updateProgram);
 
-  const { data, isLoading } = useQuery({
+  const { data, isLoading, error, refetch } = useQuery({
     queryKey: ["my-store"],
     queryFn: () => loadStore(),
     enabled: state === "ready",
@@ -155,6 +156,7 @@ function ProgramEditor() {
       toast.error(error.message.includes("STAMP_ICON_MIGRATION_REQUIRED") ? t("program.iconMigration") : t("common.error")),
   });
 
+  if (error) return <QueryError error={error} onRetry={() => refetch()} />;
   if (state !== "ready" || isLoading) return <SplashScreen />;
 
   if (!data) {

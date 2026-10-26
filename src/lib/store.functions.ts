@@ -1,4 +1,5 @@
 import { createServerFn } from "@tanstack/react-start";
+import { check, throwIfError } from "@/lib/db";
 import { isStampIconId, STAMP_LOGO_ID } from "@/lib/stamp-icons";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 
@@ -8,7 +9,7 @@ export const getMyContext = createServerFn({ method: "POST" })
   .handler(async ({ context }) => {
     const { supabase, userId } = context;
 
-    const [{ data: profile }, { data: memberships }, { data: cards }] = await Promise.all([
+    const [{ data: profile, error: profileError }, { data: memberships, error: roleError }, { data: cards, error: cardsError }] = await Promise.all([
       supabase.from("profiles").select("*").eq("id", userId).maybeSingle(),
       supabase.from("store_members").select("store_id, role, stores(id, name)").eq("user_id", userId),
       supabase
@@ -16,6 +17,9 @@ export const getMyContext = createServerFn({ method: "POST" })
         .select("id, stamp_balance, stores(name), loyalty_programs(name, stamps_required)")
         .eq("customer_id", userId),
     ]);
+
+    // A failed role lookup must not silently turn an owner into a plain customer.
+    throwIfError(profileError ?? roleError ?? cardsError, "CONTEXT_LOOKUP_FAILED");
 
     const ownerMembership = (memberships ?? []).find((m) => m.role === "owner");
     const staffMembership = (memberships ?? []).find((m) => m.role === "staff");
@@ -32,16 +36,16 @@ export const getMyStore = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
     const { supabase, userId } = context;
-    const { data: store } = await supabase
+    const { data: store } = check(await supabase
       .from("stores")
       .select("*")
       .eq("owner_id", userId)
       .order("created_at", { ascending: false })
       .limit(1)
-      .maybeSingle();
+      .maybeSingle(), "STORE_LOOKUP_FAILED");
     if (!store) return null;
 
-    const [{ data: program }, { data: rewards }, { count: customerCount }] = await Promise.all([
+    const [{ data: program, error: programError }, { data: rewards, error: rewardsError }, { count: customerCount, error: countError }] = await Promise.all([
       supabase.from("loyalty_programs").select("*").eq("store_id", store.id).limit(1).maybeSingle(),
       supabase.from("rewards").select("*").eq("store_id", store.id).order("created_at"),
       supabase
@@ -49,6 +53,8 @@ export const getMyStore = createServerFn({ method: "POST" })
         .select("id", { count: "exact", head: true })
         .eq("store_id", store.id),
     ]);
+
+    throwIfError(programError ?? rewardsError ?? countError, "STORE_DETAILS_LOOKUP_FAILED");
 
     const logoUrl = store.logo_url
       ? (await supabase.storage.from("store-logos").createSignedUrl(store.logo_url, 3600)).data?.signedUrl ?? null
@@ -158,13 +164,14 @@ export const getMyCards = createServerFn({ method: "POST" })
     if (membershipsError) throw new Error(`CARDS_LOOKUP_FAILED: ${membershipsError.message}`);
 
     const storeIds = (memberships ?? []).map((m) => m.store_id);
-    const { data: rewards } = storeIds.length
+    const { data: rewards, error: rewardsError } = storeIds.length
       ? await supabase
           .from("rewards")
           .select("id, store_id, name, description, stamps_required, kind, active")
           .in("store_id", storeIds)
           .eq("active", true)
-      : { data: [] as { id: string; store_id: string; name: string; description: string | null; stamps_required: number; kind: string; active: boolean }[] };
+      : { data: [] as { id: string; store_id: string; name: string; description: string | null; stamps_required: number; kind: string; active: boolean }[], error: null };
+    throwIfError(rewardsError, "REWARDS_LOOKUP_FAILED");
 
     const logoPaths = (memberships ?? []).flatMap((m) => m.stores?.logo_url ? [m.stores.logo_url] : []);
     const signedLogos = logoPaths.length
@@ -232,7 +239,7 @@ export const getStoreForJoin = createServerFn({ method: "POST" })
       background_tint: found.background_tint ?? null,
     };
 
-    const [{ data: programRow }, { data: reward }, { data: membership }] = await Promise.all([
+    const [{ data: programRow, error: programError }, { data: reward, error: rewardError }, { data: membership, error: membershipError }] = await Promise.all([
       supabase
         .from("loyalty_programs")
         .select("*")
@@ -256,6 +263,7 @@ export const getStoreForJoin = createServerFn({ method: "POST" })
         .eq("customer_id", userId)
         .maybeSingle(),
     ]);
+    throwIfError(programError ?? rewardError ?? membershipError, "JOIN_LOOKUP_FAILED");
 
     const logoUrl = store.logo_url
       ? (await supabase.storage.from("store-logos").createSignedUrl(store.logo_url, 3600)).data?.signedUrl ?? null
@@ -332,22 +340,22 @@ export const updateProgram = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context;
 
-    const { data: store } = await supabase
+    const { data: store } = check(await supabase
       .from("stores")
       .select("id, logo_url")
       .eq("owner_id", userId)
       .order("created_at", { ascending: false })
       .limit(1)
-      .maybeSingle();
+      .maybeSingle(), "STORE_LOOKUP_FAILED");
     if (!store) throw new Error("STORE_NOT_FOUND");
 
-    const { data: program } = await supabase
+    const { data: program } = check(await supabase
       .from("loyalty_programs")
       .select("id")
       .eq("store_id", store.id)
       .order("created_at")
       .limit(1)
-      .maybeSingle();
+      .maybeSingle(), "PROGRAM_LOOKUP_FAILED");
     if (!program) throw new Error("PROGRAM_NOT_FOUND");
 
     // "Use my logo as the stamp" only makes sense once a logo exists.
@@ -363,14 +371,14 @@ export const updateProgram = createServerFn({ method: "POST" })
       throw new Error(programError.message);
     }
 
-    const { data: reward } = await supabase
+    const { data: reward } = check(await supabase
       .from("rewards")
       .select("id")
       .eq("store_id", store.id)
       .eq("kind", "standard")
       .order("created_at")
       .limit(1)
-      .maybeSingle();
+      .maybeSingle(), "REWARD_LOOKUP_FAILED");
 
     if (reward) {
       const { error } = await supabase
@@ -411,7 +419,7 @@ export const updateStoreLogo = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context;
     if (data.objectPath && !data.objectPath.startsWith(`${userId}/`)) throw new Error("UNAUTHORIZED");
-    const { data: store } = await supabase.from("stores").select("id, logo_url").eq("owner_id", userId).order("created_at", { ascending: false }).limit(1).maybeSingle();
+    const { data: store } = check(await supabase.from("stores").select("id, logo_url").eq("owner_id", userId).order("created_at", { ascending: false }).limit(1).maybeSingle(), "STORE_LOOKUP_FAILED");
     if (!store) throw new Error("STORE_NOT_FOUND");
     const previous = store.logo_url;
     const { error } = await supabase.from("stores").update({ logo_url: data.objectPath }).eq("id", store.id);
@@ -436,9 +444,9 @@ export const requestRedemption = createServerFn({ method: "POST" })
   });
 
 async function ownedStore(supabase: any, userId: string) {
-  const { data: store } = await supabase
+  const { data: store } = check(await supabase
     .from("stores").select("id").eq("owner_id", userId)
-    .order("created_at", { ascending: false }).limit(1).maybeSingle();
+    .order("created_at", { ascending: false }).limit(1).maybeSingle(), "STORE_LOOKUP_FAILED");
   if (!store) throw new Error("STORE_NOT_FOUND");
   return store.id as string;
 }
@@ -463,8 +471,8 @@ export const saveReward = createServerFn({ method: "POST" })
       const { error } = await context.supabase.from("rewards").update(payload).eq("id", data.id).eq("store_id", storeId);
       if (error) throw new Error(error.message);
     } else {
-      const { data: program } = await context.supabase
-        .from("loyalty_programs").select("id").eq("store_id", storeId).order("created_at").limit(1).maybeSingle();
+      const { data: program } = check(await context.supabase
+        .from("loyalty_programs").select("id").eq("store_id", storeId).order("created_at").limit(1).maybeSingle(), "PROGRAM_LOOKUP_FAILED");
       const { error } = await context.supabase
         .from("rewards").insert({ ...payload, store_id: storeId, program_id: program?.id ?? null, kind: "standard" });
       if (error) throw new Error(error.message);
@@ -488,13 +496,13 @@ export const archiveReward = createServerFn({ method: "POST" })
 export const getStoreJoinLink = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
-    const { data: store } = await context.supabase
+    const { data: store } = check(await context.supabase
       .from("stores")
       .select("id")
       .eq("owner_id", context.userId)
       .order("created_at", { ascending: false })
       .limit(1)
-      .maybeSingle();
+      .maybeSingle(), "STORE_LOOKUP_FAILED");
     if (!store) throw new Error("STORE_NOT_FOUND");
     const bot = (process.env["TELEGRAM_BOT_USERNAME"] ?? process.env["VITE_TELEGRAM_BOT_USERNAME"] ?? "FellogramBot").replace(/^@/, "").trim();
     const param = `join_${store.id}`;
@@ -558,11 +566,12 @@ export const getStoreAnalytics = createServerFn({ method: "POST" })
   .handler(async ({ context }) => {
     const storeId = await ownedStore(context.supabase, context.userId);
     const sb = context.supabase;
-    const [{ data: members }, { data: txs }, { data: refs }] = await Promise.all([
+    const [{ data: members, error: membersError }, { data: txs, error: txsError }, { data: refs, error: refsError }] = await Promise.all([
       sb.from("customer_memberships").select("customer_id, joined_at").eq("store_id", storeId),
       sb.from("transactions").select("id, customer_id, type, amount, metadata, created_at").eq("store_id", storeId).limit(10000),
       sb.from("referrals").select("referred_customer_id, status, created_at").eq("store_id", storeId),
     ]);
+    throwIfError(membersError ?? txsError ?? refsError, "ANALYTICS_LOOKUP_FAILED");
     const since = Date.now() - 30 * 864e5;
     const recent = (d: string) => new Date(d).getTime() >= since;
     const all = txs ?? [];

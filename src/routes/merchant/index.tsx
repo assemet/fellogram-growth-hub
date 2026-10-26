@@ -3,6 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 
 import { AppHeader } from "@/components/BrandMark";
+import { QueryError } from "@/components/QueryError";
 import { SplashScreen } from "@/components/SplashScreen";
 import { useFellogramAuth } from "@/hooks/useFellogramAuth";
 import { t } from "@/lib/i18n";
@@ -29,12 +30,13 @@ export const Route = createFileRoute("/merchant/")({
 function MerchantDashboard() {
   const { state } = useFellogramAuth();
   const loadStore = useServerFn(getMyStore);
-  const { data, isLoading } = useQuery({
+  const { data, isLoading, error, refetch } = useQuery({
     queryKey: ["my-store"],
     queryFn: () => loadStore(),
     enabled: state === "ready",
   });
 
+  if (error) return <QueryError error={error} onRetry={() => refetch()} />;
   if (state !== "ready" || isLoading) return <SplashScreen />;
 
   if (!data) {

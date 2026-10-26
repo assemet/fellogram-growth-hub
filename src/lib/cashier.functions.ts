@@ -1,4 +1,5 @@
 import { createServerFn } from "@tanstack/react-start";
+import { check, throwIfError } from "@/lib/db";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -12,23 +13,23 @@ export function parseCustomerCode(raw: string): string | null {
 
 /** Resolves the store the signed-in user can stamp for (staff or owner only). */
 async function resolveStaffStore(supabase: any, userId: string) {
-  const { data: membership } = await supabase
+  const { data: membership } = check(await supabase
     .from("store_members")
     .select("store_id, role, stores(id, name)")
     .eq("user_id", userId)
     .order("created_at")
     .limit(1)
-    .maybeSingle();
+    .maybeSingle(), "MEMBERSHIP_LOOKUP_FAILED");
   if (membership?.store_id) {
     return { storeId: membership.store_id as string, storeName: membership.stores?.name ?? "Store", role: membership.role as string };
   }
-  const { data: store } = await supabase
+  const { data: store } = check(await supabase
     .from("stores")
     .select("id, name")
     .eq("owner_id", userId)
     .order("created_at", { ascending: false })
     .limit(1)
-    .maybeSingle();
+    .maybeSingle(), "STORE_LOOKUP_FAILED");
   if (store) return { storeId: store.id as string, storeName: store.name as string, role: "owner" };
   return null;
 }
@@ -40,14 +41,14 @@ export const getCashierStore = createServerFn({ method: "POST" })
     const store = await resolveStaffStore(context.supabase, context.userId);
     if (!store) return null;
 
-    const { data: program } = await context.supabase
+    const { data: program } = check(await context.supabase
       .from("loyalty_programs")
       .select("id, name, stamps_required")
       .eq("store_id", store.storeId)
       .eq("active", true)
       .order("created_at")
       .limit(1)
-      .maybeSingle();
+      .maybeSingle(), "PROGRAM_LOOKUP_FAILED");
 
     return { ...store, program: program ?? null };
   });
@@ -67,10 +68,10 @@ async function loadCustomerState(
   storeId: string,
   customerId: string,
 ): Promise<CustomerState | null> {
-  const [{ data: membership }, { data: profile }, { data: transactions }] = await Promise.all([
+  const [{ data: membership, error: membershipError }, { data: profile, error: profileError }, { data: transactions, error: transactionsError }] = await Promise.all([
     supabase
       .from("customer_memberships")
-      .select("id, stamp_balance, loyalty_programs(stamps_required)")
+      .select("id, stamp_balance, loyalty_programs(*)")
       .eq("store_id", storeId)
       .eq("customer_id", customerId)
       .maybeSingle(),
@@ -83,6 +84,8 @@ async function loadCustomerState(
       .order("created_at", { ascending: false })
       .limit(10),
   ]);
+  // A failed lookup must not look like "this customer has no card here".
+  throwIfError(membershipError ?? profileError ?? transactionsError, "CUSTOMER_LOOKUP_FAILED");
   if (!membership) return null;
 
   const rows = (transactions ?? []) as { id: string; type: string; created_at: string; metadata: any }[];
@@ -94,6 +97,9 @@ async function loadCustomerState(
   const lastStampAt = lastStamp ? new Date(lastStamp.created_at).getTime() : 0;
   const elapsedMs = lastStampAt ? Date.now() - lastStampAt : Number.MAX_SAFE_INTEGER;
 
+  // Minutes between stamps is configurable per program (0 = no limit); 15 was the old fixed value.
+  const cooldownMs = Math.max(0, Number(membership.loyalty_programs?.stamp_cooldown_minutes ?? 15)) * 60 * 1000;
+
   const name =
     [profile?.first_name, profile?.last_name].filter(Boolean).join(" ").trim() ||
     (profile?.username ? `@${profile.username}` : "Customer");
@@ -104,7 +110,7 @@ async function loadCustomerState(
     membershipId: membership.id,
     stampBalance: membership.stamp_balance ?? 0,
     stampsRequired: membership.loyalty_programs?.stamps_required ?? 10,
-    cooldownMinutesLeft: elapsedMs < 15 * 60 * 1000 ? Math.max(1, Math.ceil((15 * 60 * 1000 - elapsedMs) / 60000)) : 0,
+    cooldownMinutesLeft: elapsedMs < cooldownMs ? Math.max(1, Math.ceil((cooldownMs - elapsedMs) / 60000)) : 0,
     canUndo: Boolean(lastStamp) && elapsedMs < 30 * 60 * 1000,
   };
 }

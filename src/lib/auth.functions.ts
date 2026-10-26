@@ -1,4 +1,5 @@
 import { createServerFn } from "@tanstack/react-start";
+import { check, throwIfError } from "@/lib/db";
 import { createHmac, createHash } from "crypto";
 
 /**
@@ -78,11 +79,11 @@ export const telegramSignIn = createServerFn({ method: "POST" })
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { email, password } = accountFor(tgUser.id, serviceKey);
 
-    const { data: existingProfile } = await supabaseAdmin
+    const { data: existingProfile } = check(await supabaseAdmin
       .from("profiles")
       .select("id")
       .eq("telegram_user_id", tgUser.id)
-      .maybeSingle();
+      .maybeSingle(), "EXISTINGPROFILE_LOOKUP_FAILED");
 
     let userId = existingProfile?.id ?? null;
 

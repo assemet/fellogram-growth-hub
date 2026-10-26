@@ -7,6 +7,7 @@ import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 
 import { AppHeader } from "@/components/BrandMark";
+import { QueryError } from "@/components/QueryError";
 import { SplashScreen } from "@/components/SplashScreen";
 import { useFellogramAuth } from "@/hooks/useFellogramAuth";
 import { t } from "@/lib/i18n";
@@ -71,7 +72,7 @@ function Cashier() {
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const scannerRef = useRef<{ stop: () => void; destroy: () => void } | null>(null);
 
-  const { data: store, isLoading } = useQuery({
+  const { data: store, isLoading, error: storeError, refetch: refetchStore } = useQuery({
     queryKey: ["cashier-store"],
     queryFn: () => loadStore(),
     enabled: state === "ready",
@@ -191,6 +192,7 @@ function Cashier() {
     }
   };
 
+  if (storeError) return <QueryError error={storeError} onRetry={() => refetchStore()} />;
   if (state !== "ready" || isLoading) return <SplashScreen />;
 
   // Strict role isolation: cashier mode is only for store staff/owners.

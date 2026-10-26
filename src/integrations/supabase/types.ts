@@ -75,6 +75,7 @@ export type Database = {
           referrals_enabled: boolean
           referrer_bonus_stamps: number
           stamp_icon: string
+          stamp_cooldown_minutes: number
           stamps_required: number
           store_id: string
           updated_at: string
@@ -89,6 +90,7 @@ export type Database = {
           referrals_enabled?: boolean
           referrer_bonus_stamps?: number
           stamp_icon?: string
+          stamp_cooldown_minutes?: number
           stamps_required?: number
           store_id: string
           updated_at?: string
@@ -103,6 +105,7 @@ export type Database = {
           referrals_enabled?: boolean
           referrer_bonus_stamps?: number
           stamp_icon?: string
+          stamp_cooldown_minutes?: number
           stamps_required?: number
           store_id?: string
           updated_at?: string
@@ -371,6 +374,50 @@ export type Database = {
           },
         ]
       }
+      staff_invitations: {
+        Row: {
+          created_at: string
+          created_by: string
+          expires_at: string
+          id: string
+          revoked_at: string | null
+          store_id: string
+          token: string
+          used_at: string | null
+          used_by: string | null
+        }
+        Insert: {
+          created_at?: string
+          created_by: string
+          expires_at?: string
+          id?: string
+          revoked_at?: string | null
+          store_id: string
+          token?: string
+          used_at?: string | null
+          used_by?: string | null
+        }
+        Update: {
+          created_at?: string
+          created_by?: string
+          expires_at?: string
+          id?: string
+          revoked_at?: string | null
+          store_id?: string
+          token?: string
+          used_at?: string | null
+          used_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "staff_invitations_store_id_fkey"
+            columns: ["store_id"]
+            isOneToOne: false
+            referencedRelation: "stores"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       stores: {
         Row: {
           active: boolean
@@ -507,6 +554,9 @@ export type Database = {
       }
       join_store_program: { Args: { _store_id: string }; Returns: string }
       staff_enroll_customer: { Args: { _store_id: string; _customer_id: string }; Returns: string }
+      create_staff_invitation: { Args: { _store_id: string }; Returns: string }
+      revoke_staff_invitation: { Args: { _invitation_id: string }; Returns: undefined }
+      accept_staff_invitation: { Args: { _token: string }; Returns: string }
       redeem_reward: {
         Args: { _store_id: string; _token: string }
         Returns: {
