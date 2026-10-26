@@ -454,3 +454,17 @@ cd <repository-name>
 npm i
 npm run dev
 ```
+
+## Database migrations
+
+Two folders hold SQL history and they have drifted apart: `drizzle/migrations` holds the redemption,
+referral, stamp-icon and card-styling changes, while `supabase/migrations` is what a database rebuilt
+from scratch would be given. Until they are merged, a database built from `supabase/migrations` alone
+lacks objects the app needs (columns such as `card_theme`, functions such as `create_redemption`).
+
+- After connecting or restoring a database, run `supabase/diagnostics/check_schema.sql` in the SQL Editor.
+  It lists every missing table, column or function (or says OK).
+- Every new schema change must be added to **both** folders, idempotent (`IF NOT EXISTS`,
+  `CREATE OR REPLACE`), so running it twice is harmless.
+- Server code reads with `select("*")` where a column is optional and always checks `error`
+  (see `src/lib/db.ts`), so a schema gap shows up as a visible error instead of an empty screen.
