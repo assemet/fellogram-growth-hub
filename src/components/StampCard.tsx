@@ -61,7 +61,7 @@ export function StampCard({ card, preview = false, focused = false }: { card: St
               {card.logoUrl ? <img src={card.logoUrl} alt="" className="h-full w-full object-cover" /> : <Building2 className="h-5 w-5" />}
             </div>
             <div className="min-w-0">
-              <p className="font-display text-xl font-bold leading-tight break-words">{card.storeName}</p>
+              <p className="font-display text-2xl font-bold leading-tight break-words">{card.storeName}</p>
               <p className="mt-1 text-xs font-medium opacity-90">{card.programName}</p>
             </div>
           </div>

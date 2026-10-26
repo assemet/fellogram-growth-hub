@@ -20,7 +20,11 @@ export function AppHeader({ subtitle, action }: { subtitle?: string; action?: Re
       <div className="flex min-w-0 items-center gap-3">
         <div className="min-w-0">
           <BrandMark />
-          <p className="truncate text-xs text-muted-foreground">{subtitle ?? t("app.tagline")}</p>
+          {subtitle ? (
+            <p className="mt-0.5 truncate font-display text-xl font-bold leading-tight text-foreground">{subtitle}</p>
+          ) : (
+            <p className="truncate text-xs text-muted-foreground">{t("app.tagline")}</p>
+          )}
         </div>
       </div>
       <div className="flex shrink-0 items-center gap-1">

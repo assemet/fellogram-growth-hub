@@ -1,6 +1,6 @@
 import { createServerFn } from "@tanstack/react-start";
 import { miniAppLink } from "@/lib/bot-link";
-import { check, throwIfError } from "@/lib/db";
+import { check, throwIfError, type Db } from "@/lib/db";
 import { isStampIconId, STAMP_LOGO_ID } from "@/lib/stamp-icons";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 
@@ -603,4 +603,48 @@ export const getStoreAnalytics = createServerFn({ method: "POST" })
       qualified,
       conversionPct: referrals.length ? Math.round((qualified / referrals.length) * 100) : 0,
     };
+  });
+
+async function ownedStoreRow(supabase: Db, userId: string) {
+  const { data: store } = check(
+    await supabase.from("stores").select("id, name, logo_url").eq("owner_id", userId).order("created_at", { ascending: false }).limit(1).maybeSingle(),
+    "STORE_LOOKUP_FAILED",
+  );
+  if (!store) throw new Error("STORE_NOT_FOUND");
+  return store;
+}
+
+/** Owner renames the store and edits its short description. */
+export const updateStoreProfile = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((data: { name: string; description?: string }) => {
+    const name = String(data?.name ?? "").trim().replace(/\s+/g, " ");
+    if (name.length < 2 || name.length > 60) throw new Error("INVALID_NAME");
+    const description = String(data?.description ?? "").trim().slice(0, 160);
+    return { name, description: description || null };
+  })
+  .handler(async ({ data, context }) => {
+    const store = await ownedStoreRow(context.supabase, context.userId);
+    const { error } = await context.supabase.from("stores").update({ name: data.name, description: data.description }).eq("id", store.id);
+    throwIfError(error, "STORE_UPDATE_FAILED");
+    return { ok: true };
+  });
+
+/**
+ * Owner deletes the store for good. The database cascades to the loyalty program, rewards,
+ * customer cards, stamp history, referrals, team and invitations. The owner must type the store name.
+ */
+export const deleteStore = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((data: { confirmName: string }) => ({ confirmName: String(data?.confirmName ?? "").trim() }))
+  .handler(async ({ data, context }) => {
+    const store = await ownedStoreRow(context.supabase, context.userId);
+    if (data.confirmName.toLowerCase() !== store.name.trim().toLowerCase()) throw new Error("CONFIRM_MISMATCH");
+
+    // Best effort: the logo file is not worth blocking the deletion for.
+    if (store.logo_url) await context.supabase.storage.from("store-logos").remove([store.logo_url]);
+
+    const { error } = await context.supabase.from("stores").delete().eq("id", store.id);
+    throwIfError(error, "STORE_DELETE_FAILED");
+    return { ok: true };
   });

@@ -17,6 +17,7 @@ import { Route as MerchantIndexRouteImport } from './routes/merchant/index'
 import { Route as MerchantCustomersRouteImport } from './routes/merchant/customers'
 import { Route as MerchantNewRouteImport } from './routes/merchant/new'
 import { Route as MerchantProgramRouteImport } from './routes/merchant/program'
+import { Route as MerchantStoreRouteImport } from './routes/merchant/store'
 import { Route as MerchantTeamRouteImport } from './routes/merchant/team'
 
 const IndexRoute = IndexRouteImport.update({
@@ -59,6 +60,11 @@ const MerchantProgramRoute = MerchantProgramRouteImport.update({
   path: '/merchant/program',
   getParentRoute: () => rootRouteImport,
 } as any)
+const MerchantStoreRoute = MerchantStoreRouteImport.update({
+  id: '/merchant/store',
+  path: '/merchant/store',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const MerchantTeamRoute = MerchantTeamRouteImport.update({
   id: '/merchant/team',
   path: '/merchant/team',
@@ -73,6 +79,7 @@ export interface FileRoutesByFullPath {
   '/merchant/customers': typeof MerchantCustomersRoute
   '/merchant/new': typeof MerchantNewRoute
   '/merchant/program': typeof MerchantProgramRoute
+  '/merchant/store': typeof MerchantStoreRoute
   '/merchant/team': typeof MerchantTeamRoute
   '/merchant/': typeof MerchantIndexRoute
 }
@@ -84,6 +91,7 @@ export interface FileRoutesByTo {
   '/merchant/customers': typeof MerchantCustomersRoute
   '/merchant/new': typeof MerchantNewRoute
   '/merchant/program': typeof MerchantProgramRoute
+  '/merchant/store': typeof MerchantStoreRoute
   '/merchant/team': typeof MerchantTeamRoute
   '/merchant': typeof MerchantIndexRoute
 }
@@ -96,6 +104,7 @@ export interface FileRoutesById {
   '/merchant/customers': typeof MerchantCustomersRoute
   '/merchant/new': typeof MerchantNewRoute
   '/merchant/program': typeof MerchantProgramRoute
+  '/merchant/store': typeof MerchantStoreRoute
   '/merchant/team': typeof MerchantTeamRoute
   '/merchant/': typeof MerchantIndexRoute
 }
@@ -109,6 +118,7 @@ export interface FileRouteTypes {
     | '/merchant/customers'
     | '/merchant/new'
     | '/merchant/program'
+    | '/merchant/store'
     | '/merchant/team'
     | '/merchant/'
   fileRoutesByTo: FileRoutesByTo
@@ -120,6 +130,7 @@ export interface FileRouteTypes {
     | '/merchant/customers'
     | '/merchant/new'
     | '/merchant/program'
+    | '/merchant/store'
     | '/merchant/team'
     | '/merchant'
   id:
@@ -131,6 +142,7 @@ export interface FileRouteTypes {
     | '/merchant/customers'
     | '/merchant/new'
     | '/merchant/program'
+    | '/merchant/store'
     | '/merchant/team'
     | '/merchant/'
   fileRoutesById: FileRoutesById
@@ -143,6 +155,7 @@ export interface RootRouteChildren {
   MerchantCustomersRoute: typeof MerchantCustomersRoute
   MerchantNewRoute: typeof MerchantNewRoute
   MerchantProgramRoute: typeof MerchantProgramRoute
+  MerchantStoreRoute: typeof MerchantStoreRoute
   MerchantTeamRoute: typeof MerchantTeamRoute
   MerchantIndexRoute: typeof MerchantIndexRoute
 }
@@ -205,6 +218,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof MerchantProgramRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/merchant/store': {
+      id: '/merchant/store'
+      path: '/merchant/store'
+      fullPath: '/merchant/store'
+      preLoaderRoute: typeof MerchantStoreRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/merchant/team': {
       id: '/merchant/team'
       path: '/merchant/team'
@@ -223,6 +243,7 @@ const rootRouteChildren: RootRouteChildren = {
   MerchantCustomersRoute: MerchantCustomersRoute,
   MerchantNewRoute: MerchantNewRoute,
   MerchantProgramRoute: MerchantProgramRoute,
+  MerchantStoreRoute: MerchantStoreRoute,
   MerchantTeamRoute: MerchantTeamRoute,
   MerchantIndexRoute: MerchantIndexRoute,
 }

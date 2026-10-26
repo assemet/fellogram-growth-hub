@@ -10,7 +10,7 @@ import { t } from "@/lib/i18n";
 import { getMyStore } from "@/lib/store.functions";
 import { GrowthAnalytics } from "@/components/GrowthAnalytics";
 import { StoreJoinShare } from "@/components/StoreJoinShare";
-import { ArrowRight, ChevronRight, Settings2, UserPlus, Users } from "lucide-react";
+import { ArrowRight, ChevronRight, Settings2, Store, UserPlus, Users } from "lucide-react";
 
 export const Route = createFileRoute("/merchant/")({
   ssr: false,
@@ -60,14 +60,14 @@ function MerchantDashboard() {
 
   return (
     <main className="min-h-screen pb-14">
-      <AppHeader subtitle={data.store.name} />
+      <AppHeader />
 
       <section className="app-shell">
-        <h1 className="mb-4 text-2xl font-bold">{t("merchant.title")}</h1>
+        <h1 className="mb-4 text-sm font-bold uppercase text-muted-foreground">{t("merchant.title")}</h1>
 
         <div className="brand-surface animate-arrive rounded-lg p-5 shadow-[var(--shadow-float)]">
-          <p className="text-xs font-bold uppercase opacity-80">{t("merchant.program")}</p>
-          <p className="mt-2 font-display text-2xl font-bold leading-tight">{data.program?.name ?? "—"}</p>
+          <p className="break-words font-display text-3xl font-bold leading-tight">{data.store.name}</p>
+          <p className="mt-1 text-sm font-semibold opacity-90">{data.program?.name ?? "—"}</p>
           <p className="mt-1 text-sm opacity-90">
             {t("merchant.stamps", { count: data.program?.stamps_required ?? 0, reward })}
           </p>
@@ -87,6 +87,7 @@ function MerchantDashboard() {
             [
               { to: "/merchant/customers", icon: Users, title: t("dash.customers"), hint: t("dash.customers.hint") },
               { to: "/merchant/team", icon: UserPlus, title: t("dash.team"), hint: t("dash.team.hint") },
+              { to: "/merchant/store", icon: Store, title: t("dash.store"), hint: t("dash.store.hint") },
             ] as const
           ).map((tile) => (
             <Link
