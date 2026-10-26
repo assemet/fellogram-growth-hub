@@ -302,6 +302,7 @@ type UpdateProgramInput = {
   rewardName: string;
   rewardDescription?: string;
   stampIcon: string;
+  stampCooldownMinutes?: number;
   cardTheme: string;
   brandPrimary?: string | null;
   brandAccent?: string | null;
@@ -331,6 +332,7 @@ export const updateProgram = createServerFn({ method: "POST" })
       stampsRequired,
       rewardDescription: String(data?.rewardDescription ?? "").trim() || null,
       stampIcon,
+      stampCooldownMinutes: Math.min(1440, Math.max(0, Math.round(Number(data?.stampCooldownMinutes ?? 15)) || 0)),
       cardTheme: data.cardTheme,
       brandPrimary: validateColor(data.brandPrimary),
       brandAccent: validateColor(data.brandAccent),
@@ -363,11 +365,13 @@ export const updateProgram = createServerFn({ method: "POST" })
 
     const { error: programError } = await supabase
       .from("loyalty_programs")
-      .update({ name: data.programName, stamps_required: data.stampsRequired, stamp_icon: stampIcon })
+      .update({ name: data.programName, stamps_required: data.stampsRequired, stamp_icon: stampIcon, stamp_cooldown_minutes: data.stampCooldownMinutes })
       .eq("id", program.id);
     if (programError) {
       // 23514 = check_violation: the database still has the original 6-icon constraint.
       if (programError.code === "23514") throw new Error("STAMP_ICON_MIGRATION_REQUIRED");
+      // 42703 = undefined_column: the cooldown column has not been added to this database yet.
+      if (programError.code === "42703" || programError.code === "PGRST204") throw new Error("DB_MIGRATION_REQUIRED");
       throw new Error(programError.message);
     }
 

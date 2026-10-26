@@ -792,10 +792,27 @@ export function initializeLocale(telegramLanguage?: string | null) {
   return locale;
 }
 
+const localeListeners = new Set<() => void>();
+
+/** Lets React re-render the whole UI when the language changes (see useLocale). */
+export function subscribeLocale(listener: () => void) {
+  localeListeners.add(listener);
+  return () => {
+    localeListeners.delete(listener);
+  };
+}
+
 export function setLocale(next: Locale) {
   locale = next;
-  if (typeof window !== "undefined") window.localStorage.setItem("fellogram.locale", next);
+  if (typeof window !== "undefined") {
+    try {
+      window.localStorage.setItem("fellogram.locale", next);
+    } catch {
+      /* storage can be blocked: the choice then lasts for this session only */
+    }
+  }
   applyDocumentLocale();
+  localeListeners.forEach((listener) => listener());
 }
 
 export function t(key: TranslationKey, vars?: Record<string, string | number>): string {

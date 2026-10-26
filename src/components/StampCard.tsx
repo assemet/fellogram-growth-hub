@@ -86,7 +86,7 @@ export function StampCard({ card, preview = false, focused = false }: { card: St
             return (
               <div
                 key={index}
-                aria-label={filled ? "stamp collected" : "stamp empty"}
+                aria-label={filled ? t("wallet.card.stampCollected") : t("wallet.card.stampEmpty")}
                 className={
                   filled
                     ? "loyalty-stamp-filled stamp-slot flex aspect-square items-center justify-center overflow-hidden rounded-full border-2 border-primary/25 bg-primary text-primary-foreground shadow-[var(--shadow-card)]"
@@ -103,7 +103,7 @@ export function StampCard({ card, preview = false, focused = false }: { card: St
           })}
         </div>
 
-        <div className="loyalty-progress-track mt-4 h-1.5 overflow-hidden rounded-full bg-secondary" role="progressbar" aria-valuenow={balance} aria-valuemin={0} aria-valuemax={required} aria-label="Stamp progress">
+        <div className="loyalty-progress-track mt-4 h-1.5 overflow-hidden rounded-full bg-secondary" role="progressbar" aria-valuenow={balance} aria-valuemin={0} aria-valuemax={required} aria-label={t("wallet.card.progress")}>
           <div className="loyalty-progress-fill h-full rounded-full bg-growth transition-[width] duration-500" style={{ width: `${Math.min(100, (balance / Math.max(1, required)) * 100)}%` }} />
         </div>
         <p className={`loyalty-status mt-3 text-sm font-semibold ${complete ? "text-primary" : "text-foreground"}`}>
@@ -184,7 +184,7 @@ export function StampCard({ card, preview = false, focused = false }: { card: St
           onClick={() => setOpen((value) => !value)}
           variant="ghost"
           size="sm"
-          className="loyalty-card-link mt-3 -ml-2 text-xs font-semibold text-primary"
+          className="loyalty-card-link mt-3 -ms-2 text-xs font-semibold text-primary"
           aria-expanded={open}
         >
           {open ? t("wallet.card.hide") : t("wallet.card.history")}

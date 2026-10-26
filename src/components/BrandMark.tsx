@@ -12,8 +12,8 @@ export function BrandMark() {
 
 export function AppHeader({ subtitle, action }: { subtitle?: string; action?: ReactNode }) {
   const switchLanguage = () => {
+    // The root remounts the page on language change, so no reload (and no lost state/session) is needed.
     setLocale(getLocale() === "en" ? "ar" : "en");
-    window.location.reload();
   };
   return (
     <header className="app-header app-shell mb-7 grid grid-cols-[minmax(0,1fr)_auto] items-center gap-3 border-b border-border py-4 [padding-top:calc(1rem+env(safe-area-inset-top))]">

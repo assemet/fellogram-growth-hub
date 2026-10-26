@@ -44,6 +44,7 @@ type FormValues = {
   rewardName: string;
   rewardDescription: string;
   stampIcon: string;
+  stampCooldownMinutes: number;
   cardTheme: CardTheme;
   brandPrimary: string | null;
   brandAccent: string | null;
@@ -51,6 +52,7 @@ type FormValues = {
 };
 
 const snapshot = (values: FormValues) => JSON.stringify(values);
+const clampCooldown = (text: string) => Math.min(1440, Math.max(0, Math.round(Number(text)) || 0));
 const clampStamps = (text: string, fallback: number) => Math.min(50, Math.max(1, Math.round(Number(text) || fallback)));
 
 function ProgramEditor() {
@@ -73,6 +75,7 @@ function ProgramEditor() {
   const [rewardName, setRewardName] = useState("");
   const [rewardDescription, setRewardDescription] = useState("");
   const [stampIcon, setStampIcon] = useState("stamp");
+  const [cooldownText, setCooldownText] = useState("15");
   const [cardTheme, setCardTheme] = useState<CardTheme>("classic");
   const [brandPrimary, setBrandPrimary] = useState<string | null>(null);
   const [brandAccent, setBrandAccent] = useState<string | null>(null);
@@ -86,6 +89,7 @@ function ProgramEditor() {
     rewardName,
     rewardDescription,
     stampIcon,
+    stampCooldownMinutes: clampCooldown(cooldownText),
     cardTheme,
     brandPrimary,
     brandAccent,
@@ -111,6 +115,7 @@ function ProgramEditor() {
       rewardName: reward?.name ?? "",
       rewardDescription: reward?.description ?? "",
       stampIcon: data.program?.stamp_icon ?? "stamp",
+      stampCooldownMinutes: data.program?.stamp_cooldown_minutes ?? 15,
       cardTheme: resolveCardTheme(data.store.card_theme),
       brandPrimary: data.store.brand_primary,
       brandAccent: data.store.brand_accent,
@@ -122,6 +127,7 @@ function ProgramEditor() {
     setRewardName(next.rewardName);
     setRewardDescription(next.rewardDescription);
     setStampIcon(next.stampIcon);
+    setCooldownText(String(next.stampCooldownMinutes));
     setCardTheme(next.cardTheme);
     setBrandPrimary(next.brandPrimary);
     setBrandAccent(next.brandAccent);
@@ -139,6 +145,7 @@ function ProgramEditor() {
           rewardName,
           rewardDescription,
           stampIcon,
+          stampCooldownMinutes: clampCooldown(cooldownText),
           cardTheme,
           brandPrimary,
           brandAccent,
@@ -153,7 +160,13 @@ function ProgramEditor() {
       await queryClient.invalidateQueries({ queryKey: ["my-cards"] });
     },
     onError: (error: Error) =>
-      toast.error(error.message.includes("STAMP_ICON_MIGRATION_REQUIRED") ? t("program.iconMigration") : t("common.error")),
+      toast.error(
+        error.message.includes("STAMP_ICON_MIGRATION_REQUIRED")
+          ? t("program.iconMigration")
+          : error.message.includes("DB_MIGRATION_REQUIRED")
+            ? t("error.migrationNeeded")
+            : t("common.error"),
+      ),
   });
 
   if (error) return <QueryError error={error} onRetry={() => refetch()} />;
@@ -328,7 +341,7 @@ function ProgramEditor() {
               <div>
                 <span className="text-sm font-semibold">{t("program.stamps")}</span>
                 <div className="mt-1 flex items-center gap-3">
-                  <Button type="button" aria-label="decrease stamps" onClick={() => changeStamps(-1)} variant="secondary" size="icon" className="touch-action h-11 w-11 shrink-0">
+                  <Button type="button" aria-label={t("program.decrease")} onClick={() => changeStamps(-1)} variant="secondary" size="icon" className="touch-action h-11 w-11 shrink-0">
                     <Minus className="h-4 w-4" />
                   </Button>
                   <input
@@ -345,10 +358,27 @@ function ProgramEditor() {
                     }}
                     className="w-20 rounded-md border border-border bg-card px-4 py-3 text-center text-sm outline-none focus:ring-2 focus:ring-ring"
                   />
-                  <Button type="button" aria-label="increase stamps" onClick={() => changeStamps(1)} variant="secondary" size="icon" className="touch-action h-11 w-11 shrink-0">
+                  <Button type="button" aria-label={t("program.increase")} onClick={() => changeStamps(1)} variant="secondary" size="icon" className="touch-action h-11 w-11 shrink-0">
                     <Plus className="h-4 w-4" />
                   </Button>
                 </div>
+              </div>
+
+              <div className="settings-section">
+                <label htmlFor="cooldown" className="text-sm font-semibold">
+                  {t("program.cooldown")}
+                </label>
+                <input
+                  id="cooldown"
+                  type="number"
+                  inputMode="numeric"
+                  min={0}
+                  max={1440}
+                  value={cooldownText}
+                  onChange={(event) => setCooldownText(event.target.value)}
+                  className="mt-1 w-28 rounded-md border border-border bg-card px-4 py-3 text-center text-sm outline-none focus:ring-2 focus:ring-ring"
+                />
+                <p className="mt-1 text-xs text-muted-foreground">{t("program.cooldownHint")}</p>
               </div>
 
               <div className="settings-section">
@@ -359,7 +389,7 @@ function ProgramEditor() {
                   id="rewardName"
                   value={rewardName}
                   onChange={(event) => setRewardName(event.target.value)}
-                  placeholder="Free coffee"
+                  placeholder={t("onboarding.program.rewardPlaceholder")}
                   className="mt-1 w-full rounded-md border border-border bg-card px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-ring"
                 />
               </div>

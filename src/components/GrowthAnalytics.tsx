@@ -33,7 +33,7 @@ export function GrowthAnalytics() {
     <section className="mt-7 animate-arrive">
       <div className="flex items-end justify-between gap-3 border-b border-border pb-3">
         <h2 className="max-w-[17rem] text-xl font-bold leading-tight">{t("analytics.title")}</h2>
-        <p className="max-w-24 text-right text-xs text-muted-foreground">{t("analytics.period")}</p>
+        <p className="max-w-24 text-end text-xs text-muted-foreground">{t("analytics.period")}</p>
       </div>
       <p className="mt-4 border-l-2 border-growth bg-growth/10 px-4 py-3 text-sm font-semibold leading-snug text-foreground">{t(verdict)}</p>
 

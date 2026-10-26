@@ -12,6 +12,8 @@ import appCss from "../styles.css?url";
 import { Toaster } from "../components/ui/sonner";
 import { reportLovableError } from "../lib/lovable-error-reporting";
 import { Button } from "../components/ui/button";
+import { useLocale } from "../hooks/useLocale";
+import { t } from "../lib/i18n";
 
 
 function NotFoundComponent() {
@@ -19,16 +21,16 @@ function NotFoundComponent() {
     <div className="flex min-h-screen items-center justify-center bg-background px-4">
       <div className="max-w-md text-center">
         <h1 className="text-7xl font-bold text-foreground">404</h1>
-        <h2 className="mt-4 text-xl font-semibold text-foreground">Page not found</h2>
+        <h2 className="mt-4 text-xl font-semibold text-foreground">{t("error.notFound.title")}</h2>
         <p className="mt-2 text-sm text-muted-foreground">
-          The page you're looking for doesn't exist or has been moved.
+          {t("error.notFound.body")}
         </p>
         <div className="mt-6">
           <Link
             to="/"
             className="inline-flex items-center justify-center rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90"
           >
-            Go home
+            {t("error.goHome")}
           </Link>
         </div>
       </div>
@@ -67,18 +69,18 @@ function ErrorComponent({ error }: { error: unknown }) {
     <div className="flex min-h-screen items-center justify-center bg-background px-4">
       <div className="max-w-md text-center">
         <h1 className="text-xl font-semibold tracking-tight text-foreground">
-          This page didn't load
+          {t("error.title")}
         </h1>
         <p className="mt-2 text-sm text-muted-foreground">
-          Something went wrong on our end. A refresh usually fixes it.
+          {t("error.body")}
         </p>
         <div className="mt-6 flex flex-wrap justify-center gap-2">
-          <Button onClick={() => window.location.reload()}>Reload page</Button>
+          <Button onClick={() => window.location.reload()}>{t("error.reload")}</Button>
           <a
             href="/"
             className="inline-flex items-center justify-center rounded-md border border-input bg-background px-4 py-2 text-sm font-medium text-foreground transition-colors hover:bg-accent"
           >
-            Go home
+            {t("error.goHome")}
           </a>
         </div>
       </div>
@@ -92,7 +94,7 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { charSet: "utf-8" },
       {
         name: "viewport",
-        content: "width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover",
+        content: "width=device-width, initial-scale=1, viewport-fit=cover",
       },
       { title: "Fellogram — Turn loyalty into growth" },
       {
@@ -150,6 +152,8 @@ function RootShell({ children }: { children: ReactNode }) {
 }
 
 function RootComponent() {
+  // Remount the routed page when the language changes so every t() call picks up the new language.
+  const locale = useLocale();
   const { queryClient } = Route.useRouteContext();
 
   useEffect(() => {
@@ -168,9 +172,8 @@ function RootComponent() {
   return (
     <QueryClientProvider client={queryClient}>
       {/* Required: nested routes render here. Removing <Outlet /> breaks all child routes. */}
-      <Outlet />
+      <Outlet key={locale} />
       <Toaster position="top-center" />
     </QueryClientProvider>
   );
 }
-

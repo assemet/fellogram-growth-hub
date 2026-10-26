@@ -395,3 +395,13 @@
   26%, 86% { background: var(--growth); transform: scale(1); }
   96%, 100% { background: oklch(1 0 0 / 0.28); transform: scale(1); }
 }
+
+/* Pinch-zoom is allowed (accessibility), so keep text fields at 16px on touch devices:
+   smaller sizes make iOS zoom the page whenever a field gets focus. */
+@media (pointer: coarse) {
+  input:not([type="checkbox"]):not([type="radio"]):not([type="color"]):not([type="range"]),
+  textarea,
+  select {
+    font-size: 16px;
+  }
+}

@@ -1,4 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
+import { shareViaTelegram } from "@/lib/telegram";
 import { useServerFn } from "@tanstack/react-start";
 import { X } from "lucide-react";
 import { toast } from "sonner";
@@ -30,11 +31,7 @@ export function InviteFriend({
 
   const share = () => {
     if (!data?.link) return;
-    const text = `Join me at ${storeName} on Fellogram and get bonus stamps!`;
-    const url = `https://t.me/share/url?url=${encodeURIComponent(data.link)}&text=${encodeURIComponent(text)}`;
-    const tg = (window as unknown as { Telegram?: { WebApp?: { openTelegramLink?: (u: string) => void } } }).Telegram?.WebApp;
-    if (tg?.openTelegramLink) tg.openTelegramLink(url);
-    else window.open(url, "_blank", "noopener");
+    shareViaTelegram(data.link, t("referral.shareText", { store: storeName }));
   };
 
   const copy = async () => {

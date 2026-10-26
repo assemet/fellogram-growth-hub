@@ -67,7 +67,7 @@ export function RedeemRewardQr({
         <p className="mt-1 text-xs text-muted-foreground">{t("rewards.showCashier")}</p>
 
         <div className="mx-auto mt-4 aspect-square w-60 overflow-hidden rounded-md border border-border bg-background">
-          {src && !expired && <img src={src} alt="Reward QR" className="h-full w-full" />}
+          {src && !expired && <img src={src} alt={t("rewards.qrAlt")} className="h-full w-full" />}
           {(expired || error) && (
             <div className="flex h-full items-center justify-center p-4 text-sm font-semibold text-muted-foreground">
               {error ?? t("rewards.expired")}
