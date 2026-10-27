@@ -349,7 +349,7 @@ function ProgramEditor() {
               </details>
             </TabsContent>
 
-            <TabsContent value="reward" className="mt-5 space-y-6">
+            <TabsContent value="reward" className="mt-5 min-w-0 space-y-6">
               <div>
                 <span className="text-sm font-semibold">{t("program.stamps")}</span>
                 <div className="mt-1 flex items-center gap-3">
@@ -381,15 +381,17 @@ function ProgramEditor() {
                   <label htmlFor="joinBonusOn" className="min-w-0 text-sm font-semibold">
                     {t("program.joinBonus.title")}
                   </label>
-                  <Switch
-                    id="joinBonusOn"
-                    checked={joinBonusOn}
-                    onCheckedChange={(checked) => {
-                      setJoinBonusOn(checked);
-                      if (checked && (Number(joinBonusText) || 0) < 1) setJoinBonusText("1");
-                    }}
-                    aria-label={t("program.joinBonus.toggle")}
-                  />
+                  <span className="relative inline-flex shrink-0">
+                    <Switch
+                      id="joinBonusOn"
+                      checked={joinBonusOn}
+                      onCheckedChange={(checked) => {
+                        setJoinBonusOn(checked);
+                        if (checked && (Number(joinBonusText) || 0) < 1) setJoinBonusText("1");
+                      }}
+                      aria-label={t("program.joinBonus.toggle")}
+                    />
+                  </span>
                 </div>
                 {joinBonusOn && (
                   <div className="mt-3 flex items-center gap-3">

@@ -154,7 +154,12 @@
 
   body {
     background-color: var(--color-background);
-    overflow-x: clip;
+    /* "hidden" (not "clip"): older Telegram WebViews ignore clip. On body it propagates to the viewport,
+       so position: sticky keeps working. Together with the two lines below the page can no longer be
+       dragged sideways, whatever a screen contains. */
+    overflow-x: hidden;
+    overscroll-behavior-x: none;
+    touch-action: pan-y pinch-zoom;
     color: var(--color-foreground);
     font-family: var(--font-sans);
     -webkit-tap-highlight-color: transparent;
