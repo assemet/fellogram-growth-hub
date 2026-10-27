@@ -278,6 +278,7 @@ export const getStoreForJoin = createServerFn({ method: "POST" })
             name: programRow.name,
             stamps_required: programRow.stamps_required,
             stamp_icon: programRow.stamp_icon ?? "stamp",
+            join_bonus_stamps: programRow.join_bonus_stamps ?? 0,
           }
         : null,
       reward: reward ?? null,
@@ -304,6 +305,7 @@ type UpdateProgramInput = {
   rewardDescription?: string;
   stampIcon: string;
   stampCooldownMinutes?: number;
+  joinBonusStamps?: number;
   cardTheme: string;
   brandPrimary?: string | null;
   brandAccent?: string | null;
@@ -334,6 +336,8 @@ export const updateProgram = createServerFn({ method: "POST" })
       rewardDescription: String(data?.rewardDescription ?? "").trim() || null,
       stampIcon,
       stampCooldownMinutes: Math.min(1440, Math.max(0, Math.round(Number(data?.stampCooldownMinutes ?? 15)) || 0)),
+      // Welcome stamps for new customers: 0 = off, never enough to complete a card on their own.
+      joinBonusStamps: Math.max(0, Math.min(20, Math.round(Number(data?.joinBonusStamps ?? 0)) || 0, Math.round(Number(data?.stampsRequired)) - 1 || 0)),
       cardTheme: data.cardTheme,
       brandPrimary: validateColor(data.brandPrimary),
       brandAccent: validateColor(data.brandAccent),
@@ -364,10 +368,21 @@ export const updateProgram = createServerFn({ method: "POST" })
     // "Use my logo as the stamp" only makes sense once a logo exists.
     const stampIcon = data.stampIcon === STAMP_LOGO_ID && !store.logo_url ? "stamp" : data.stampIcon;
 
-    const { error: programError } = await supabase
+    const programUpdate = {
+      name: data.programName,
+      stamps_required: data.stampsRequired,
+      stamp_icon: stampIcon,
+      stamp_cooldown_minutes: data.stampCooldownMinutes,
+    };
+    let { error: programError } = await supabase
       .from("loyalty_programs")
-      .update({ name: data.programName, stamps_required: data.stampsRequired, stamp_icon: stampIcon, stamp_cooldown_minutes: data.stampCooldownMinutes })
+      .update({ ...programUpdate, join_bonus_stamps: data.joinBonusStamps })
       .eq("id", program.id);
+    // A database that has not run the welcome-stamps migration yet must still save everything else
+    // while that option is off.
+    if (programError && (programError.code === "42703" || programError.code === "PGRST204") && data.joinBonusStamps === 0) {
+      ({ error: programError } = await supabase.from("loyalty_programs").update(programUpdate).eq("id", program.id));
+    }
     if (programError) {
       // 23514 = check_violation: the database still has the original 6-icon constraint.
       if (programError.code === "23514") throw new Error("STAMP_ICON_MIGRATION_REQUIRED");

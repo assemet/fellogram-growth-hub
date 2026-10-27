@@ -69,7 +69,7 @@ export const getStoreActivity = createServerFn({ method: "POST" })
     return {
       items: list.map((r) => ({
         id: r.id,
-        type: r.type as "stamp_awarded" | "stamp_reversed" | "reward_redeemed" | "referral_reward",
+        type: r.type as "stamp_awarded" | "stamp_reversed" | "reward_redeemed" | "referral_reward" | "join_bonus",
         amount: r.amount,
         createdAt: r.created_at,
         customerName: names.get(r.customer_id)?.name ?? names.get(r.customer_id)?.username ?? null,

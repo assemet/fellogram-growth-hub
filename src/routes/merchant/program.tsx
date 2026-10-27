@@ -5,6 +5,7 @@ import { useEffect, useRef, useState } from "react";
 import { Check, Minus, Plus } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
+import { Switch } from "@/components/ui/switch";
 
 import { AppHeader } from "@/components/BrandMark";
 import { CardPreviewMini } from "@/components/CardPreviewMini";
@@ -45,6 +46,7 @@ type FormValues = {
   rewardDescription: string;
   stampIcon: string;
   stampCooldownMinutes: number;
+  joinBonusStamps: number;
   cardTheme: CardTheme;
   brandPrimary: string | null;
   brandAccent: string | null;
@@ -52,6 +54,9 @@ type FormValues = {
 };
 
 const snapshot = (values: FormValues) => JSON.stringify(values);
+/** Welcome stamps are limited to one less than the stamps needed, so joining alone never earns the reward. */
+const clampJoinBonus = (on: boolean, text: string, required: number) =>
+  on ? Math.max(0, Math.min(20, Math.max(0, required - 1), Math.round(Number(text)) || 0)) : 0;
 const clampCooldown = (text: string) => Math.min(1440, Math.max(0, Math.round(Number(text)) || 0));
 const clampStamps = (text: string, fallback: number) => Math.min(50, Math.max(1, Math.round(Number(text) || fallback)));
 
@@ -76,6 +81,8 @@ function ProgramEditor() {
   const [rewardDescription, setRewardDescription] = useState("");
   const [stampIcon, setStampIcon] = useState("stamp");
   const [cooldownText, setCooldownText] = useState("15");
+  const [joinBonusOn, setJoinBonusOn] = useState(false);
+  const [joinBonusText, setJoinBonusText] = useState("1");
   const [cardTheme, setCardTheme] = useState<CardTheme>("classic");
   const [brandPrimary, setBrandPrimary] = useState<string | null>(null);
   const [brandAccent, setBrandAccent] = useState<string | null>(null);
@@ -90,6 +97,7 @@ function ProgramEditor() {
     rewardDescription,
     stampIcon,
     stampCooldownMinutes: clampCooldown(cooldownText),
+    joinBonusStamps: clampJoinBonus(joinBonusOn, joinBonusText, clampStamps(stampsText, stampsRequired)),
     cardTheme,
     brandPrimary,
     brandAccent,
@@ -116,6 +124,7 @@ function ProgramEditor() {
       rewardDescription: reward?.description ?? "",
       stampIcon: data.program?.stamp_icon ?? "stamp",
       stampCooldownMinutes: data.program?.stamp_cooldown_minutes ?? 15,
+      joinBonusStamps: data.program?.join_bonus_stamps ?? 0,
       cardTheme: resolveCardTheme(data.store.card_theme),
       brandPrimary: data.store.brand_primary,
       brandAccent: data.store.brand_accent,
@@ -128,6 +137,8 @@ function ProgramEditor() {
     setRewardDescription(next.rewardDescription);
     setStampIcon(next.stampIcon);
     setCooldownText(String(next.stampCooldownMinutes));
+    setJoinBonusOn(next.joinBonusStamps > 0);
+    setJoinBonusText(String(next.joinBonusStamps > 0 ? next.joinBonusStamps : 1));
     setCardTheme(next.cardTheme);
     setBrandPrimary(next.brandPrimary);
     setBrandAccent(next.brandAccent);
@@ -146,6 +157,7 @@ function ProgramEditor() {
           rewardDescription,
           stampIcon,
           stampCooldownMinutes: clampCooldown(cooldownText),
+          joinBonusStamps: clampJoinBonus(joinBonusOn, joinBonusText, clampStamps(stampsText, stampsRequired)),
           cardTheme,
           brandPrimary,
           brandAccent,
@@ -362,6 +374,41 @@ function ProgramEditor() {
                     <Plus className="h-4 w-4" />
                   </Button>
                 </div>
+              </div>
+
+              <div className="settings-section">
+                <div className="flex items-center justify-between gap-3">
+                  <label htmlFor="joinBonusOn" className="min-w-0 text-sm font-semibold">
+                    {t("program.joinBonus.title")}
+                  </label>
+                  <Switch
+                    id="joinBonusOn"
+                    checked={joinBonusOn}
+                    onCheckedChange={(checked) => {
+                      setJoinBonusOn(checked);
+                      if (checked && (Number(joinBonusText) || 0) < 1) setJoinBonusText("1");
+                    }}
+                    aria-label={t("program.joinBonus.toggle")}
+                  />
+                </div>
+                {joinBonusOn && (
+                  <div className="mt-3 flex items-center gap-3">
+                    <label htmlFor="joinBonusCount" className="text-sm text-muted-foreground">
+                      {t("program.joinBonus.count")}
+                    </label>
+                    <input
+                      id="joinBonusCount"
+                      type="number"
+                      inputMode="numeric"
+                      min={1}
+                      max={Math.max(1, Math.min(20, clampStamps(stampsText, stampsRequired) - 1))}
+                      value={joinBonusText}
+                      onChange={(event) => setJoinBonusText(event.target.value)}
+                      className="w-20 rounded-md border border-border bg-card px-3 py-2 text-center text-sm outline-none focus:ring-2 focus:ring-ring"
+                    />
+                  </div>
+                )}
+                <p className="mt-2 text-xs text-muted-foreground">{t("program.joinBonus.hint")}</p>
               </div>
 
               <div className="settings-section">

@@ -83,6 +83,7 @@ function JoinStore() {
   }
 
   const required = data.program?.stamps_required ?? 10;
+  const welcomeStamps = Math.min(data.program?.join_bonus_stamps ?? 0, Math.max(0, required - 1));
 
   return (
     <main className="store-theme min-h-[100dvh] pb-14" style={brandThemeStyle(data.store.card_theme, { brandPrimary: data.store.brand_primary, brandAccent: data.store.brand_accent, backgroundTint: data.store.background_tint })}>
@@ -105,6 +106,12 @@ function JoinStore() {
             <StampIcon name={data.program?.stamp_icon} className="h-4 w-4 text-primary" />
             {t("program.preview", { count: required, reward: data.reward?.name ?? "—" })}
           </p>
+          {welcomeStamps > 0 && (
+            <p className="mt-3 flex items-center gap-2 rounded-md bg-growth/15 px-3 py-2 text-sm font-semibold">
+              <Gift className="h-4 w-4 shrink-0" />
+              {t("join.bonus", { count: welcomeStamps })}
+            </p>
+          )}
           {data.reward?.description && (
             <p className="mt-1 flex items-center gap-2 text-xs text-muted-foreground">
               <Gift className="h-3.5 w-3.5" />

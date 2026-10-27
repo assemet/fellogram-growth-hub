@@ -75,6 +75,7 @@ export type Database = {
           referrals_enabled: boolean
           referrer_bonus_stamps: number
           stamp_icon: string
+          join_bonus_stamps: number
           stamp_cooldown_minutes: number
           stamps_required: number
           store_id: string
@@ -90,6 +91,7 @@ export type Database = {
           referrals_enabled?: boolean
           referrer_bonus_stamps?: number
           stamp_icon?: string
+          join_bonus_stamps?: number
           stamp_cooldown_minutes?: number
           stamps_required?: number
           store_id: string
@@ -105,6 +107,7 @@ export type Database = {
           referrals_enabled?: boolean
           referrer_bonus_stamps?: number
           stamp_icon?: string
+          join_bonus_stamps?: number
           stamp_cooldown_minutes?: number
           stamps_required?: number
           store_id?: string
@@ -586,6 +589,7 @@ export type Database = {
         | "stamp_reversed"
         | "reward_redeemed"
         | "referral_reward"
+        | "join_bonus"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -722,6 +726,7 @@ export const Constants = {
         "stamp_reversed",
         "reward_redeemed",
         "referral_reward",
+        "join_bonus",
       ],
     },
   },

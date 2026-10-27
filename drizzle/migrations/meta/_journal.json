@@ -85,6 +85,13 @@
       "when": 1791154362386,
       "tag": "0011_backfill_drizzle_features",
       "breakpoints": true
+    },
+    {
+      "idx": 12,
+      "version": "7",
+      "when": 1791154962386,
+      "tag": "0012_join_bonus",
+      "breakpoints": true
     }
   ]
 }

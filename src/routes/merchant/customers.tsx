@@ -2,7 +2,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useEffect, useState } from "react";
-import { Gift, Search, Stamp, Undo2, Users } from "lucide-react";
+import { Gift, Search, Sparkles, Stamp, Undo2, Users } from "lucide-react";
 
 import { AppHeader } from "@/components/BrandMark";
 import { QueryError } from "@/components/QueryError";
@@ -149,6 +149,7 @@ const activityMeta = {
   stamp_reversed: { icon: Undo2, key: "activity.reversed", tone: "bg-muted text-muted-foreground" },
   reward_redeemed: { icon: Gift, key: "activity.redeemed", tone: "bg-accent text-accent-foreground" },
   referral_reward: { icon: Users, key: "activity.referral", tone: "bg-accent text-accent-foreground" },
+  join_bonus: { icon: Sparkles, key: "activity.joinBonus", tone: "bg-growth/15 text-growth" },
 } as const;
 
 function ActivityTab({ ready }: { ready: boolean }) {
@@ -179,7 +180,7 @@ function ActivityTab({ ready }: { ready: boolean }) {
             <div className="min-w-0 flex-1">
               <p className="truncate text-sm font-semibold">
                 {t(meta.key)}
-                {item.type === "stamp_awarded" && item.amount > 1 ? ` ×${item.amount}` : ""}
+                {(item.type === "stamp_awarded" || item.type === "join_bonus") && item.amount > 1 ? ` ×${item.amount}` : ""}
               </p>
               <p className="truncate text-xs text-muted-foreground">
                 {item.customerName ?? t("customers.anonymous")}

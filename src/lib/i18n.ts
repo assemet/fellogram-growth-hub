@@ -397,6 +397,12 @@ const en = {
   "store.deleteMismatch": "The name doesn't match.",
   "dash.store": "Store settings",
   "dash.store.hint": "Rename your store or delete it",
+  "program.joinBonus.title": "Welcome stamps for new customers",
+  "program.joinBonus.toggle": "Give welcome stamps",
+  "program.joinBonus.count": "Stamps given on joining",
+  "program.joinBonus.hint": "Given once, when a customer first joins your store. It never completes a card on its own: the maximum is one less than the stamps needed.",
+  "join.bonus": "Your card starts with {count} welcome stamps!",
+  "activity.joinBonus": "Welcome stamps",
 } satisfies Record<string, string>;
 
 export type TranslationKey = keyof typeof en;
@@ -783,6 +789,12 @@ const ar: Record<TranslationKey, string> = {
   "store.deleteMismatch": "الاسم غير مطابق.",
   "dash.store": "إعدادات المتجر",
   "dash.store.hint": "غيّر اسم متجرك أو احذفه",
+  "program.joinBonus.title": "طوابع ترحيبية للعملاء الجدد",
+  "program.joinBonus.toggle": "منح طوابع ترحيبية",
+  "program.joinBonus.count": "عدد الطوابع عند الانضمام",
+  "program.joinBonus.hint": "تُمنح مرة واحدة عند أول انضمام للعميل إلى متجرك. لا تكمل البطاقة وحدها: الحد الأقصى أقل بواحد من الطوابع المطلوبة.",
+  "join.bonus": "تبدأ بطاقتك ومعها {count} من الطوابع الترحيبية!",
+  "activity.joinBonus": "طوابع ترحيبية",
 };
 
 const dictionaries: Record<Locale, Record<TranslationKey, string>> = { en, ar };
