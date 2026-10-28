@@ -1,5 +1,7 @@
 import { useEffect, useRef } from "react";
 
+import { PageSkeleton } from "@/components/PageSkeleton";
+import { hasBooted } from "@/lib/boot";
 import { t } from "@/lib/i18n";
 
 const CYCLE_MS = 2400;
@@ -13,6 +15,11 @@ let entrancePlayed = false;
  * moving from route to route looks like a single splash instead of several.
  */
 export function SplashScreen({ message }: { message?: string }) {
+  // No hooks here on purpose: the choice may flip between renders once the first screen has appeared.
+  return hasBooted() ? <PageSkeleton /> : <BrandedSplash message={message} />;
+}
+
+function BrandedSplash({ message }: { message?: string | undefined }) {
   const entrance = useRef(!entrancePlayed);
   useEffect(() => {
     entrancePlayed = true;

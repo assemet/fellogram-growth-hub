@@ -18,14 +18,21 @@ export type AuthState = "loading" | "ready";
 const DEMO_TELEGRAM_ID = 100000001;
 
 /**
+ * Remembered for this page session. Every screen calls the hook, and starting each one at "loading"
+ * made the splash flash between screens even though the user was already signed in. The session is
+ * still re-checked in the background on every mount.
+ */
+let signedIn: { previewMode: boolean } | null = null;
+
+/**
  * Ensures a session exists without ever showing an error screen. Inside
  * Telegram the signed launch data is verified server-side; elsewhere the
  * shared demo account is used. Transient failures retry automatically.
  */
 export function useFellogramAuth() {
   const signIn = useServerFn(telegramSignIn);
-  const [state, setState] = useState<AuthState>("loading");
-  const [previewMode, setPreviewMode] = useState(false);
+  const [state, setState] = useState<AuthState>(signedIn ? "ready" : "loading");
+  const [previewMode, setPreviewMode] = useState(signedIn?.previewMode ?? false);
 
   useEffect(() => {
     let cancelled = false;
@@ -44,8 +51,9 @@ export function useFellogramAuth() {
         const sessionMatches =
           data.session && (launchUserId === null || sessionTgId === launchUserId);
         if (sessionMatches) {
+          signedIn = { previewMode: sessionTgId === DEMO_TELEGRAM_ID };
           if (!cancelled) {
-            setPreviewMode(sessionTgId === DEMO_TELEGRAM_ID);
+            setPreviewMode(signedIn.previewMode);
             setState("ready");
           }
           return;
@@ -57,6 +65,7 @@ export function useFellogramAuth() {
           refresh_token: result.refresh_token,
         });
         if (error) throw error;
+        signedIn = { previewMode: result.previewMode };
         if (!cancelled) {
           setPreviewMode(result.previewMode);
           setState("ready");

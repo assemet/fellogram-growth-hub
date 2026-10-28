@@ -1,7 +1,8 @@
-import type { ReactNode } from "react";
+import { useEffect, type ReactNode } from "react";
 import { Languages } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
+import { markBooted } from "@/lib/boot";
 import { getLocale, setLocale, t } from "@/lib/i18n";
 
 export function BrandMark() {
@@ -11,6 +12,9 @@ export function BrandMark() {
 }
 
 export function AppHeader({ subtitle, action }: { subtitle?: string; action?: ReactNode }) {
+  useEffect(() => {
+    markBooted();
+  }, []);
   const switchLanguage = () => {
     // The root remounts the page on language change, so no reload (and no lost state/session) is needed.
     setLocale(getLocale() === "en" ? "ar" : "en");
