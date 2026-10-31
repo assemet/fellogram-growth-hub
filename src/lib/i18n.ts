@@ -403,6 +403,7 @@ const en = {
   "program.joinBonus.hint": "Given once, when a customer first joins your store. It never completes a card on its own: the maximum is one less than the stamps needed.",
   "join.bonus": "Your card starts with {count} welcome stamps!",
   "activity.joinBonus": "Welcome stamps",
+  "onboarding.alreadyOwner": "You already have a store. Open its dashboard to manage it.",
 } satisfies Record<string, string>;
 
 export type TranslationKey = keyof typeof en;
@@ -795,6 +796,7 @@ const ar: Record<TranslationKey, string> = {
   "program.joinBonus.hint": "تُمنح مرة واحدة عند أول انضمام للعميل إلى متجرك. لا تكمل البطاقة وحدها: الحد الأقصى أقل بواحد من الطوابع المطلوبة.",
   "join.bonus": "تبدأ بطاقتك ومعها {count} من الطوابع الترحيبية!",
   "activity.joinBonus": "طوابع ترحيبية",
+  "onboarding.alreadyOwner": "لديك متجر بالفعل. افتح لوحة التحكم لإدارته.",
 };
 
 const dictionaries: Record<Locale, Record<TranslationKey, string>> = { en, ar };

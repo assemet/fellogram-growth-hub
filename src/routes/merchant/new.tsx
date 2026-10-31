@@ -1,7 +1,7 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { useMutation } from "@tanstack/react-query";
+import { useMutation, useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { toast } from "sonner";
 
 import { AppHeader } from "@/components/BrandMark";
@@ -11,7 +11,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useFellogramAuth } from "@/hooks/useFellogramAuth";
 import { t } from "@/lib/i18n";
-import { createStore } from "@/lib/store.functions";
+import { createStore, getMyStore } from "@/lib/store.functions";
 
 export const Route = createFileRoute("/merchant/new")({
   ssr: false,
@@ -38,6 +38,7 @@ function NewStore() {
   const { state } = useFellogramAuth();
   const navigate = useNavigate();
   const submit = useServerFn(createStore);
+  const loadStore = useServerFn(getMyStore);
 
   const [step, setStep] = useState(0);
   const [storeName, setStoreName] = useState("");
@@ -52,8 +53,25 @@ function NewStore() {
         data: { storeName, description, programName, stampsRequired, rewardName },
       }),
     onSuccess: () => setStep(2),
-    onError: () => toast.error(t("common.error")),
+    onError: (e: Error) => {
+      if (e.message.includes("STORE_ALREADY_EXISTS")) {
+        toast.error(t("onboarding.alreadyOwner"));
+        navigate({ to: "/merchant", replace: true });
+        return;
+      }
+      toast.error(t("common.error"));
+    },
   });
+
+  // One store per owner: someone who already has a store belongs on its dashboard, not here.
+  const { data: existing } = useQuery({
+    queryKey: ["my-store"],
+    queryFn: () => loadStore(),
+    enabled: state === "ready",
+  });
+  useEffect(() => {
+    if (existing && step !== 2) navigate({ to: "/merchant", replace: true });
+  }, [existing, step, navigate]);
 
   if (state !== "ready") return <SplashScreen />;
 

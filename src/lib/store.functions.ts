@@ -1,4 +1,5 @@
 import { createServerFn } from "@tanstack/react-start";
+import { currentOwnedStoreId, ownedIdOrNil } from "@/lib/current-store";
 import { miniAppLink } from "@/lib/bot-link";
 import { check, throwIfError, type Db } from "@/lib/db";
 import { isStampIconId, STAMP_LOGO_ID } from "@/lib/stamp-icons";
@@ -12,7 +13,7 @@ export const getMyContext = createServerFn({ method: "POST" })
 
     const [{ data: profile, error: profileError }, { data: memberships, error: roleError }, { data: cards, error: cardsError }] = await Promise.all([
       supabase.from("profiles").select("*").eq("id", userId).maybeSingle(),
-      supabase.from("store_members").select("store_id, role, stores(id, name)").eq("user_id", userId),
+      supabase.from("store_members").select("store_id, role, stores(id, name)").eq("user_id", userId).order("created_at", { ascending: false }),
       supabase
         .from("customer_memberships")
         .select("id, stamp_balance, stores(name), loyalty_programs(name, stamps_required)")
@@ -40,9 +41,7 @@ export const getMyStore = createServerFn({ method: "POST" })
     const { data: store } = check(await supabase
       .from("stores")
       .select("*")
-      .eq("owner_id", userId)
-      .order("created_at", { ascending: false })
-      .limit(1)
+      .eq("id", await ownedIdOrNil(supabase, userId))
       .maybeSingle(), "STORE_LOOKUP_FAILED");
     if (!store) return null;
 
@@ -94,6 +93,9 @@ export const createStore = createServerFn({ method: "POST" })
   })
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context;
+
+    // One store per owner: a second one would split customers, cashier and dashboard across stores.
+    if (await currentOwnedStoreId(supabase, userId)) throw new Error("STORE_ALREADY_EXISTS");
 
     const { data: store, error: storeError } = await supabase
       .from("stores")
@@ -350,9 +352,7 @@ export const updateProgram = createServerFn({ method: "POST" })
     const { data: store } = check(await supabase
       .from("stores")
       .select("id, logo_url")
-      .eq("owner_id", userId)
-      .order("created_at", { ascending: false })
-      .limit(1)
+      .eq("id", await ownedIdOrNil(supabase, userId))
       .maybeSingle(), "STORE_LOOKUP_FAILED");
     if (!store) throw new Error("STORE_NOT_FOUND");
 
@@ -439,7 +439,7 @@ export const updateStoreLogo = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context;
     if (data.objectPath && !data.objectPath.startsWith(`${userId}/`)) throw new Error("UNAUTHORIZED");
-    const { data: store } = check(await supabase.from("stores").select("id, logo_url").eq("owner_id", userId).order("created_at", { ascending: false }).limit(1).maybeSingle(), "STORE_LOOKUP_FAILED");
+    const { data: store } = check(await supabase.from("stores").select("id, logo_url").eq("id", await ownedIdOrNil(supabase, userId)).maybeSingle(), "STORE_LOOKUP_FAILED");
     if (!store) throw new Error("STORE_NOT_FOUND");
     const previous = store.logo_url;
     const { error } = await supabase.from("stores").update({ logo_url: data.objectPath }).eq("id", store.id);
@@ -465,8 +465,7 @@ export const requestRedemption = createServerFn({ method: "POST" })
 
 async function ownedStore(supabase: any, userId: string) {
   const { data: store } = check(await supabase
-    .from("stores").select("id").eq("owner_id", userId)
-    .order("created_at", { ascending: false }).limit(1).maybeSingle(), "STORE_LOOKUP_FAILED");
+    .from("stores").select("id").eq("id", await ownedIdOrNil(supabase, userId)).maybeSingle(), "STORE_LOOKUP_FAILED");
   if (!store) throw new Error("STORE_NOT_FOUND");
   return store.id as string;
 }
@@ -519,9 +518,7 @@ export const getStoreJoinLink = createServerFn({ method: "POST" })
     const { data: store } = check(await context.supabase
       .from("stores")
       .select("id")
-      .eq("owner_id", context.userId)
-      .order("created_at", { ascending: false })
-      .limit(1)
+      .eq("id", await ownedIdOrNil(context.supabase, context.userId))
       .maybeSingle(), "STORE_LOOKUP_FAILED");
     if (!store) throw new Error("STORE_NOT_FOUND");
     const param = `join_${store.id}`;
@@ -622,7 +619,7 @@ export const getStoreAnalytics = createServerFn({ method: "POST" })
 
 async function ownedStoreRow(supabase: Db, userId: string) {
   const { data: store } = check(
-    await supabase.from("stores").select("id, name, logo_url").eq("owner_id", userId).order("created_at", { ascending: false }).limit(1).maybeSingle(),
+    await supabase.from("stores").select("id, name, logo_url").eq("id", await ownedIdOrNil(supabase, userId)).maybeSingle(),
     "STORE_LOOKUP_FAILED",
   );
   if (!store) throw new Error("STORE_NOT_FOUND");

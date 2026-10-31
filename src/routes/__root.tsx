@@ -13,6 +13,7 @@ import { Toaster } from "../components/ui/sonner";
 import { reportLovableError } from "../lib/lovable-error-reporting";
 import { Button } from "../components/ui/button";
 import { useLocale } from "../hooks/useLocale";
+import { useTelegramBackButton } from "../hooks/useTelegramBackButton";
 import { t } from "../lib/i18n";
 
 
@@ -92,6 +93,8 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
   head: () => ({
     meta: [
       { charSet: "utf-8" },
+      { name: "theme-color", content: "#f7f4ff", media: "(prefers-color-scheme: light)" },
+      { name: "theme-color", content: "#16132a", media: "(prefers-color-scheme: dark)" },
       {
         name: "viewport",
         content: "width=device-width, initial-scale=1, viewport-fit=cover",
@@ -113,12 +116,8 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
     ],
     links: [
       { rel: "stylesheet", href: appCss },
-      { rel: "preconnect", href: "https://fonts.googleapis.com" },
-      { rel: "preconnect", href: "https://fonts.gstatic.com", crossOrigin: "anonymous" },
-      {
-        rel: "stylesheet",
-        href: "https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&display=swap",
-      },
+      // The Latin text font is needed on every screen, so fetch it before the CSS asks for it.
+      { rel: "preload", href: "/fonts/dm-sans-latin.woff2", as: "font", type: "font/woff2", crossOrigin: "anonymous" },
       { rel: "icon", type: "image/png", href: "/favicon.png" },
     ],
   }),
@@ -154,6 +153,7 @@ function RootShell({ children }: { children: ReactNode }) {
 function RootComponent() {
   // Remount the routed page when the language changes so every t() call picks up the new language.
   const locale = useLocale();
+  useTelegramBackButton();
   const { queryClient } = Route.useRouteContext();
 
   useEffect(() => {

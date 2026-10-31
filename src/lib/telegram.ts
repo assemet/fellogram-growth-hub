@@ -14,6 +14,14 @@ type TelegramWebApp = {
   openTelegramLink?: (url: string) => void;
   showScanQrPopup?: (params: { text?: string }, callback?: (text: string) => boolean | void) => void;
   closeScanQrPopup?: () => void;
+  setHeaderColor?: (color: string) => void;
+  setBackgroundColor?: (color: string) => void;
+  BackButton?: {
+    show: () => void;
+    hide: () => void;
+    onClick: (callback: () => void) => void;
+    offClick: (callback: () => void) => void;
+  };
   HapticFeedback?: { notificationOccurred?: (type: "success" | "error" | "warning") => void };
 };
 
@@ -26,6 +34,33 @@ export function initTelegram() {
   const app = webApp();
   app?.ready?.();
   app?.expand?.();
+  try {
+    // Let Telegram's own header and overscroll area blend into the app instead of a separate strip.
+    app?.setHeaderColor?.("secondary_bg_color");
+    app?.setBackgroundColor?.("secondary_bg_color");
+  } catch {
+    /* older Telegram clients do not support these */
+  }
+}
+
+let backHandler: (() => void) | null = null;
+
+/** Telegram's native Back button: pass a handler to show it, null to hide it. */
+export function setTelegramBackButton(handler: (() => void) | null) {
+  const button = webApp()?.BackButton;
+  if (!button) return;
+  try {
+    if (backHandler) button.offClick(backHandler);
+    backHandler = handler;
+    if (handler) {
+      button.onClick(handler);
+      button.show();
+    } else {
+      button.hide();
+    }
+  } catch {
+    /* Back button needs Telegram 6.1+; screens still have their own "back" links */
+  }
 }
 
 /** Keep the app in sync with Telegram's live appearance, or the device preference outside Telegram. */

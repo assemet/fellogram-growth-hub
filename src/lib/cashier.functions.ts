@@ -1,4 +1,5 @@
 import { createServerFn } from "@tanstack/react-start";
+import { resolveCurrentStore } from "@/lib/current-store";
 import { check, throwIfError } from "@/lib/db";
 import { loadNames, matchesPerson } from "@/lib/people";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
@@ -14,25 +15,10 @@ export function parseCustomerCode(raw: string): string | null {
 
 /** Resolves the store the signed-in user can stamp for (staff or owner only). */
 async function resolveStaffStore(supabase: any, userId: string) {
-  const { data: membership } = check(await supabase
-    .from("store_members")
-    .select("store_id, role, stores(id, name)")
-    .eq("user_id", userId)
-    .order("created_at")
-    .limit(1)
-    .maybeSingle(), "MEMBERSHIP_LOOKUP_FAILED");
-  if (membership?.store_id) {
-    return { storeId: membership.store_id as string, storeName: membership.stores?.name ?? "Store", role: membership.role as string };
-  }
-  const { data: store } = check(await supabase
-    .from("stores")
-    .select("id, name")
-    .eq("owner_id", userId)
-    .order("created_at", { ascending: false })
-    .limit(1)
-    .maybeSingle(), "STORE_LOOKUP_FAILED");
-  if (store) return { storeId: store.id as string, storeName: store.name as string, role: "owner" };
-  return null;
+  const current = await resolveCurrentStore(supabase, userId);
+  if (!current) return null;
+  const { data: store } = check(await supabase.from("stores").select("id, name").eq("id", current.storeId).maybeSingle(), "STORE_LOOKUP_FAILED");
+  return { storeId: current.storeId, storeName: (store?.name as string | undefined) ?? "Store", role: current.role as string };
 }
 
 /** Store context for cashier mode. Returns null for customers (no access). */

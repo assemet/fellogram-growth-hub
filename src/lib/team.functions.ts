@@ -1,4 +1,5 @@
 import { createServerFn } from "@tanstack/react-start";
+import { ownedIdOrNil } from "@/lib/current-store";
 
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { miniAppLink } from "@/lib/bot-link";
@@ -10,7 +11,7 @@ const ID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 async function ownedStore(supabase: Db, userId: string): Promise<{ id: string; name: string }> {
   const { data: store } = check(
-    await supabase.from("stores").select("id, name").eq("owner_id", userId).order("created_at", { ascending: false }).limit(1).maybeSingle(),
+    await supabase.from("stores").select("id, name").eq("id", await ownedIdOrNil(supabase, userId)).maybeSingle(),
     "STORE_LOOKUP_FAILED",
   );
   if (!store) throw new Error("STORE_NOT_FOUND");
