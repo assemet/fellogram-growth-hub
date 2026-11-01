@@ -8,6 +8,7 @@ import { brandThemeStyle } from "@/lib/card-theme";
 import { AppHeader } from "@/components/BrandMark";
 import { SplashScreen } from "@/components/SplashScreen";
 import { MyQrDialog } from "@/components/MyQrDialog";
+import { NotificationsCard } from "@/components/NotificationsCard";
 import { QueryError } from "@/components/QueryError";
 import { StoreScanButton } from "@/components/StoreScanButton";
 import { WalletEmptyState } from "@/components/WalletEmptyState";
@@ -117,6 +118,12 @@ function Wallet() {
             ))}
           </ul>
         )}
+{cards.length > 0 && (
+          <div className="mt-6">
+            <NotificationsCard />
+          </div>
+        )}
+
 {!focusedCard && cards.length > 0 && <StoreScanButton variant="outline" label={t("wallet.addCard")} className="mt-6 w-full" />}
 
         {!focusedCard && !data.ownedStoreId && !data.staffStoreId && (

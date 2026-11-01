@@ -92,6 +92,13 @@
       "when": 1791154962386,
       "tag": "0012_join_bonus",
       "breakpoints": true
+    },
+    {
+      "idx": 13,
+      "version": "7",
+      "when": 1791155562386,
+      "tag": "0013_notifications",
+      "breakpoints": true
     }
   ]
 }

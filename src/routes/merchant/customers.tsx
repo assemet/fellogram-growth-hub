@@ -6,6 +6,7 @@ import { Gift, Search, Sparkles, Stamp, Undo2, Users } from "lucide-react";
 
 import { AppHeader } from "@/components/BrandMark";
 import { QueryError } from "@/components/QueryError";
+import { ReminderCard } from "@/components/ReminderCard";
 import { SplashScreen } from "@/components/SplashScreen";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useFellogramAuth } from "@/hooks/useFellogramAuth";
@@ -83,6 +84,7 @@ function CustomersTab({ ready }: { ready: boolean }) {
 
   return (
     <div>
+      <ReminderCard ready={ready} />
       <div className="relative">
         <Search className="pointer-events-none absolute start-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" aria-hidden="true" />
         <input

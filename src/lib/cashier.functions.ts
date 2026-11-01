@@ -1,5 +1,6 @@
 import { createServerFn } from "@tanstack/react-start";
 import { resolveCurrentStore } from "@/lib/current-store";
+import { notifyStamp, withinBudget } from "@/lib/notify";
 import { check, throwIfError } from "@/lib/db";
 import { loadNames, matchesPerson } from "@/lib/people";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
@@ -131,14 +132,21 @@ export const awardStamp = createServerFn({ method: "POST" })
     const store = await resolveStaffStore(context.supabase, context.userId);
     if (!store) throw new Error("NOT_STORE_STAFF");
 
-    const { error } = await context.supabase.rpc("award_stamp", {
+    const { data: awarded, error } = await context.supabase.rpc("award_stamp", {
       _store_id: store.storeId,
       _customer_id: data.customerId,
       _amount: data.amount,
     });
     if (error) throw new Error(error.message);
 
+    // Tell the customer (if they opted in) while the screen state loads; it can never delay or fail the stamp.
+    const row = Array.isArray(awarded) ? awarded[0] : awarded;
+    const notified = row
+      ? withinBudget(notifyStamp({ storeId: store.storeId, storeName: store.storeName, customerId: data.customerId, balance: row.stamp_balance, required: row.stamps_required }))
+      : Promise.resolve();
+
     const state = await loadCustomerState(context.supabase, store.storeId, data.customerId);
+    await notified;
     if (!state) throw new Error("MEMBERSHIP_NOT_FOUND");
     return state;
   });
@@ -213,14 +221,20 @@ export const enrollCustomer = createServerFn({ method: "POST" })
     });
     if (enrollError) throw new Error(enrollError.message);
 
-    const { error: awardError } = await context.supabase.rpc("award_stamp", {
+    const { data: awarded, error: awardError } = await context.supabase.rpc("award_stamp", {
       _store_id: store.storeId,
       _customer_id: data.customerId,
       _amount: 1,
     });
     if (awardError) throw new Error(awardError.message);
 
+    const row = Array.isArray(awarded) ? awarded[0] : awarded;
+    const notified = row
+      ? withinBudget(notifyStamp({ storeId: store.storeId, storeName: store.storeName, customerId: data.customerId, balance: row.stamp_balance, required: row.stamps_required }))
+      : Promise.resolve();
+
     const state = await loadCustomerState(context.supabase, store.storeId, data.customerId);
+    await notified;
     if (!state) throw new Error("MEMBERSHIP_NOT_FOUND");
     return state;
   });

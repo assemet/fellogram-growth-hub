@@ -15,6 +15,7 @@ type TelegramWebApp = {
   showScanQrPopup?: (params: { text?: string }, callback?: (text: string) => boolean | void) => void;
   closeScanQrPopup?: () => void;
   setHeaderColor?: (color: string) => void;
+  requestWriteAccess?: (callback?: (granted: boolean) => void) => void;
   setBackgroundColor?: (color: string) => void;
   BackButton?: {
     show: () => void;
@@ -175,4 +176,25 @@ export function telegramHaptic(kind: "success" | "error" | "warning") {
   } catch {
     /* haptics are best-effort */
   }
+}
+
+/**
+ * Native Telegram prompt: "allow this bot to message you". Resolves true/false, or null when this
+ * Telegram client cannot show it (the server then finds out by trying to deliver a message).
+ */
+export function requestTelegramWriteAccess(): Promise<boolean | null> {
+  const app = webApp();
+  if (!app?.requestWriteAccess) return Promise.resolve(null);
+  return new Promise((resolve) => {
+    const timer = setTimeout(() => resolve(null), 60_000);
+    try {
+      app.requestWriteAccess!((granted) => {
+        clearTimeout(timer);
+        resolve(Boolean(granted));
+      });
+    } catch {
+      clearTimeout(timer);
+      resolve(null);
+    }
+  });
 }

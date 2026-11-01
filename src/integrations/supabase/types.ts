@@ -124,13 +124,47 @@ export type Database = {
           },
         ]
       }
+      notification_log: {
+        Row: {
+          created_at: string
+          customer_id: string
+          id: string
+          kind: string
+          store_id: string
+        }
+        Insert: {
+          created_at?: string
+          customer_id: string
+          id?: string
+          kind: string
+          store_id: string
+        }
+        Update: {
+          created_at?: string
+          customer_id?: string
+          id?: string
+          kind?: string
+          store_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "notification_log_store_id_fkey"
+            columns: ["store_id"]
+            isOneToOne: false
+            referencedRelation: "stores"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       profiles: {
         Row: {
           avatar_url: string | null
           created_at: string
           first_name: string | null
           id: string
+          language_code: string | null
           last_name: string | null
+          notifications_enabled: boolean
           telegram_user_id: number | null
           updated_at: string
           username: string | null
@@ -140,7 +174,9 @@ export type Database = {
           created_at?: string
           first_name?: string | null
           id: string
+          language_code?: string | null
           last_name?: string | null
+          notifications_enabled?: boolean
           telegram_user_id?: number | null
           updated_at?: string
           username?: string | null
@@ -150,7 +186,9 @@ export type Database = {
           created_at?: string
           first_name?: string | null
           id?: string
+          language_code?: string | null
           last_name?: string | null
+          notifications_enabled?: boolean
           telegram_user_id?: number | null
           updated_at?: string
           username?: string | null
