@@ -34,7 +34,8 @@ export function AppHeader({ subtitle, action }: { subtitle?: string; action?: Re
       <div className="flex shrink-0 items-center gap-1">
         <Button type="button" variant="ghost" size="sm" className="touch-action gap-1 px-2 text-muted-foreground" onClick={switchLanguage} aria-label={t("language.switch")}>
           <Languages className="h-4 w-4" />
-          <span className="text-xs font-bold">{getLocale() === "en" ? "AR" : "EN"}</span>
+          {/* Native names on purpose: someone who cannot read the current language still recognizes theirs. */}
+          <span className="text-xs font-bold">{getLocale() === "en" ? "العربية" : "English"}</span>
         </Button>
         {action}
       </div>

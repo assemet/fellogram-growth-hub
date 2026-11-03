@@ -11,6 +11,7 @@ import { toast } from "sonner";
 import { acceptReferral, getMyContext } from "@/lib/store.functions";
 import { acceptInvite } from "@/lib/team.functions";
 import { parseStoreCode } from "@/lib/join-code";
+import { pickStartTab, readLastTab, TAB_PATH } from "@/lib/start-tab";
 import { clearPendingStartParam, readPendingStartParam } from "@/lib/telegram";
 
 export const Route = createFileRoute("/")({
@@ -100,13 +101,9 @@ function SplashRouter() {
         }
         const context = await loadContext();
         if (cancelled) return;
-        if (context.staffStoreId) {
-          navigate({ to: "/cashier", replace: true });
-        } else if (context.ownedStoreId) {
-          navigate({ to: "/merchant", replace: true });
-        } else {
-          navigate({ to: "/wallet", replace: true });
-        }
+        // Reopen the tab used last (if still allowed), otherwise the one that fits the role.
+        const tab = pickStartTab({ isOwner: Boolean(context.ownedStoreId), isStaff: Boolean(context.staffStoreId) }, readLastTab());
+        navigate({ to: TAB_PATH[tab], replace: true });
       } catch (error) {
         console.error(error);
         if (cancelled) return;

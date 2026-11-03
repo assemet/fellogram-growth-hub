@@ -3,6 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 
 import { AppHeader } from "@/components/BrandMark";
+import { BottomNav } from "@/components/BottomNav";
 import { QueryError } from "@/components/QueryError";
 import { SplashScreen } from "@/components/SplashScreen";
 import { useFellogramAuth } from "@/hooks/useFellogramAuth";
@@ -10,7 +11,7 @@ import { t } from "@/lib/i18n";
 import { getMyStore } from "@/lib/store.functions";
 import { GrowthAnalytics } from "@/components/GrowthAnalytics";
 import { StoreJoinShare } from "@/components/StoreJoinShare";
-import { ArrowRight, ChevronRight, Settings2, Store, UserPlus, Users } from "lucide-react";
+import { ChevronRight, Settings2, Store, UserPlus, Users } from "lucide-react";
 
 export const Route = createFileRoute("/merchant/")({
   ssr: false,
@@ -109,11 +110,8 @@ function MerchantDashboard() {
 
         <GrowthAnalytics />
 
-
-        <Link to="/wallet" className="touch-action mt-6 flex items-center justify-between border-t border-border py-4 text-sm font-semibold text-primary">
-          {t("merchant.switchToWallet")} <ArrowRight className="h-4 w-4" />
-        </Link>
       </section>
+      <BottomNav current="merchant" />
     </main>
   );
 }

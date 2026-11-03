@@ -425,6 +425,10 @@ const en = {
   "reminder.more": "{count} more can be reminded: send again.",
   "reminder.none": "None of them can be reached yet: customers must turn on notifications first.",
   "reminder.limit": "Each customer gets at most one reminder every 14 days.",
+  "nav.main": "Main navigation",
+  "nav.wallet": "My cards",
+  "nav.cashier": "Cashier",
+  "nav.store": "My store",
 } satisfies Record<string, string>;
 
 export type TranslationKey = keyof typeof en;
@@ -839,6 +843,10 @@ const ar: Record<TranslationKey, string> = {
   "reminder.more": "يمكن تذكير {count} آخرين: أرسل مرة أخرى.",
   "reminder.none": "لا يمكن الوصول إليهم بعد: يجب أن يفعّل العملاء الإشعارات أولاً.",
   "reminder.limit": "يصل كل عميل تذكير واحد كحد أقصى كل 14 يوماً.",
+  "nav.main": "التنقل الرئيسي",
+  "nav.wallet": "بطاقاتي",
+  "nav.cashier": "الكاشير",
+  "nav.store": "متجري",
 };
 
 const dictionaries: Record<Locale, Record<TranslationKey, string>> = { en, ar };

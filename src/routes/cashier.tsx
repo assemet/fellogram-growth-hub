@@ -7,6 +7,7 @@ import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 
 import { AppHeader } from "@/components/BrandMark";
+import { BottomNav } from "@/components/BottomNav";
 import { QueryError } from "@/components/QueryError";
 import { SplashScreen } from "@/components/SplashScreen";
 import { useFellogramAuth } from "@/hooks/useFellogramAuth";
@@ -560,11 +561,8 @@ function Cashier() {
             {error}
           </p>
         )}
-
-        <Link to="/merchant" className="block text-center text-sm font-semibold text-primary">
-          {t("merchant.title")}
-        </Link>
       </section>
+      <BottomNav current="cashier" />
     </main>
   );
 }

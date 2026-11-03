@@ -438,3 +438,14 @@
   src: url("/fonts/cairo-arabic.woff2") format("woff2");
   unicode-range: U+0600-06FF,U+0750-077F,U+0870-088E,U+0890-0891,U+0897-08E1,U+08E3-08FF,U+200C-200E,U+2010-2011,U+204F,U+2E41,U+FB50-FDFF,U+FE70-FE74,U+FE76-FEFC;
 }
+
+/* ---------- Bottom navigation ---------- */
+/* One class on <body> (set by BottomNav) keeps every page's last content clear of the fixed bar
+   (56px bar + the device's bottom safe area), and lifts toasts above it. */
+body.has-bottom-nav {
+  padding-bottom: calc(3.5rem + env(safe-area-inset-bottom, 0px));
+}
+body.has-bottom-nav [data-sonner-toaster] {
+  --offset: calc(4.5rem + env(safe-area-inset-bottom, 0px));
+  --mobile-offset: calc(4.5rem + env(safe-area-inset-bottom, 0px));
+}
