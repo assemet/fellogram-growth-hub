@@ -1,3 +1,4 @@
+import { APPEARANCE_EVENT, readAppearance } from "@/lib/prefs";
 /**
  * Browser-side Telegram Mini App helpers. The raw initData string is only ever
  * forwarded to the server, which validates it with HMAC before trusting it.
@@ -69,16 +70,35 @@ export function watchTelegramTheme() {
   if (typeof window === "undefined") return () => {};
   const app = webApp();
   const media = window.matchMedia("(prefers-color-scheme: dark)");
+  const root = document.documentElement;
   const sync = () => {
-    document.documentElement.classList.toggle("dark", app?.colorScheme === "dark" || (!app?.colorScheme && media.matches));
-    document.documentElement.classList.toggle("telegram-theme", Boolean(app && getComputedStyle(document.documentElement).getPropertyValue("--tg-theme-bg-color").trim()));
+    const appearance = readAppearance();
+    if (appearance === "auto") {
+      // Follow Telegram: its colorScheme, and its own surface colors (the "telegram-theme" class).
+      root.classList.toggle("dark", app?.colorScheme === "dark" || (!app?.colorScheme && media.matches));
+      root.classList.toggle("telegram-theme", Boolean(app && getComputedStyle(root).getPropertyValue("--tg-theme-bg-color").trim()));
+    } else {
+      // A chosen look must not be overridden by Telegram's colors, so use our own palette only.
+      root.classList.toggle("dark", appearance === "dark");
+      root.classList.remove("telegram-theme");
+    }
+    try {
+      // Keep Telegram's own header and overscroll area matching whatever the app now looks like.
+      const chrome = appearance === "auto" ? "secondary_bg_color" : appearance === "dark" ? "#16132a" : "#f7f4ff";
+      app?.setHeaderColor?.(chrome);
+      app?.setBackgroundColor?.(chrome);
+    } catch {
+      /* older Telegram clients do not support custom header colors */
+    }
   };
   sync();
   app?.onEvent?.("themeChanged", sync);
   media.addEventListener("change", sync);
+  window.addEventListener(APPEARANCE_EVENT, sync);
   return () => {
     app?.offEvent?.("themeChanged", sync);
     media.removeEventListener("change", sync);
+    window.removeEventListener(APPEARANCE_EVENT, sync);
   };
 }
 

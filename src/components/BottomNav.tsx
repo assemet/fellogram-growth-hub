@@ -1,13 +1,13 @@
 import { useEffect, useState } from "react";
 import { Link } from "@tanstack/react-router";
-import { ScanLine, Store, Wallet } from "lucide-react";
+import { ScanLine, Settings, Store, Wallet } from "lucide-react";
 
 import { useMyContext } from "@/hooks/useMyContext";
 import { t } from "@/lib/i18n";
 import { rememberTab, TAB_PATH, tabsFor, type Tab } from "@/lib/start-tab";
 
-const TAB_ICON = { wallet: Wallet, cashier: ScanLine, merchant: Store } as const;
-const TAB_LABEL = { wallet: "nav.wallet", cashier: "nav.cashier", merchant: "nav.store" } as const;
+const TAB_ICON = { wallet: Wallet, cashier: ScanLine, merchant: Store, settings: Settings } as const;
+const TAB_LABEL = { wallet: "nav.wallet", cashier: "nav.cashier", merchant: "nav.store", settings: "nav.settings" } as const;
 
 /** The software keyboard shrinks the visual viewport; a bar stuck above it would squeeze the form being typed in. */
 function useKeyboardOpen(): boolean {
@@ -33,11 +33,12 @@ export function BottomNav({ current }: { current: Tab }) {
 
   // Opening the app again lands on the tab used last.
   useEffect(() => {
-    rememberTab(current);
+    if (current !== "settings") rememberTab(current);
   }, [current]);
 
   const tabs = tabsFor({ isOwner: Boolean(data?.ownedStoreId), isStaff: Boolean(data?.staffStoreId) });
-  const visible = tabs.length > 1 && !keyboardOpen;
+  // Wait for the role so the bar does not appear with two tabs and then grow to four.
+  const visible = Boolean(data) && !keyboardOpen;
 
   // Pages keep their content clear of the bar through one class on <body> (see styles.css).
   useEffect(() => {
@@ -61,7 +62,7 @@ export function BottomNav({ current }: { current: Tab }) {
               <Link
                 to={TAB_PATH[tab]}
                 aria-current={active ? "page" : undefined}
-                className={`touch-action flex h-14 flex-col items-center justify-center gap-0.5 rounded-md text-[11px] font-semibold transition-colors ${
+                className={`touch-action flex h-14 flex-col items-center justify-center gap-0.5 rounded-md text-[0.6875rem] font-semibold transition-colors ${
                   active ? "text-primary" : "text-muted-foreground"
                 }`}
               >

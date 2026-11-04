@@ -1,8 +1,8 @@
 /** The app's top-level destinations and which of them a person may use. */
-export type Tab = "wallet" | "cashier" | "merchant";
+export type Tab = "wallet" | "cashier" | "merchant" | "settings";
 export type Roles = { isOwner: boolean; isStaff: boolean };
 
-export const TAB_PATH = { wallet: "/wallet", cashier: "/cashier", merchant: "/merchant" } as const satisfies Record<Tab, string>;
+export const TAB_PATH = { wallet: "/wallet", cashier: "/cashier", merchant: "/merchant", settings: "/settings" } as const satisfies Record<Tab, string>;
 
 const STORAGE_KEY = "fellogram.lastTab";
 
@@ -11,6 +11,7 @@ export function tabsFor(roles: Roles): Tab[] {
   const tabs: Tab[] = ["wallet"];
   if (roles.isOwner || roles.isStaff) tabs.push("cashier");
   if (roles.isOwner) tabs.push("merchant");
+  tabs.push("settings");
   return tabs;
 }
 
@@ -23,7 +24,8 @@ export function defaultTab(roles: Roles): Tab {
 
 /** Reopen the tab used last, as long as this person may still use it (e.g. after being removed from the team). */
 export function pickStartTab(roles: Roles, last: string | null): Tab {
-  return tabsFor(roles).find((tab) => tab === last) ?? defaultTab(roles);
+  // Settings is a place to visit, never a place to start from.
+  return tabsFor(roles).find((tab) => tab !== "settings" && tab === last) ?? defaultTab(roles);
 }
 
 export function readLastTab(): string | null {

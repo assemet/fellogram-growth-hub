@@ -1,13 +1,9 @@
 import { useState } from "react";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useServerFn } from "@tanstack/react-start";
 import { Bell, BellOff } from "lucide-react";
-import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
-import { getLocale, t } from "@/lib/i18n";
-import { disableNotifications, enableNotifications, getNotificationStatus } from "@/lib/notifications.functions";
-import { requestTelegramWriteAccess } from "@/lib/telegram";
+import { useNotifications } from "@/hooks/useNotifications";
+import { t } from "@/lib/i18n";
 
 const DISMISS_KEY = "fellogram.notify.dismissedAt";
 const DISMISS_DAYS = 14;
@@ -26,42 +22,8 @@ function recentlyDismissed(): boolean {
  * which is when it makes sense to them; "Not now" is remembered for two weeks.
  */
 export function NotificationsCard() {
-  const queryClient = useQueryClient();
-  const status = useServerFn(getNotificationStatus);
-  const enable = useServerFn(enableNotifications);
-  const disable = useServerFn(disableNotifications);
-  const { data } = useQuery({ queryKey: ["notif-status"], queryFn: () => status(), staleTime: 60_000 });
+  const { data, needsStart, enableMutation, disableMutation } = useNotifications();
   const [dismissed, setDismissed] = useState(recentlyDismissed);
-  const [needsStart, setNeedsStart] = useState(false);
-
-  const enableMutation = useMutation({
-    mutationFn: async () => {
-      // Telegram's own "allow this bot to message you" prompt; the server then proves it by delivering a message.
-      await requestTelegramWriteAccess();
-      return enable({ data: { locale: getLocale() } });
-    },
-    onSuccess: async (result) => {
-      if (result.ok) {
-        setNeedsStart(false);
-        toast.success(t("notify.enabledToast"));
-        await queryClient.invalidateQueries({ queryKey: ["notif-status"] });
-      } else if (result.reason === "blocked") {
-        setNeedsStart(true);
-      } else {
-        toast.error(result.reason === "migration" ? t("notify.migration") : t("notify.failed"));
-      }
-    },
-    onError: () => toast.error(t("notify.failed")),
-  });
-
-  const disableMutation = useMutation({
-    mutationFn: () => disable(),
-    onSuccess: async () => {
-      toast.success(t("notify.disabledToast"));
-      await queryClient.invalidateQueries({ queryKey: ["notif-status"] });
-    },
-    onError: () => toast.error(t("common.error")),
-  });
 
   if (!data || !data.supported) return null;
 

@@ -33,7 +33,7 @@ export function CustomerQr({ customerId }: { customerId: string }) {
           <span className="text-xs text-muted-foreground">…</span>
         )}
       </div>
-      <p className="mt-3 font-mono text-[10px] tracking-wide text-muted-foreground">{customerId}</p>
+      <p className="mt-3 font-mono text-[0.625rem] tracking-wide text-muted-foreground">{customerId}</p>
     </div>
   );
 }

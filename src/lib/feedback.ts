@@ -1,3 +1,4 @@
+import { readBool } from "@/lib/prefs";
 import { telegramHaptic } from "@/lib/telegram";
 
 type Kind = "success" | "error" | "warning";
@@ -35,12 +36,15 @@ const VIBRATION: Record<Kind, number[]> = { success: [40], warning: [60], error:
 
 /** Cashier feedback: the cashier is busy and rarely looks at the screen, so also use touch and sound. */
 export function notify(kind: Kind) {
-  telegramHaptic(kind);
-  try {
-    navigator.vibrate?.(VIBRATION[kind]);
-  } catch {
-    /* vibration is best-effort */
+  if (readBool("vibration")) {
+    telegramHaptic(kind);
+    try {
+      navigator.vibrate?.(VIBRATION[kind]);
+    } catch {
+      /* vibration is best-effort */
+    }
   }
+  if (!readBool("sound")) return;
   if (kind === "success") {
     tone(880, 0, 0.1);
     tone(1320, 0.11, 0.14);

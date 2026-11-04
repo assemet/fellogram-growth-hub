@@ -70,7 +70,7 @@ function JoinStore() {
         <section className="app-shell rounded-lg bg-card p-8 text-center shadow-[var(--shadow-card)]">
           <p className="font-semibold">{t("join.notFound")}</p>
           {error && (
-            <p dir="ltr" className="mt-3 break-all rounded-md bg-muted px-3 py-2 text-start font-mono text-[11px] text-muted-foreground">
+            <p dir="ltr" className="mt-3 break-all rounded-md bg-muted px-3 py-2 text-start font-mono text-[0.6875rem] text-muted-foreground">
               {String((error as Error).message ?? error)}
             </p>
           )}

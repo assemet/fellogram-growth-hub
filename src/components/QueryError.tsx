@@ -13,7 +13,7 @@ export function QueryError({ error, onRetry }: { error: unknown; onRetry: () => 
           <p className="font-semibold">{t("error.load.title")}</p>
           <p className="mt-1 text-sm text-muted-foreground">{t("error.load.body")}</p>
           {reason && (
-            <p dir="ltr" className="mt-3 break-all rounded-md bg-muted px-3 py-2 text-start font-mono text-[11px] text-muted-foreground">
+            <p dir="ltr" className="mt-3 break-all rounded-md bg-muted px-3 py-2 text-start font-mono text-[0.6875rem] text-muted-foreground">
               {reason}
             </p>
           )}

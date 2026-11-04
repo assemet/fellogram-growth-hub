@@ -86,12 +86,7 @@ function Wallet() {
 
 {!focusedCard && cards.length > 0 && <StoreScanButton variant="outline" label={t("wallet.addCard")} className="mt-6 w-full" />}
 
-        {!focusedCard && !data.ownedStoreId && !data.staffStoreId && (
-          <Link to="/merchant/new" className="mt-8 block text-center text-sm font-semibold text-muted-foreground underline-offset-4 hover:text-primary hover:underline">
-            {t("wallet.merchantCta.link")}
-          </Link>
-        )}
-      </section>
+              </section>
       <BottomNav current="wallet" />
     </main>
   );

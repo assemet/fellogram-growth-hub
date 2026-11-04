@@ -137,7 +137,7 @@ function RootShell({ children }: { children: ReactNode }) {
         {/* Set language/direction before first paint so Arabic never flashes as LTR English. */}
         <script
           dangerouslySetInnerHTML={{
-            __html: `try{var l=localStorage.getItem('fellogram.locale');if(l!=='ar'&&l!=='en'){var w=window.Telegram&&Telegram.WebApp&&Telegram.WebApp.initDataUnsafe&&Telegram.WebApp.initDataUnsafe.user;var n=(w&&w.language_code)||navigator.language||'';l=n.toLowerCase().indexOf('ar')===0?'ar':'en'}document.documentElement.lang=l;document.documentElement.dir=l==='ar'?'rtl':'ltr'}catch(e){}`,
+            __html: `try{var l=localStorage.getItem('fellogram.locale');if(l!=='ar'&&l!=='en'){var w=window.Telegram&&Telegram.WebApp&&Telegram.WebApp.initDataUnsafe&&Telegram.WebApp.initDataUnsafe.user;var n=(w&&w.language_code)||navigator.language||'';l=n.toLowerCase().indexOf('ar')===0?'ar':'en'}document.documentElement.lang=l;document.documentElement.dir=l==='ar'?'rtl':'ltr'}catch(e){}try{if(localStorage.getItem('fellogram.appearance')==='dark')document.documentElement.classList.add('dark');if(localStorage.getItem('fellogram.textSize')==='large')document.documentElement.style.fontSize='112.5%'}catch(e){}`,
           }}
         />
         <HeadContent />

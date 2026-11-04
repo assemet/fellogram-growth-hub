@@ -62,7 +62,7 @@ export function ReminderCard({ ready }: { ready: boolean }) {
           >
             {mutation.isPending ? t("reminder.sending") : confirming ? t("reminder.confirm") : t("reminder.send", { count: Math.min(data.reachable, data.perSend) })}
           </Button>
-          <p className="mt-2 text-[11px] text-muted-foreground">{t("reminder.limit")}</p>
+          <p className="mt-2 text-[0.6875rem] text-muted-foreground">{t("reminder.limit")}</p>
         </>
       ) : (
         <p className="mt-3 rounded-md bg-muted px-3 py-2 text-xs text-muted-foreground">{t("reminder.none")}</p>
