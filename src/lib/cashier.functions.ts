@@ -38,7 +38,11 @@ export const getCashierStore = createServerFn({ method: "POST" })
       .limit(1)
       .maybeSingle(), "PROGRAM_LOOKUP_FAILED");
 
-    return { ...store, program: program ?? null };
+    // Owner rule: cashiers may be barred from undoing stamps (owners always can).
+    const { data: storeRow } = check(await context.supabase.from("stores").select("*").eq("id", store.storeId).maybeSingle(), "STORE_LOOKUP_FAILED");
+    const canUndo = store.role === "owner" || (storeRow?.staff_can_undo ?? true);
+
+    return { ...store, canUndo, program: program ?? null };
   });
 
 type CustomerState = {

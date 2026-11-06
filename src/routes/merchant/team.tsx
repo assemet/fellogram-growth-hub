@@ -8,6 +8,7 @@ import { toast } from "sonner";
 import { AppHeader } from "@/components/BrandMark";
 import { InviteLinkCard } from "@/components/InviteLinkCard";
 import { QueryError } from "@/components/QueryError";
+import { TeamRulesCard } from "@/components/TeamRulesCard";
 import { SplashScreen } from "@/components/SplashScreen";
 import { Button } from "@/components/ui/button";
 import { useFellogramAuth } from "@/hooks/useFellogramAuth";
@@ -190,6 +191,8 @@ function TeamPage() {
             </ul>
           )}
         </div>
+
+        <TeamRulesCard rules={data.rules} />
       </section>
     </main>
   );

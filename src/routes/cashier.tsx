@@ -52,6 +52,8 @@ function friendlyError(message: string): string {
   if (message.includes("TOKEN_INVALID")) return t("cashier.tokenInvalid");
   if (message.includes("NOT_ENOUGH_STAMPS")) return t("rewards.notEnough");
   if (message.includes("NOTHING_TO_UNDO")) return t("cashier.nothingToUndo");
+  if (message.includes("DAILY_LIMIT_REACHED")) return t("cashier.dailyLimit");
+  if (message.includes("UNDO_NOT_ALLOWED")) return t("cashier.undoNotAllowed");
   return t("common.error");
 }
 
@@ -524,7 +526,7 @@ function Cashier() {
               </p>
             )}
 
-            {customer.canUndo && (
+            {customer.canUndo && store.canUndo && (
               <Button
                 type="button"
                 onClick={() => {

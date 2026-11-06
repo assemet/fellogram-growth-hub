@@ -2,6 +2,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useState } from "react";
 import { ChevronRight } from "lucide-react";
 
+import { DeleteAccountSection, LeaveTeamRow } from "@/components/AccountDangerZone";
 import { AppHeader } from "@/components/BrandMark";
 import { BottomNav } from "@/components/BottomNav";
 import { QueryError } from "@/components/QueryError";
@@ -163,6 +164,7 @@ function SettingsPage() {
             <SwitchRow label={t("cashier.autoStamp")} checked={prefs.autoStamp} onChange={(next) => togglePref("autoStamp", next)} />
             <SwitchRow label={t("settings.sound")} checked={prefs.sound} onChange={(next) => togglePref("sound", next)} />
             <SwitchRow label={t("settings.vibration")} checked={prefs.vibration} onChange={(next) => togglePref("vibration", next)} />
+            {!isOwner && context.staffStoreName && <LeaveTeamRow storeName={context.staffStoreName} />}
           </Section>
         )}
 
@@ -177,6 +179,11 @@ function SettingsPage() {
             </Link>
           </Section>
         )}
+
+        <Section title={t("settings.data")}>
+          <p className="text-sm font-semibold text-destructive">{t("settings.delete.title")}</p>
+          <DeleteAccountSection isOwner={isOwner} />
+        </Section>
 
         <Section title={t("settings.about")}>
           <div>

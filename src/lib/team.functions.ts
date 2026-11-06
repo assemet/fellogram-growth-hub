@@ -42,9 +42,18 @@ export const getTeam = createServerFn({ method: "POST" })
     ]);
     throwIfError(members.error ?? invitations.error, "TEAM_LOOKUP_FAILED");
 
+    // select("*") so a database without the team-rules columns still loads (rules then read as defaults).
+    const { data: storeRow } = check(await supabase.from("stores").select("*").eq("id", store.id).maybeSingle(), "STORE_LOOKUP_FAILED");
+    const rules = {
+      supported: Boolean(storeRow && "staff_can_undo" in storeRow),
+      canUndo: storeRow?.staff_can_undo ?? true,
+      dailyLimit: storeRow?.staff_daily_stamp_limit ?? 0,
+    };
+
     const names = await loadNames(supabase, (members.data ?? []).map((m) => m.user_id));
     return {
       storeName: store.name,
+      rules,
       staff: (members.data ?? []).map((m) => ({
         userId: m.user_id,
         name: names.get(m.user_id)?.name ?? null,
@@ -115,4 +124,25 @@ export const acceptInvite = createServerFn({ method: "POST" })
     const { data: storeId, error } = await context.supabase.rpc("accept_staff_invitation", { _token: data.token });
     if (error) throw new Error(error.message);
     return { storeId: String(storeId) };
+  });
+
+/** Owner: what cashiers may do. Owners themselves are never limited. */
+export const updateTeamRules = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((data: { canUndo: boolean; dailyLimit: number }) => ({
+    canUndo: Boolean(data?.canUndo),
+    dailyLimit: Math.min(1000, Math.max(0, Math.round(Number(data?.dailyLimit)) || 0)),
+  }))
+  .handler(async ({ data, context }) => {
+    const store = await ownedStore(context.supabase, context.userId);
+    const { error } = await context.supabase
+      .from("stores")
+      .update({ staff_can_undo: data.canUndo, staff_daily_stamp_limit: data.dailyLimit })
+      .eq("id", store.id);
+    if (error) {
+      // 42703 / PGRST204: the privacy-and-team-rules migration has not been applied to this database yet.
+      if (error.code === "42703" || error.code === "PGRST204") throw new Error("DB_MIGRATION_REQUIRED");
+      throw new Error(error.message);
+    }
+    return { ok: true };
   });

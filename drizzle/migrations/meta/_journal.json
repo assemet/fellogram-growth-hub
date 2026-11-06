@@ -99,6 +99,13 @@
       "when": 1791155562386,
       "tag": "0013_notifications",
       "breakpoints": true
+    },
+    {
+      "idx": 14,
+      "version": "7",
+      "when": 1791156162386,
+      "tag": "0014_privacy_and_team_rules",
+      "breakpoints": true
     }
   ]
 }

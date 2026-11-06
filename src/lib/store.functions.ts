@@ -30,6 +30,7 @@ export const getMyContext = createServerFn({ method: "POST" })
       profile: profile ?? null,
       ownedStoreId: ownerMembership?.store_id ?? null,
       staffStoreId: staffMembership?.store_id ?? null,
+      staffStoreName: (staffMembership?.stores as { name?: string } | null)?.name ?? null,
       cards: cards ?? [],
     };
   });

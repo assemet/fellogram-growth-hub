@@ -472,6 +472,8 @@ export type Database = {
           logo_url: string | null
           name: string
           owner_id: string
+          staff_can_undo: boolean
+          staff_daily_stamp_limit: number
           updated_at: string
         }
         Insert: {
@@ -486,6 +488,8 @@ export type Database = {
           logo_url?: string | null
           name: string
           owner_id: string
+          staff_can_undo?: boolean
+          staff_daily_stamp_limit?: number
           updated_at?: string
         }
         Update: {
@@ -500,6 +504,8 @@ export type Database = {
           logo_url?: string | null
           name?: string
           owner_id?: string
+          staff_can_undo?: boolean
+          staff_daily_stamp_limit?: number
           updated_at?: string
         }
         Relationships: []
@@ -595,6 +601,8 @@ export type Database = {
       }
       join_store_program: { Args: { _store_id: string }; Returns: string }
       staff_enroll_customer: { Args: { _store_id: string; _customer_id: string }; Returns: string }
+      leave_store_program: { Args: { _store_id: string }; Returns: boolean }
+      leave_team: { Args: { _store_id: string }; Returns: boolean }
       create_staff_invitation: { Args: { _store_id: string }; Returns: string }
       revoke_staff_invitation: { Args: { _invitation_id: string }; Returns: undefined }
       accept_staff_invitation: { Args: { _token: string }; Returns: string }

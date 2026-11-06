@@ -9,6 +9,7 @@ import { BottomNav } from "@/components/BottomNav";
 import { SplashScreen } from "@/components/SplashScreen";
 import { MyQrDialog } from "@/components/MyQrDialog";
 import { NotificationsCard } from "@/components/NotificationsCard";
+import { RemoveCardSection } from "@/components/RemoveCardSection";
 import { QueryError } from "@/components/QueryError";
 import { StoreScanButton } from "@/components/StoreScanButton";
 import { WalletEmptyState } from "@/components/WalletEmptyState";
@@ -78,6 +79,8 @@ function Wallet() {
             ))}
           </ul>
         )}
+{focusedCard && <RemoveCardSection storeId={focusedCard.storeId} storeName={focusedCard.storeName} balance={focusedCard.stampBalance} />}
+
 {cards.length > 0 && (
           <div className="mt-6">
             <NotificationsCard />

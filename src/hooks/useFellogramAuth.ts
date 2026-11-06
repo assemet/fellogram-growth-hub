@@ -24,6 +24,11 @@ const DEMO_TELEGRAM_ID = 100000001;
  */
 let signedIn: { previewMode: boolean } | null = null;
 
+/** Forget the remembered sign-in (after the account was deleted, the next screen must sign in afresh). */
+export function resetAuthCache(): void {
+  signedIn = null;
+}
+
 /**
  * Ensures a session exists without ever showing an error screen. Inside
  * Telegram the signed launch data is verified server-side; elsewhere the
