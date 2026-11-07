@@ -3,6 +3,7 @@ import { useQueryClient } from "@tanstack/react-query";
 
 import { InviteFriend } from "@/components/InviteFriend";
 import { RedeemRewardQr } from "@/components/RedeemRewardQr";
+import type { ContactField } from "@/lib/store-contact";
 import { Building2, ChevronDown, Gift, UserPlus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { StampIcon } from "@/components/StampIcon";
@@ -20,6 +21,7 @@ export type StampCardData = {
   reward: string | null;
   lastVisitAt: string | null;
   storeId?: string;
+  contact?: Partial<Record<ContactField, string | null>>;
   referralsEnabled?: boolean;
   referrerBonus?: number;
   welcomeBonus?: number;

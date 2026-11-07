@@ -1,6 +1,8 @@
 import { createServerFn } from "@tanstack/react-start";
 import { currentOwnedStoreId, ownedIdOrNil } from "@/lib/current-store";
 import { isValidTier, mainRewardId, visibleRewards } from "@/lib/rewards";
+import { contactFromRow, normalizeContact, type ContactInput, type ContactValues } from "@/lib/store-contact";
+import { writeStoreProfile } from "@/lib/store-profile";
 import { miniAppLink } from "@/lib/bot-link";
 import { check, throwIfError, type Db } from "@/lib/db";
 import { isStampIconId, STAMP_LOGO_ID } from "@/lib/stamp-icons";
@@ -189,6 +191,7 @@ export const getMyCards = createServerFn({ method: "POST" })
       storeId: m.store_id,
       storeName: m.stores?.name ?? "Store",
       storeDescription: m.stores?.description ?? null,
+      contact: contactFromRow(m.stores as unknown as Record<string, unknown> | null),
       logoUrl: m.stores?.logo_url ? logoMap.get(m.stores.logo_url) ?? null : null,
       cardTheme: m.stores?.card_theme ?? "classic",
       brandPrimary: m.stores?.brand_primary ?? null,
@@ -245,6 +248,7 @@ export const getStoreForJoin = createServerFn({ method: "POST" })
       brand_primary: found.brand_primary ?? null,
       brand_accent: found.brand_accent ?? null,
       background_tint: found.background_tint ?? null,
+      contact: contactFromRow(found as unknown as Record<string, unknown>),
     };
 
     const [{ data: programRow, error: programError }, { data: reward, error: rewardError }, { data: membership, error: membershipError }] = await Promise.all([
@@ -648,16 +652,23 @@ async function ownedStoreRow(supabase: Db, userId: string) {
 /** Owner renames the store and edits its short description. */
 export const updateStoreProfile = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((data: { name: string; description?: string }) => {
+  .inputValidator((data: { name: string; description?: string; contact?: ContactInput }) => {
     const name = String(data?.name ?? "").trim().replace(/\s+/g, " ");
     if (name.length < 2 || name.length > 60) throw new Error("INVALID_NAME");
     const description = String(data?.description ?? "").trim().slice(0, 160);
-    return { name, description: description || null };
+    // Contact details are optional in the request; when present they are normalized and re-checked here, never trusted from the browser.
+    let contact: ContactValues | null = null;
+    if (data?.contact) {
+      const { values, errors } = normalizeContact(data.contact);
+      const invalid = Object.keys(errors);
+      if (invalid.length > 0) throw new Error(`INVALID_CONTACT:${invalid.join(",")}`);
+      contact = values;
+    }
+    return { name, description: description || null, contact };
   })
   .handler(async ({ data, context }) => {
     const store = await ownedStoreRow(context.supabase, context.userId);
-    const { error } = await context.supabase.from("stores").update({ name: data.name, description: data.description }).eq("id", store.id);
-    throwIfError(error, "STORE_UPDATE_FAILED");
+    await writeStoreProfile(context.supabase, store.id, data);
     return { ok: true };
   });
 

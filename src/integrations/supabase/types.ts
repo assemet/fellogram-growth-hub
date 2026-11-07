@@ -475,6 +475,15 @@ export type Database = {
           staff_can_undo: boolean
           staff_daily_stamp_limit: number
           updated_at: string
+          address: string | null
+          facebook_url: string | null
+          instagram: string | null
+          maps_url: string | null
+          phone: string | null
+          telegram_username: string | null
+          tiktok: string | null
+          website_url: string | null
+          whatsapp: string | null
         }
         Insert: {
           active?: boolean
@@ -491,6 +500,15 @@ export type Database = {
           staff_can_undo?: boolean
           staff_daily_stamp_limit?: number
           updated_at?: string
+          address?: string | null
+          facebook_url?: string | null
+          instagram?: string | null
+          maps_url?: string | null
+          phone?: string | null
+          telegram_username?: string | null
+          tiktok?: string | null
+          website_url?: string | null
+          whatsapp?: string | null
         }
         Update: {
           active?: boolean
@@ -507,6 +525,15 @@ export type Database = {
           staff_can_undo?: boolean
           staff_daily_stamp_limit?: number
           updated_at?: string
+          address?: string | null
+          facebook_url?: string | null
+          instagram?: string | null
+          maps_url?: string | null
+          phone?: string | null
+          telegram_username?: string | null
+          tiktok?: string | null
+          website_url?: string | null
+          whatsapp?: string | null
         }
         Relationships: []
       }

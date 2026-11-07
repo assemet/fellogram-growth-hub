@@ -13,6 +13,7 @@ type TelegramWebApp = {
   onEvent?: (event: string, callback: () => void) => void;
   offEvent?: (event: string, callback: () => void) => void;
   openTelegramLink?: (url: string) => void;
+  openLink?: (url: string) => void;
   showScanQrPopup?: (params: { text?: string }, callback?: (text: string) => boolean | void) => void;
   closeScanQrPopup?: () => void;
   setHeaderColor?: (color: string) => void;
@@ -217,4 +218,12 @@ export function requestTelegramWriteAccess(): Promise<boolean | null> {
       resolve(null);
     }
   });
+}
+
+/** Opens an external page the right way: t.me links inside Telegram, other links in the in-app browser. */
+export function openExternalLink(url: string): void {
+  const app = webApp();
+  if (/^https:\/\/t\.me\//i.test(url) && app?.openTelegramLink) app.openTelegramLink(url);
+  else if (app?.openLink) app.openLink(url);
+  else window.open(url, "_blank", "noopener,noreferrer");
 }

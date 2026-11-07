@@ -12,7 +12,9 @@ expected_columns(tbl, col) AS (
          ('loyalty_programs', 'referrals_enabled'), ('loyalty_programs', 'referrer_bonus_stamps'),
          ('loyalty_programs', 'welcome_bonus_stamps'), ('loyalty_programs', 'join_bonus_stamps'),
          ('profiles', 'notifications_enabled'), ('profiles', 'language_code'),
-         ('stores', 'staff_can_undo'), ('stores', 'staff_daily_stamp_limit')
+         ('stores', 'staff_can_undo'), ('stores', 'staff_daily_stamp_limit'),
+         ('stores', 'phone'), ('stores', 'whatsapp'), ('stores', 'address'), ('stores', 'telegram_username'), ('stores', 'instagram'),
+         ('stores', 'facebook_url'), ('stores', 'tiktok'), ('stores', 'website_url'), ('stores', 'maps_url')
 ),
 expected_functions(item) AS (
   VALUES ('award_stamp'), ('undo_last_stamp'), ('join_store_program'), ('staff_enroll_customer'),

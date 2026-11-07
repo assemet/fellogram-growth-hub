@@ -113,6 +113,13 @@
       "when": 1791156762386,
       "tag": "0015_search_store_customers",
       "breakpoints": true
+    },
+    {
+      "idx": 16,
+      "version": "7",
+      "when": 1791157362386,
+      "tag": "0016_store_contact",
+      "breakpoints": true
     }
   ]
 }

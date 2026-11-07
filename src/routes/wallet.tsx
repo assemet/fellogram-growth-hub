@@ -9,6 +9,7 @@ import { BottomNav } from "@/components/BottomNav";
 import { SplashScreen } from "@/components/SplashScreen";
 import { MyQrDialog } from "@/components/MyQrDialog";
 import { NotificationsCard } from "@/components/NotificationsCard";
+import { StoreContactLinks } from "@/components/StoreContactLinks";
 import { RemoveCardSection } from "@/components/RemoveCardSection";
 import { QueryError } from "@/components/QueryError";
 import { StoreScanButton } from "@/components/StoreScanButton";
@@ -79,6 +80,7 @@ function Wallet() {
             ))}
           </ul>
         )}
+{focusedCard && <StoreContactLinks contact={focusedCard.contact} className="mt-5" />}
 {focusedCard && <RemoveCardSection storeId={focusedCard.storeId} storeName={focusedCard.storeName} balance={focusedCard.stampBalance} />}
 
 {cards.length > 0 && (

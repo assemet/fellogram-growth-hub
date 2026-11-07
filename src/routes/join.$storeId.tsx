@@ -5,6 +5,7 @@ import { Gift } from "lucide-react";
 import { useEffect } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
+import { StoreContactLinks } from "@/components/StoreContactLinks";
 import { StampIcon } from "@/components/StampIcon";
 
 import { AppHeader } from "@/components/BrandMark";
@@ -132,6 +133,8 @@ function JoinStore() {
             ))}
           </div>
         </div>
+
+        <StoreContactLinks contact={data.store.contact} className="mt-4" />
 
         {data.alreadyJoined ? (
           <div className="mt-5 text-center">
