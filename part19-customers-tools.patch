@@ -1,0 +1,1655 @@
+diff --git a/part17-privacy-and-team-rules.patch b/part17-privacy-and-team-rules.patch
+deleted file mode 100644
+index c6e3ea2..0000000
+--- a/part17-privacy-and-team-rules.patch
++++ /dev/null
+@@ -1,1150 +0,0 @@
+-diff --git a/drizzle/migrations/0014_privacy_and_team_rules.sql b/drizzle/migrations/0014_privacy_and_team_rules.sql
+-new file mode 100644
+-index 0000000..c3bb0ab
+---- /dev/null
+-+++ b/drizzle/migrations/0014_privacy_and_team_rules.sql
+-@@ -0,0 +1,253 @@
+-+-- Privacy controls and team rules. Safe to run more than once.
+-+
+-+-- 1) Team rules the owner controls.
+-+ALTER TABLE public.stores ADD COLUMN IF NOT EXISTS staff_can_undo boolean NOT NULL DEFAULT true;
+-+ALTER TABLE public.stores ADD COLUMN IF NOT EXISTS staff_daily_stamp_limit integer NOT NULL DEFAULT 0;
+-+ALTER TABLE public.stores DROP CONSTRAINT IF EXISTS stores_staff_daily_limit_range;
+-+ALTER TABLE public.stores ADD CONSTRAINT stores_staff_daily_limit_range CHECK (staff_daily_stamp_limit BETWEEN 0 AND 1000);
+-+
+-+-- 2) A customer removes their own card for a store (their history stays with the store's records).
+-+CREATE OR REPLACE FUNCTION public.leave_store_program(_store_id uuid)
+-+RETURNS boolean
+-+LANGUAGE plpgsql
+-+SECURITY DEFINER
+-+SET search_path = public
+-+AS $$
+-+DECLARE
+-+  _removed integer;
+-+BEGIN
+-+  IF auth.uid() IS NULL THEN RAISE EXCEPTION 'AUTH_REQUIRED'; END IF;
+-+  DELETE FROM public.customer_memberships WHERE store_id = _store_id AND customer_id = auth.uid();
+-+  GET DIAGNOSTICS _removed = ROW_COUNT;
+-+  RETURN _removed > 0;
+-+END;
+-+$$;
+-+
+-+-- 3) A cashier leaves the team (owners cannot: they delete the store instead).
+-+CREATE OR REPLACE FUNCTION public.leave_team(_store_id uuid)
+-+RETURNS boolean
+-+LANGUAGE plpgsql
+-+SECURITY DEFINER
+-+SET search_path = public
+-+AS $$
+-+DECLARE
+-+  _removed integer;
+-+BEGIN
+-+  IF auth.uid() IS NULL THEN RAISE EXCEPTION 'AUTH_REQUIRED'; END IF;
+-+  DELETE FROM public.store_members WHERE store_id = _store_id AND user_id = auth.uid() AND role = 'staff';
+-+  GET DIAGNOSTICS _removed = ROW_COUNT;
+-+  RETURN _removed > 0;
+-+END;
+-+$$;
+-+
+-+REVOKE ALL ON FUNCTION public.leave_store_program(uuid) FROM PUBLIC, anon;
+-+REVOKE ALL ON FUNCTION public.leave_team(uuid) FROM PUBLIC, anon;
+-+GRANT EXECUTE ON FUNCTION public.leave_store_program(uuid) TO authenticated;
+-+GRANT EXECUTE ON FUNCTION public.leave_team(uuid) TO authenticated;
+-+
+-+-- 4) Welcome stamps once per customer per store, even if they leave and rejoin.
+-+CREATE OR REPLACE FUNCTION public.grant_join_bonus()
+-+RETURNS trigger
+-+LANGUAGE plpgsql
+-+SECURITY DEFINER
+-+SET search_path = public
+-+AS $$
+-+DECLARE
+-+  _bonus integer;
+-+  _required integer;
+-+BEGIN
+-+  -- One welcome bonus per customer per store, ever: leaving a store and rejoining must not earn it again.
+-+  IF EXISTS (SELECT 1 FROM public.transactions t WHERE t.store_id = NEW.store_id AND t.customer_id = NEW.customer_id AND t.type = 'join_bonus') THEN
+-+    RETURN NULL;
+-+  END IF;
+-+
+-+  SELECT lp.join_bonus_stamps, lp.stamps_required INTO _bonus, _required
+-+  FROM public.loyalty_programs lp WHERE lp.id = NEW.program_id;
+-+
+-+  -- Never enough to earn the reward by joining alone.
+-+  _bonus := LEAST(COALESCE(_bonus, 0), GREATEST(COALESCE(_required, 1) - 1, 0));
+-+
+-+  IF _bonus > 0 THEN
+-+    UPDATE public.customer_memberships SET stamp_balance = stamp_balance + _bonus WHERE id = NEW.id;
+-+    INSERT INTO public.transactions (store_id, customer_id, type, amount)
+-+    VALUES (NEW.store_id, NEW.customer_id, 'join_bonus', _bonus);
+-+  END IF;
+-+  RETURN NULL;
+-+END;
+-+$$;
+-+
+-+-- 5) Daily cap per cashier (based on the referral-aware version with the cooldown setting).
+-+CREATE OR REPLACE FUNCTION public.award_stamp(_store_id uuid, _customer_id uuid, _amount integer DEFAULT 1)
+-+ RETURNS TABLE(membership_id uuid, stamp_balance integer, stamps_required integer, transaction_id uuid)
+-+ LANGUAGE plpgsql SECURITY DEFINER SET search_path TO 'public'
+-+AS $function$
+-+DECLARE
+-+  _staff_id uuid := auth.uid();
+-+  _amt integer := GREATEST(1, LEAST(5, COALESCE(_amount, 1)));
+-+  _membership public.customer_memberships;
+-+  _required integer;
+-+  _last_at timestamptz;
+-+  _tx_id uuid;
+-+  _new_balance integer;
+-+  _cooldown integer;
+-+  _limit integer;
+-+  _ref public.referrals;
+-+  _ref_bonus integer;
+-+  _welcome_bonus integer;
+-+BEGIN
+-+  IF _staff_id IS NULL THEN RAISE EXCEPTION 'AUTH_REQUIRED'; END IF;
+-+  IF NOT (public.is_store_member(_store_id, _staff_id) OR public.is_store_owner(_store_id, _staff_id)) THEN
+-+    RAISE EXCEPTION 'NOT_STORE_STAFF';
+-+  END IF;
+-+
+-+  -- Team rule: the owner can cap how many stamps one cashier gives in 24 hours (0 = no cap; owners are exempt).
+-+  IF NOT public.is_store_owner(_store_id, _staff_id) THEN
+-+    SELECT s.staff_daily_stamp_limit INTO _limit FROM public.stores s WHERE s.id = _store_id;
+-+    IF COALESCE(_limit, 0) > 0 AND (
+-+      SELECT count(*) FROM public.transactions t
+-+      WHERE t.store_id = _store_id AND t.staff_id = _staff_id AND t.type = 'stamp_awarded'
+-+        AND t.created_at > now() - interval '24 hours'
+-+    ) >= _limit THEN
+-+      RAISE EXCEPTION 'DAILY_LIMIT_REACHED:%', _limit;
+-+    END IF;
+-+  END IF;
+-+
+-+  SELECT * INTO _membership FROM public.customer_memberships
+-+  WHERE customer_memberships.store_id = _store_id AND customer_memberships.customer_id = _customer_id
+-+  FOR UPDATE;
+-+  IF _membership.id IS NULL THEN RAISE EXCEPTION 'MEMBERSHIP_NOT_FOUND'; END IF;
+-+
+-+  SELECT COALESCE(lp.stamp_cooldown_minutes, 15) INTO _cooldown
+-+  FROM public.loyalty_programs lp WHERE lp.id = _membership.program_id;
+-+  _cooldown := COALESCE(_cooldown, 15);
+-+
+-+  SELECT max(tx.created_at) INTO _last_at FROM public.transactions tx
+-+  WHERE tx.store_id = _store_id AND tx.customer_id = _customer_id AND tx.type = 'stamp_awarded'
+-+    AND NOT EXISTS (SELECT 1 FROM public.transactions r WHERE r.type = 'stamp_reversed'
+-+                    AND (r.metadata->>'reversed_transaction_id') = tx.id::text);
+-+  IF _cooldown > 0 AND _last_at IS NOT NULL AND _last_at > now() - make_interval(mins => _cooldown) THEN
+-+    RAISE EXCEPTION 'COOLDOWN_ACTIVE:%', GREATEST(1, CEIL(EXTRACT(EPOCH FROM (_last_at + make_interval(mins => _cooldown) - now())) / 60));
+-+  END IF;
+-+
+-+  INSERT INTO public.transactions (store_id, customer_id, staff_id, type, amount)
+-+  VALUES (_store_id, _customer_id, _staff_id, 'stamp_awarded', _amt)
+-+  RETURNING id INTO _tx_id;
+-+
+-+  UPDATE public.customer_memberships cm SET stamp_balance = cm.stamp_balance + _amt, last_visit_at = now()
+-+  WHERE cm.id = _membership.id RETURNING cm.stamp_balance INTO _new_balance;
+-+
+-+  SELECT lp.stamps_required, lp.referrer_bonus_stamps, lp.welcome_bonus_stamps
+-+    INTO _required, _ref_bonus, _welcome_bonus
+-+  FROM public.loyalty_programs lp WHERE lp.id = _membership.program_id;
+-+
+-+  -- First qualifying stamp of a referred customer: qualify + reward both sides atomically.
+-+  SELECT * INTO _ref FROM public.referrals r
+-+   WHERE r.store_id = _store_id AND r.referred_customer_id = _customer_id AND r.status = 'pending'
+-+   FOR UPDATE;
+-+  IF _ref.id IS NOT NULL THEN
+-+    UPDATE public.referrals SET status = 'qualified', qualifying_transaction_id = _tx_id, rewarded_at = now()
+-+     WHERE id = _ref.id;
+-+    IF COALESCE(_welcome_bonus, 0) > 0 THEN
+-+      UPDATE public.customer_memberships cm SET stamp_balance = cm.stamp_balance + _welcome_bonus
+-+       WHERE cm.id = _membership.id RETURNING cm.stamp_balance INTO _new_balance;
+-+      INSERT INTO public.transactions (store_id, customer_id, staff_id, type, amount, metadata)
+-+      VALUES (_store_id, _customer_id, _staff_id, 'referral_reward', _welcome_bonus,
+-+              jsonb_build_object('referral_id', _ref.id, 'role', 'referred'));
+-+    END IF;
+-+    IF COALESCE(_ref_bonus, 0) > 0 AND EXISTS (SELECT 1 FROM public.customer_memberships
+-+         WHERE store_id = _store_id AND customer_id = _ref.referrer_customer_id) THEN
+-+      UPDATE public.customer_memberships cm SET stamp_balance = cm.stamp_balance + _ref_bonus
+-+       WHERE cm.store_id = _store_id AND cm.customer_id = _ref.referrer_customer_id;
+-+      INSERT INTO public.transactions (store_id, customer_id, staff_id, type, amount, metadata)
+-+      VALUES (_store_id, _ref.referrer_customer_id, _staff_id, 'referral_reward', _ref_bonus,
+-+              jsonb_build_object('referral_id', _ref.id, 'role', 'referrer'));
+-+    END IF;
+-+  END IF;
+-+
+-+  membership_id := _membership.id;
+-+  stamp_balance := _new_balance;
+-+  stamps_required := COALESCE(_required, 10);
+-+  transaction_id := _tx_id;
+-+  RETURN NEXT;
+-+END;
+-+$function$;
+-+
+-+-- 6) Cashiers may be barred from undoing stamps (based on the referral-aware undo).
+-+CREATE OR REPLACE FUNCTION public.undo_last_stamp(_store_id uuid, _customer_id uuid)
+-+ RETURNS TABLE(membership_id uuid, stamp_balance integer, stamps_required integer)
+-+ LANGUAGE plpgsql
+-+ SECURITY DEFINER
+-+ SET search_path TO 'public'
+-+AS $function$
+-+DECLARE
+-+  _staff_id uuid := auth.uid();
+-+  _membership public.customer_memberships;
+-+  _tx public.transactions;
+-+  _required integer;
+-+  _new_balance integer;
+-+  _ref public.referrals;
+-+  _bonus public.transactions;
+-+BEGIN
+-+  IF _staff_id IS NULL THEN RAISE EXCEPTION 'AUTH_REQUIRED'; END IF;
+-+  IF NOT (public.is_store_member(_store_id, _staff_id) OR public.is_store_owner(_store_id, _staff_id)) THEN
+-+    RAISE EXCEPTION 'NOT_STORE_STAFF';
+-+  END IF;
+-+
+-+  -- Team rule: the owner can take the undo button away from cashiers.
+-+  IF NOT public.is_store_owner(_store_id, _staff_id)
+-+     AND NOT COALESCE((SELECT s.staff_can_undo FROM public.stores s WHERE s.id = _store_id), true) THEN
+-+    RAISE EXCEPTION 'UNDO_NOT_ALLOWED';
+-+  END IF;
+-+
+-+  SELECT * INTO _membership FROM public.customer_memberships
+-+  WHERE customer_memberships.store_id = _store_id AND customer_memberships.customer_id = _customer_id
+-+  FOR UPDATE;
+-+  IF _membership.id IS NULL THEN RAISE EXCEPTION 'MEMBERSHIP_NOT_FOUND'; END IF;
+-+
+-+  SELECT * INTO _tx FROM public.transactions tx
+-+  WHERE tx.store_id = _store_id AND tx.customer_id = _customer_id AND tx.type = 'stamp_awarded'
+-+    AND tx.created_at > now() - interval '30 minutes'
+-+  ORDER BY tx.created_at DESC LIMIT 1;
+-+  IF _tx.id IS NULL THEN RAISE EXCEPTION 'NOTHING_TO_UNDO'; END IF;
+-+  IF EXISTS (SELECT 1 FROM public.transactions r WHERE r.type = 'stamp_reversed'
+-+             AND (r.metadata->>'reversed_transaction_id') = _tx.id::text) THEN
+-+    RAISE EXCEPTION 'NOTHING_TO_UNDO';
+-+  END IF;
+-+
+-+  INSERT INTO public.transactions (store_id, customer_id, staff_id, type, amount, metadata)
+-+  VALUES (_store_id, _customer_id, _staff_id, 'stamp_reversed', _tx.amount,
+-+          jsonb_build_object('reversed_transaction_id', _tx.id));
+-+  UPDATE public.customer_memberships cm SET stamp_balance = GREATEST(0, cm.stamp_balance - _tx.amount)
+-+  WHERE cm.id = _membership.id;
+-+
+-+  -- If this stamp qualified a referral, revert it and claw back both bonuses.
+-+  SELECT * INTO _ref FROM public.referrals r WHERE r.qualifying_transaction_id = _tx.id FOR UPDATE;
+-+  IF _ref.id IS NOT NULL THEN
+-+    FOR _bonus IN
+-+      SELECT * FROM public.transactions b
+-+      WHERE b.type = 'referral_reward' AND b.store_id = _store_id
+-+        AND (b.metadata->>'referral_id') = _ref.id::text
+-+        AND NOT EXISTS (SELECT 1 FROM public.transactions x WHERE x.type = 'stamp_reversed'
+-+                        AND (x.metadata->>'reversed_transaction_id') = b.id::text)
+-+    LOOP
+-+      INSERT INTO public.transactions (store_id, customer_id, staff_id, type, amount, metadata)
+-+      VALUES (_store_id, _bonus.customer_id, _staff_id, 'stamp_reversed', _bonus.amount,
+-+              jsonb_build_object('reversed_transaction_id', _bonus.id, 'referral_id', _ref.id));
+-+      UPDATE public.customer_memberships cm SET stamp_balance = GREATEST(0, cm.stamp_balance - _bonus.amount)
+-+      WHERE cm.store_id = _store_id AND cm.customer_id = _bonus.customer_id;
+-+    END LOOP;
+-+    UPDATE public.referrals SET status = 'pending', qualifying_transaction_id = NULL, rewarded_at = NULL
+-+    WHERE id = _ref.id;
+-+  END IF;
+-+
+-+  SELECT cm.stamp_balance INTO _new_balance FROM public.customer_memberships cm WHERE cm.id = _membership.id;
+-+  SELECT lp.stamps_required INTO _required FROM public.loyalty_programs lp WHERE lp.id = _membership.program_id;
+-+
+-+  membership_id := _membership.id;
+-+  stamp_balance := _new_balance;
+-+  stamps_required := COALESCE(_required, 10);
+-+  RETURN NEXT;
+-+END;
+-+$function$;
+-+
+-+NOTIFY pgrst, 'reload schema';
+-diff --git a/drizzle/migrations/meta/_journal.json b/drizzle/migrations/meta/_journal.json
+-index d406399..a069958 100644
+---- a/drizzle/migrations/meta/_journal.json
+-+++ b/drizzle/migrations/meta/_journal.json
+-@@ -99,6 +99,13 @@
+-       "when": 1791155562386,
+-       "tag": "0013_notifications",
+-       "breakpoints": true
+-+    },
+-+    {
+-+      "idx": 14,
+-+      "version": "7",
+-+      "when": 1791156162386,
+-+      "tag": "0014_privacy_and_team_rules",
+-+      "breakpoints": true
+-     }
+-   ]
+- }
+-diff --git a/src/components/AccountDangerZone.tsx b/src/components/AccountDangerZone.tsx
+-new file mode 100644
+-index 0000000..037f8d7
+---- /dev/null
+-+++ b/src/components/AccountDangerZone.tsx
+-@@ -0,0 +1,113 @@
+-+import { useEffect, useState } from "react";
+-+import { useNavigate } from "@tanstack/react-router";
+-+import { useMutation, useQueryClient } from "@tanstack/react-query";
+-+import { useServerFn } from "@tanstack/react-start";
+-+import { toast } from "sonner";
+-+
+-+import { Button } from "@/components/ui/button";
+-+import { resetAuthCache } from "@/hooks/useFellogramAuth";
+-+import { supabase } from "@/integrations/supabase/client";
+-+import { t } from "@/lib/i18n";
+-+import { deleteMyAccount, leaveTeam } from "@/lib/privacy.functions";
+-+
+-+const CONFIRM_WORDS = ["delete", "حذف"];
+-+
+-+/** A cashier stops working for their store (two taps). */
+-+export function LeaveTeamRow({ storeName }: { storeName: string }) {
+-+  const queryClient = useQueryClient();
+-+  const navigate = useNavigate();
+-+  const leave = useServerFn(leaveTeam);
+-+  const [confirming, setConfirming] = useState(false);
+-+
+-+  useEffect(() => {
+-+    if (!confirming) return;
+-+    const id = setTimeout(() => setConfirming(false), 4000);
+-+    return () => clearTimeout(id);
+-+  }, [confirming]);
+-+
+-+  const mutation = useMutation({
+-+    mutationFn: () => leave(),
+-+    onSuccess: async () => {
+-+      toast.success(t("settings.leftTeam"));
+-+      await queryClient.invalidateQueries({ queryKey: ["my-context"] });
+-+      void navigate({ to: "/wallet", replace: true });
+-+    },
+-+    onError: () => {
+-+      setConfirming(false);
+-+      toast.error(t("common.error"));
+-+    },
+-+  });
+-+
+-+  return (
+-+    <div>
+-+      <p className="text-xs text-muted-foreground">{t("settings.leaveTeam.hint")}</p>
+-+      <Button
+-+        type="button"
+-+        variant={confirming ? "destructive" : "outline"}
+-+        disabled={mutation.isPending}
+-+        className="touch-action mt-2 h-11 w-full font-semibold"
+-+        onClick={() => (confirming ? mutation.mutate() : setConfirming(true))}
+-+      >
+-+        {confirming ? t("team.confirmRemove") : t("settings.leaveTeam", { store: storeName })}
+-+      </Button>
+-+    </div>
+-+  );
+-+}
+-+
+-+/** Delete my account and data. Owners are told to delete their store first (the server refuses too). */
+-+export function DeleteAccountSection({ isOwner }: { isOwner: boolean }) {
+-+  const queryClient = useQueryClient();
+-+  const navigate = useNavigate();
+-+  const remove = useServerFn(deleteMyAccount);
+-+  const [typed, setTyped] = useState("");
+-+  const confirmed = CONFIRM_WORDS.includes(typed.trim().toLowerCase());
+-+
+-+  const mutation = useMutation({
+-+    mutationFn: () => remove({ data: { confirm: typed } }),
+-+    onSuccess: async () => {
+-+      // The account no longer exists: drop the local session and everything cached, then start over.
+-+      await supabase.auth.signOut({ scope: "local" });
+-+      resetAuthCache();
+-+      queryClient.clear();
+-+      toast.success(t("settings.deleted"));
+-+      void navigate({ to: "/", replace: true });
+-+    },
+-+    onError: (e: Error) =>
+-+      toast.error(
+-+        e.message.includes("OWNS_STORE") ? t("settings.delete.owner") : e.message.includes("PREVIEW_ACCOUNT") ? t("settings.delete.preview") : t("common.error"),
+-+      ),
+-+  });
+-+
+-+  return (
+-+    <div className="space-y-3">
+-+      <p className="text-xs text-muted-foreground">{t("settings.delete.body")}</p>
+-+      {isOwner ? (
+-+        <p role="note" className="rounded-md bg-muted px-3 py-2 text-xs font-semibold">
+-+          {t("settings.delete.owner")}
+-+        </p>
+-+      ) : (
+-+        <>
+-+          <label htmlFor="deleteConfirm" className="block text-xs font-semibold text-muted-foreground">
+-+            {t("settings.delete.confirmLabel", { word: t("settings.delete.word") })}
+-+          </label>
+-+          <input
+-+            id="deleteConfirm"
+-+            value={typed}
+-+            onChange={(event) => setTyped(event.target.value)}
+-+            autoComplete="off"
+-+            className="w-full rounded-md border border-border bg-background px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-destructive"
+-+          />
+-+          <Button
+-+            type="button"
+-+            variant="destructive"
+-+            disabled={!confirmed || mutation.isPending}
+-+            className="touch-action h-11 w-full font-semibold"
+-+            onClick={() => mutation.mutate()}
+-+          >
+-+            {mutation.isPending ? t("settings.delete.deleting") : t("settings.delete.action")}
+-+          </Button>
+-+        </>
+-+      )}
+-+    </div>
+-+  );
+-+}
+-diff --git a/src/components/RemoveCardSection.tsx b/src/components/RemoveCardSection.tsx
+-new file mode 100644
+-index 0000000..b987716
+---- /dev/null
+-+++ b/src/components/RemoveCardSection.tsx
+-@@ -0,0 +1,53 @@
+-+import { useEffect, useState } from "react";
+-+import { useNavigate } from "@tanstack/react-router";
+-+import { useMutation, useQueryClient } from "@tanstack/react-query";
+-+import { useServerFn } from "@tanstack/react-start";
+-+import { toast } from "sonner";
+-+
+-+import { Button } from "@/components/ui/button";
+-+import { t } from "@/lib/i18n";
+-+import { leaveStore } from "@/lib/privacy.functions";
+-+
+-+/** A customer removes their own card for one store. Two taps, and the cost (lost stamps) is spelled out. */
+-+export function RemoveCardSection({ storeId, storeName, balance }: { storeId: string; storeName: string; balance: number }) {
+-+  const queryClient = useQueryClient();
+-+  const navigate = useNavigate();
+-+  const remove = useServerFn(leaveStore);
+-+  const [confirming, setConfirming] = useState(false);
+-+
+-+  // The "tap again" step lapses on its own so a stray tap never removes the card later.
+-+  useEffect(() => {
+-+    if (!confirming) return;
+-+    const id = setTimeout(() => setConfirming(false), 4000);
+-+    return () => clearTimeout(id);
+-+  }, [confirming]);
+-+
+-+  const mutation = useMutation({
+-+    mutationFn: () => remove({ data: { storeId } }),
+-+    onSuccess: async () => {
+-+      toast.success(t("wallet.removed"));
+-+      await queryClient.invalidateQueries({ queryKey: ["my-cards"] });
+-+      void navigate({ to: "/wallet", replace: true });
+-+    },
+-+    onError: () => {
+-+      setConfirming(false);
+-+      toast.error(t("common.error"));
+-+    },
+-+  });
+-+
+-+  return (
+-+    <div className="mt-8 rounded-lg border border-border bg-card p-4">
+-+      <p className="text-sm font-bold">{t("wallet.remove.title")}</p>
+-+      <p className="mt-1 text-xs text-muted-foreground">{t("wallet.remove.body", { count: balance, store: storeName })}</p>
+-+      <Button
+-+        type="button"
+-+        variant={confirming ? "destructive" : "outline"}
+-+        disabled={mutation.isPending}
+-+        className="touch-action mt-3 h-11 w-full font-semibold"
+-+        onClick={() => (confirming ? mutation.mutate() : setConfirming(true))}
+-+      >
+-+        {confirming ? t("team.confirmRemove") : t("wallet.remove.action")}
+-+      </Button>
+-+    </div>
+-+  );
+-+}
+-diff --git a/src/components/TeamRulesCard.tsx b/src/components/TeamRulesCard.tsx
+-new file mode 100644
+-index 0000000..d6758cb
+---- /dev/null
+-+++ b/src/components/TeamRulesCard.tsx
+-@@ -0,0 +1,68 @@
+-+import { useState } from "react";
+-+import { useMutation, useQueryClient } from "@tanstack/react-query";
+-+import { useServerFn } from "@tanstack/react-start";
+-+import { toast } from "sonner";
+-+
+-+import { Button } from "@/components/ui/button";
+-+import { Switch } from "@/components/ui/switch";
+-+import { t } from "@/lib/i18n";
+-+import { updateTeamRules } from "@/lib/team.functions";
+-+
+-+type Rules = { supported: boolean; canUndo: boolean; dailyLimit: number };
+-+
+-+/** Owner-set limits for cashiers: whether they can undo a stamp, and a rolling 24-hour stamp cap. */
+-+export function TeamRulesCard({ rules }: { rules: Rules }) {
+-+  const queryClient = useQueryClient();
+-+  const save = useServerFn(updateTeamRules);
+-+  const [canUndo, setCanUndo] = useState(rules.canUndo);
+-+  const [limitText, setLimitText] = useState(String(rules.dailyLimit));
+-+
+-+  const dailyLimit = Math.min(1000, Math.max(0, Math.round(Number(limitText)) || 0));
+-+  const dirty = canUndo !== rules.canUndo || dailyLimit !== rules.dailyLimit;
+-+
+-+  const mutation = useMutation({
+-+    mutationFn: () => save({ data: { canUndo, dailyLimit } }),
+-+    onSuccess: async () => {
+-+      toast.success(t("team.rules.saved"));
+-+      await queryClient.invalidateQueries({ queryKey: ["team"] });
+-+    },
+-+    onError: (e: Error) => toast.error(e.message.includes("DB_MIGRATION_REQUIRED") ? t("error.migrationNeeded") : t("common.error")),
+-+  });
+-+
+-+  return (
+-+    <div className="mt-8 rounded-lg border border-border bg-card p-4 shadow-[var(--shadow-card)]">
+-+      <h2 className="text-sm font-bold">{t("team.rules.title")}</h2>
+-+      {!rules.supported ? (
+-+        <p className="mt-2 rounded-md bg-muted px-3 py-2 text-xs text-muted-foreground">{t("error.migrationNeeded")}</p>
+-+      ) : (
+-+        <div className="mt-3 space-y-4">
+-+          <div className="flex min-h-11 items-center justify-between gap-3">
+-+            <label htmlFor="teamCanUndo" className="min-w-0 text-sm font-medium">
+-+              {t("team.rules.canUndo")}
+-+            </label>
+-+            <Switch id="teamCanUndo" checked={canUndo} onCheckedChange={setCanUndo} />
+-+          </div>
+-+          <div>
+-+            <label htmlFor="teamDailyLimit" className="text-sm font-medium">
+-+              {t("team.rules.dailyLimit")}
+-+            </label>
+-+            <input
+-+              id="teamDailyLimit"
+-+              type="number"
+-+              inputMode="numeric"
+-+              min={0}
+-+              max={1000}
+-+              value={limitText}
+-+              onChange={(event) => setLimitText(event.target.value)}
+-+              className="mt-1 w-28 rounded-md border border-border bg-background px-4 py-3 text-center text-sm outline-none focus:ring-2 focus:ring-ring"
+-+            />
+-+            <p className="mt-1 text-xs text-muted-foreground">{t("team.rules.dailyLimit.hint")}</p>
+-+          </div>
+-+          <Button type="button" disabled={!dirty || mutation.isPending} onClick={() => mutation.mutate()} className="touch-action h-11 w-full font-bold">
+-+            {mutation.isPending ? t("program.saving") : t("team.rules.save")}
+-+          </Button>
+-+        </div>
+-+      )}
+-+    </div>
+-+  );
+-+}
+-diff --git a/src/hooks/useFellogramAuth.ts b/src/hooks/useFellogramAuth.ts
+-index 4332c3b..888eb71 100644
+---- a/src/hooks/useFellogramAuth.ts
+-+++ b/src/hooks/useFellogramAuth.ts
+-@@ -24,6 +24,11 @@ const DEMO_TELEGRAM_ID = 100000001;
+-  */
+- let signedIn: { previewMode: boolean } | null = null;
+- 
+-+/** Forget the remembered sign-in (after the account was deleted, the next screen must sign in afresh). */
+-+export function resetAuthCache(): void {
+-+  signedIn = null;
+-+}
+-+
+- /**
+-  * Ensures a session exists without ever showing an error screen. Inside
+-  * Telegram the signed launch data is verified server-side; elsewhere the
+-diff --git a/src/integrations/supabase/types.ts b/src/integrations/supabase/types.ts
+-index f7e2dfc..bef44e5 100644
+---- a/src/integrations/supabase/types.ts
+-+++ b/src/integrations/supabase/types.ts
+-@@ -472,6 +472,8 @@ export type Database = {
+-           logo_url: string | null
+-           name: string
+-           owner_id: string
+-+          staff_can_undo: boolean
+-+          staff_daily_stamp_limit: number
+-           updated_at: string
+-         }
+-         Insert: {
+-@@ -486,6 +488,8 @@ export type Database = {
+-           logo_url?: string | null
+-           name: string
+-           owner_id: string
+-+          staff_can_undo?: boolean
+-+          staff_daily_stamp_limit?: number
+-           updated_at?: string
+-         }
+-         Update: {
+-@@ -500,6 +504,8 @@ export type Database = {
+-           logo_url?: string | null
+-           name?: string
+-           owner_id?: string
+-+          staff_can_undo?: boolean
+-+          staff_daily_stamp_limit?: number
+-           updated_at?: string
+-         }
+-         Relationships: []
+-@@ -595,6 +601,8 @@ export type Database = {
+-       }
+-       join_store_program: { Args: { _store_id: string }; Returns: string }
+-       staff_enroll_customer: { Args: { _store_id: string; _customer_id: string }; Returns: string }
+-+      leave_store_program: { Args: { _store_id: string }; Returns: boolean }
+-+      leave_team: { Args: { _store_id: string }; Returns: boolean }
+-       create_staff_invitation: { Args: { _store_id: string }; Returns: string }
+-       revoke_staff_invitation: { Args: { _invitation_id: string }; Returns: undefined }
+-       accept_staff_invitation: { Args: { _token: string }; Returns: string }
+-diff --git a/src/lib/cashier.functions.ts b/src/lib/cashier.functions.ts
+-index 23d2a26..3c9408a 100644
+---- a/src/lib/cashier.functions.ts
+-+++ b/src/lib/cashier.functions.ts
+-@@ -38,7 +38,11 @@ export const getCashierStore = createServerFn({ method: "POST" })
+-       .limit(1)
+-       .maybeSingle(), "PROGRAM_LOOKUP_FAILED");
+- 
+--    return { ...store, program: program ?? null };
+-+    // Owner rule: cashiers may be barred from undoing stamps (owners always can).
+-+    const { data: storeRow } = check(await context.supabase.from("stores").select("*").eq("id", store.storeId).maybeSingle(), "STORE_LOOKUP_FAILED");
+-+    const canUndo = store.role === "owner" || (storeRow?.staff_can_undo ?? true);
+-+
+-+    return { ...store, canUndo, program: program ?? null };
+-   });
+- 
+- type CustomerState = {
+-diff --git a/src/lib/i18n.ts b/src/lib/i18n.ts
+-index b97d657..4dea29e 100644
+---- a/src/lib/i18n.ts
+-+++ b/src/lib/i18n.ts
+-@@ -448,6 +448,31 @@ const en = {
+-   "settings.vibration": "Vibration",
+-   "settings.store": "Your store",
+-   "settings.about": "About",
+-+  "wallet.remove.title": "Remove this card",
+-+  "wallet.remove.body": "You'll lose your stamps ({count}) at {store}. You can join again later, but you start from zero.",
+-+  "wallet.remove.action": "Remove card",
+-+  "wallet.removed": "Card removed",
+-+  "settings.leaveTeam": "Leave {store}",
+-+  "settings.leaveTeam.hint": "You will no longer be able to stamp for this store.",
+-+  "settings.leftTeam": "You left the team",
+-+  "settings.data": "Your data",
+-+  "settings.delete.title": "Delete my account and data",
+-+  "settings.delete.body": "This permanently deletes your cards, stamps and history from Fellogram. It cannot be undone. Opening the app again starts a new, empty account.",
+-+  "settings.delete.owner": "You own a store. Delete your store first (My store → Store settings), then you can delete your account.",
+-+  "settings.delete.word": "DELETE",
+-+  "settings.delete.confirmLabel": "Type {word} to confirm",
+-+  "settings.delete.action": "Delete everything",
+-+  "settings.delete.deleting": "Deleting…",
+-+  "settings.deleted": "Your data was deleted",
+-+  "settings.delete.preview": "This shared preview account can't be deleted.",
+-+  "team.rules.title": "Cashier rules",
+-+  "team.rules.canUndo": "Cashiers can undo a stamp",
+-+  "team.rules.dailyLimit": "Daily stamp limit per cashier",
+-+  "team.rules.dailyLimit.hint": "Counts the last 24 hours. 0 means no limit. It never applies to you as the owner.",
+-+  "team.rules.save": "Save rules",
+-+  "team.rules.saved": "Rules saved",
+-+  "cashier.dailyLimit": "Daily stamp limit reached. Ask the owner.",
+-+  "cashier.undoNotAllowed": "The owner turned off undo for cashiers.",
+- } satisfies Record<string, string>;
+- 
+- export type TranslationKey = keyof typeof en;
+-@@ -885,6 +910,31 @@ const ar: Record<TranslationKey, string> = {
+-   "settings.vibration": "الاهتزاز",
+-   "settings.store": "متجرك",
+-   "settings.about": "حول التطبيق",
+-+  "wallet.remove.title": "إزالة هذه البطاقة",
+-+  "wallet.remove.body": "ستفقد طوابعك ({count}) في {store}. يمكنك الانضمام مجدداً لاحقاً، لكنك تبدأ من الصفر.",
+-+  "wallet.remove.action": "إزالة البطاقة",
+-+  "wallet.removed": "أُزيلت البطاقة",
+-+  "settings.leaveTeam": "مغادرة {store}",
+-+  "settings.leaveTeam.hint": "لن تستطيع بعد ذلك منح طوابع لهذا المتجر.",
+-+  "settings.leftTeam": "غادرت الفريق",
+-+  "settings.data": "بياناتك",
+-+  "settings.delete.title": "حذف حسابي وبياناتي",
+-+  "settings.delete.body": "يحذف هذا بطاقاتك وطوابعك وسجلك من فيلوغرام نهائياً ولا يمكن التراجع عنه. وعند فتح التطبيق مجدداً يبدأ حساب جديد فارغ.",
+-+  "settings.delete.owner": "أنت تملك متجراً. احذف متجرك أولاً (متجري ← إعدادات المتجر) ثم يمكنك حذف حسابك.",
+-+  "settings.delete.word": "حذف",
+-+  "settings.delete.confirmLabel": "اكتب {word} للتأكيد",
+-+  "settings.delete.action": "احذف كل شيء",
+-+  "settings.delete.deleting": "جارٍ الحذف…",
+-+  "settings.deleted": "تم حذف بياناتك",
+-+  "settings.delete.preview": "لا يمكن حذف حساب المعاينة المشترك هذا.",
+-+  "team.rules.title": "قواعد الكاشير",
+-+  "team.rules.canUndo": "يستطيع الكاشير التراجع عن طابع",
+-+  "team.rules.dailyLimit": "السقف اليومي للطوابع لكل كاشير",
+-+  "team.rules.dailyLimit.hint": "يحسب آخر 24 ساعة. الصفر يعني بلا حد. ولا ينطبق عليك أنت كمالك.",
+-+  "team.rules.save": "حفظ القواعد",
+-+  "team.rules.saved": "حُفظت القواعد",
+-+  "cashier.dailyLimit": "بلغتَ السقف اليومي للطوابع. اطلب من المالك.",
+-+  "cashier.undoNotAllowed": "أوقف المالك التراجع للكاشير.",
+- };
+- 
+- const dictionaries: Record<Locale, Record<TranslationKey, string>> = { en, ar };
+-diff --git a/src/lib/privacy.functions.ts b/src/lib/privacy.functions.ts
+-new file mode 100644
+-index 0000000..de8a5ab
+---- /dev/null
+-+++ b/src/lib/privacy.functions.ts
+-@@ -0,0 +1,59 @@
+-+import { createServerFn } from "@tanstack/react-start";
+-+
+-+import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+-+import { currentOwnedStoreId, resolveCurrentStore } from "@/lib/current-store";
+-+import { check, throwIfError } from "@/lib/db";
+-+import { adminClient } from "@/lib/notify";
+-+
+-+const ID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+-+/** The shared preview identity belongs to everybody who opens the app in a plain browser. */
+-+const PREVIEW_TELEGRAM_ID = 100000001;
+-+/** Typed to confirm deleting an account: the same word in both app languages. */
+-+const CONFIRM_WORDS = ["delete", "حذف"];
+-+
+-+/** Customer: remove my own card for a store (the store keeps its stamp history). */
+-+export const leaveStore = createServerFn({ method: "POST" })
+-+  .middleware([requireSupabaseAuth])
+-+  .inputValidator((data: { storeId: string }) => {
+-+    const storeId = String(data?.storeId ?? "");
+-+    if (!ID_RE.test(storeId)) throw new Error("INVALID_STORE");
+-+    return { storeId };
+-+  })
+-+  .handler(async ({ data, context }) => {
+-+    const { data: removed, error } = await context.supabase.rpc("leave_store_program", { _store_id: data.storeId });
+-+    throwIfError(error, "LEAVE_STORE_FAILED");
+-+    return { removed: Boolean(removed) };
+-+  });
+-+
+-+/** Cashier: stop working for the store I am currently a cashier at. Owners delete the store instead. */
+-+export const leaveTeam = createServerFn({ method: "POST" })
+-+  .middleware([requireSupabaseAuth])
+-+  .handler(async ({ context }) => {
+-+    const current = await resolveCurrentStore(context.supabase, context.userId);
+-+    if (!current) throw new Error("NOT_ON_A_TEAM");
+-+    if (current.role !== "staff") throw new Error("OWNER_CANNOT_LEAVE");
+-+    const { data: removed, error } = await context.supabase.rpc("leave_team", { _store_id: current.storeId });
+-+    throwIfError(error, "LEAVE_TEAM_FAILED");
+-+    return { removed: Boolean(removed) };
+-+  });
+-+
+-+/**
+-+ * Delete my account and everything tied to it. Store owners are refused: their store (and every
+-+ * customer's card) would go with them, so they delete the store first, deliberately.
+-+ */
+-+export const deleteMyAccount = createServerFn({ method: "POST" })
+-+  .middleware([requireSupabaseAuth])
+-+  .inputValidator((data: { confirm: string }) => ({ confirm: String(data?.confirm ?? "").trim().toLowerCase() }))
+-+  .handler(async ({ data, context }) => {
+-+    if (!CONFIRM_WORDS.includes(data.confirm)) throw new Error("CONFIRM_MISMATCH");
+-+
+-+    const admin = await adminClient();
+-+    const { data: profile } = check(await admin.from("profiles").select("telegram_user_id").eq("id", context.userId).maybeSingle(), "PROFILE_LOOKUP_FAILED");
+-+    if (Number(profile?.telegram_user_id) === PREVIEW_TELEGRAM_ID) throw new Error("PREVIEW_ACCOUNT");
+-+    if (await currentOwnedStoreId(context.supabase, context.userId)) throw new Error("OWNS_STORE");
+-+
+-+    // Cards, stamp history, referrals, team membership and the profile follow through the database's cascades.
+-+    const { error } = await admin.auth.admin.deleteUser(context.userId);
+-+    throwIfError(error, "DELETE_ACCOUNT_FAILED");
+-+    return { ok: true };
+-+  });
+-diff --git a/src/lib/store.functions.ts b/src/lib/store.functions.ts
+-index 98f2885..1d8c4fa 100644
+---- a/src/lib/store.functions.ts
+-+++ b/src/lib/store.functions.ts
+-@@ -30,6 +30,7 @@ export const getMyContext = createServerFn({ method: "POST" })
+-       profile: profile ?? null,
+-       ownedStoreId: ownerMembership?.store_id ?? null,
+-       staffStoreId: staffMembership?.store_id ?? null,
+-+      staffStoreName: (staffMembership?.stores as { name?: string } | null)?.name ?? null,
+-       cards: cards ?? [],
+-     };
+-   });
+-diff --git a/src/lib/team.functions.ts b/src/lib/team.functions.ts
+-index a77a48e..aea6960 100644
+---- a/src/lib/team.functions.ts
+-+++ b/src/lib/team.functions.ts
+-@@ -42,9 +42,18 @@ export const getTeam = createServerFn({ method: "POST" })
+-     ]);
+-     throwIfError(members.error ?? invitations.error, "TEAM_LOOKUP_FAILED");
+- 
+-+    // select("*") so a database without the team-rules columns still loads (rules then read as defaults).
+-+    const { data: storeRow } = check(await supabase.from("stores").select("*").eq("id", store.id).maybeSingle(), "STORE_LOOKUP_FAILED");
+-+    const rules = {
+-+      supported: Boolean(storeRow && "staff_can_undo" in storeRow),
+-+      canUndo: storeRow?.staff_can_undo ?? true,
+-+      dailyLimit: storeRow?.staff_daily_stamp_limit ?? 0,
+-+    };
+-+
+-     const names = await loadNames(supabase, (members.data ?? []).map((m) => m.user_id));
+-     return {
+-       storeName: store.name,
+-+      rules,
+-       staff: (members.data ?? []).map((m) => ({
+-         userId: m.user_id,
+-         name: names.get(m.user_id)?.name ?? null,
+-@@ -116,3 +125,24 @@ export const acceptInvite = createServerFn({ method: "POST" })
+-     if (error) throw new Error(error.message);
+-     return { storeId: String(storeId) };
+-   });
+-+
+-+/** Owner: what cashiers may do. Owners themselves are never limited. */
+-+export const updateTeamRules = createServerFn({ method: "POST" })
+-+  .middleware([requireSupabaseAuth])
+-+  .inputValidator((data: { canUndo: boolean; dailyLimit: number }) => ({
+-+    canUndo: Boolean(data?.canUndo),
+-+    dailyLimit: Math.min(1000, Math.max(0, Math.round(Number(data?.dailyLimit)) || 0)),
+-+  }))
+-+  .handler(async ({ data, context }) => {
+-+    const store = await ownedStore(context.supabase, context.userId);
+-+    const { error } = await context.supabase
+-+      .from("stores")
+-+      .update({ staff_can_undo: data.canUndo, staff_daily_stamp_limit: data.dailyLimit })
+-+      .eq("id", store.id);
+-+    if (error) {
+-+      // 42703 / PGRST204: the privacy-and-team-rules migration has not been applied to this database yet.
+-+      if (error.code === "42703" || error.code === "PGRST204") throw new Error("DB_MIGRATION_REQUIRED");
+-+      throw new Error(error.message);
+-+    }
+-+    return { ok: true };
+-+  });
+-diff --git a/src/routes/cashier.tsx b/src/routes/cashier.tsx
+-index 1b0ab9f..de32628 100644
+---- a/src/routes/cashier.tsx
+-+++ b/src/routes/cashier.tsx
+-@@ -52,6 +52,8 @@ function friendlyError(message: string): string {
+-   if (message.includes("TOKEN_INVALID")) return t("cashier.tokenInvalid");
+-   if (message.includes("NOT_ENOUGH_STAMPS")) return t("rewards.notEnough");
+-   if (message.includes("NOTHING_TO_UNDO")) return t("cashier.nothingToUndo");
+-+  if (message.includes("DAILY_LIMIT_REACHED")) return t("cashier.dailyLimit");
+-+  if (message.includes("UNDO_NOT_ALLOWED")) return t("cashier.undoNotAllowed");
+-   return t("common.error");
+- }
+- 
+-@@ -524,7 +526,7 @@ function Cashier() {
+-               </p>
+-             )}
+- 
+--            {customer.canUndo && (
+-+            {customer.canUndo && store.canUndo && (
+-               <Button
+-                 type="button"
+-                 onClick={() => {
+-diff --git a/src/routes/merchant/team.tsx b/src/routes/merchant/team.tsx
+-index 231c577..cbfad65 100644
+---- a/src/routes/merchant/team.tsx
+-+++ b/src/routes/merchant/team.tsx
+-@@ -8,6 +8,7 @@ import { toast } from "sonner";
+- import { AppHeader } from "@/components/BrandMark";
+- import { InviteLinkCard } from "@/components/InviteLinkCard";
+- import { QueryError } from "@/components/QueryError";
+-+import { TeamRulesCard } from "@/components/TeamRulesCard";
+- import { SplashScreen } from "@/components/SplashScreen";
+- import { Button } from "@/components/ui/button";
+- import { useFellogramAuth } from "@/hooks/useFellogramAuth";
+-@@ -190,6 +191,8 @@ function TeamPage() {
+-             </ul>
+-           )}
+-         </div>
+-+
+-+        <TeamRulesCard rules={data.rules} />
+-       </section>
+-     </main>
+-   );
+-diff --git a/src/routes/settings.tsx b/src/routes/settings.tsx
+-index 9a51f76..79b98c8 100644
+---- a/src/routes/settings.tsx
+-+++ b/src/routes/settings.tsx
+-@@ -2,6 +2,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
+- import { useState } from "react";
+- import { ChevronRight } from "lucide-react";
+- 
+-+import { DeleteAccountSection, LeaveTeamRow } from "@/components/AccountDangerZone";
+- import { AppHeader } from "@/components/BrandMark";
+- import { BottomNav } from "@/components/BottomNav";
+- import { QueryError } from "@/components/QueryError";
+-@@ -163,6 +164,7 @@ function SettingsPage() {
+-             <SwitchRow label={t("cashier.autoStamp")} checked={prefs.autoStamp} onChange={(next) => togglePref("autoStamp", next)} />
+-             <SwitchRow label={t("settings.sound")} checked={prefs.sound} onChange={(next) => togglePref("sound", next)} />
+-             <SwitchRow label={t("settings.vibration")} checked={prefs.vibration} onChange={(next) => togglePref("vibration", next)} />
+-+            {!isOwner && context.staffStoreName && <LeaveTeamRow storeName={context.staffStoreName} />}
+-           </Section>
+-         )}
+- 
+-@@ -178,6 +180,11 @@ function SettingsPage() {
+-           </Section>
+-         )}
+- 
+-+        <Section title={t("settings.data")}>
+-+          <p className="text-sm font-semibold text-destructive">{t("settings.delete.title")}</p>
+-+          <DeleteAccountSection isOwner={isOwner} />
+-+        </Section>
+-+
+-         <Section title={t("settings.about")}>
+-           <div>
+-             <p className="font-display text-lg font-bold">{t("app.name")}</p>
+-diff --git a/src/routes/wallet.tsx b/src/routes/wallet.tsx
+-index 48bd7d5..408eda8 100644
+---- a/src/routes/wallet.tsx
+-+++ b/src/routes/wallet.tsx
+-@@ -9,6 +9,7 @@ import { BottomNav } from "@/components/BottomNav";
+- import { SplashScreen } from "@/components/SplashScreen";
+- import { MyQrDialog } from "@/components/MyQrDialog";
+- import { NotificationsCard } from "@/components/NotificationsCard";
+-+import { RemoveCardSection } from "@/components/RemoveCardSection";
+- import { QueryError } from "@/components/QueryError";
+- import { StoreScanButton } from "@/components/StoreScanButton";
+- import { WalletEmptyState } from "@/components/WalletEmptyState";
+-@@ -78,6 +79,8 @@ function Wallet() {
+-             ))}
+-           </ul>
+-         )}
+-+{focusedCard && <RemoveCardSection storeId={focusedCard.storeId} storeName={focusedCard.storeName} balance={focusedCard.stampBalance} />}
+-+
+- {cards.length > 0 && (
+-           <div className="mt-6">
+-             <NotificationsCard />
+-diff --git a/supabase/migrations/20261030090000_privacy_and_team_rules.sql b/supabase/migrations/20261030090000_privacy_and_team_rules.sql
+-new file mode 100644
+-index 0000000..c3bb0ab
+---- /dev/null
+-+++ b/supabase/migrations/20261030090000_privacy_and_team_rules.sql
+-@@ -0,0 +1,253 @@
+-+-- Privacy controls and team rules. Safe to run more than once.
+-+
+-+-- 1) Team rules the owner controls.
+-+ALTER TABLE public.stores ADD COLUMN IF NOT EXISTS staff_can_undo boolean NOT NULL DEFAULT true;
+-+ALTER TABLE public.stores ADD COLUMN IF NOT EXISTS staff_daily_stamp_limit integer NOT NULL DEFAULT 0;
+-+ALTER TABLE public.stores DROP CONSTRAINT IF EXISTS stores_staff_daily_limit_range;
+-+ALTER TABLE public.stores ADD CONSTRAINT stores_staff_daily_limit_range CHECK (staff_daily_stamp_limit BETWEEN 0 AND 1000);
+-+
+-+-- 2) A customer removes their own card for a store (their history stays with the store's records).
+-+CREATE OR REPLACE FUNCTION public.leave_store_program(_store_id uuid)
+-+RETURNS boolean
+-+LANGUAGE plpgsql
+-+SECURITY DEFINER
+-+SET search_path = public
+-+AS $$
+-+DECLARE
+-+  _removed integer;
+-+BEGIN
+-+  IF auth.uid() IS NULL THEN RAISE EXCEPTION 'AUTH_REQUIRED'; END IF;
+-+  DELETE FROM public.customer_memberships WHERE store_id = _store_id AND customer_id = auth.uid();
+-+  GET DIAGNOSTICS _removed = ROW_COUNT;
+-+  RETURN _removed > 0;
+-+END;
+-+$$;
+-+
+-+-- 3) A cashier leaves the team (owners cannot: they delete the store instead).
+-+CREATE OR REPLACE FUNCTION public.leave_team(_store_id uuid)
+-+RETURNS boolean
+-+LANGUAGE plpgsql
+-+SECURITY DEFINER
+-+SET search_path = public
+-+AS $$
+-+DECLARE
+-+  _removed integer;
+-+BEGIN
+-+  IF auth.uid() IS NULL THEN RAISE EXCEPTION 'AUTH_REQUIRED'; END IF;
+-+  DELETE FROM public.store_members WHERE store_id = _store_id AND user_id = auth.uid() AND role = 'staff';
+-+  GET DIAGNOSTICS _removed = ROW_COUNT;
+-+  RETURN _removed > 0;
+-+END;
+-+$$;
+-+
+-+REVOKE ALL ON FUNCTION public.leave_store_program(uuid) FROM PUBLIC, anon;
+-+REVOKE ALL ON FUNCTION public.leave_team(uuid) FROM PUBLIC, anon;
+-+GRANT EXECUTE ON FUNCTION public.leave_store_program(uuid) TO authenticated;
+-+GRANT EXECUTE ON FUNCTION public.leave_team(uuid) TO authenticated;
+-+
+-+-- 4) Welcome stamps once per customer per store, even if they leave and rejoin.
+-+CREATE OR REPLACE FUNCTION public.grant_join_bonus()
+-+RETURNS trigger
+-+LANGUAGE plpgsql
+-+SECURITY DEFINER
+-+SET search_path = public
+-+AS $$
+-+DECLARE
+-+  _bonus integer;
+-+  _required integer;
+-+BEGIN
+-+  -- One welcome bonus per customer per store, ever: leaving a store and rejoining must not earn it again.
+-+  IF EXISTS (SELECT 1 FROM public.transactions t WHERE t.store_id = NEW.store_id AND t.customer_id = NEW.customer_id AND t.type = 'join_bonus') THEN
+-+    RETURN NULL;
+-+  END IF;
+-+
+-+  SELECT lp.join_bonus_stamps, lp.stamps_required INTO _bonus, _required
+-+  FROM public.loyalty_programs lp WHERE lp.id = NEW.program_id;
+-+
+-+  -- Never enough to earn the reward by joining alone.
+-+  _bonus := LEAST(COALESCE(_bonus, 0), GREATEST(COALESCE(_required, 1) - 1, 0));
+-+
+-+  IF _bonus > 0 THEN
+-+    UPDATE public.customer_memberships SET stamp_balance = stamp_balance + _bonus WHERE id = NEW.id;
+-+    INSERT INTO public.transactions (store_id, customer_id, type, amount)
+-+    VALUES (NEW.store_id, NEW.customer_id, 'join_bonus', _bonus);
+-+  END IF;
+-+  RETURN NULL;
+-+END;
+-+$$;
+-+
+-+-- 5) Daily cap per cashier (based on the referral-aware version with the cooldown setting).
+-+CREATE OR REPLACE FUNCTION public.award_stamp(_store_id uuid, _customer_id uuid, _amount integer DEFAULT 1)
+-+ RETURNS TABLE(membership_id uuid, stamp_balance integer, stamps_required integer, transaction_id uuid)
+-+ LANGUAGE plpgsql SECURITY DEFINER SET search_path TO 'public'
+-+AS $function$
+-+DECLARE
+-+  _staff_id uuid := auth.uid();
+-+  _amt integer := GREATEST(1, LEAST(5, COALESCE(_amount, 1)));
+-+  _membership public.customer_memberships;
+-+  _required integer;
+-+  _last_at timestamptz;
+-+  _tx_id uuid;
+-+  _new_balance integer;
+-+  _cooldown integer;
+-+  _limit integer;
+-+  _ref public.referrals;
+-+  _ref_bonus integer;
+-+  _welcome_bonus integer;
+-+BEGIN
+-+  IF _staff_id IS NULL THEN RAISE EXCEPTION 'AUTH_REQUIRED'; END IF;
+-+  IF NOT (public.is_store_member(_store_id, _staff_id) OR public.is_store_owner(_store_id, _staff_id)) THEN
+-+    RAISE EXCEPTION 'NOT_STORE_STAFF';
+-+  END IF;
+-+
+-+  -- Team rule: the owner can cap how many stamps one cashier gives in 24 hours (0 = no cap; owners are exempt).
+-+  IF NOT public.is_store_owner(_store_id, _staff_id) THEN
+-+    SELECT s.staff_daily_stamp_limit INTO _limit FROM public.stores s WHERE s.id = _store_id;
+-+    IF COALESCE(_limit, 0) > 0 AND (
+-+      SELECT count(*) FROM public.transactions t
+-+      WHERE t.store_id = _store_id AND t.staff_id = _staff_id AND t.type = 'stamp_awarded'
+-+        AND t.created_at > now() - interval '24 hours'
+-+    ) >= _limit THEN
+-+      RAISE EXCEPTION 'DAILY_LIMIT_REACHED:%', _limit;
+-+    END IF;
+-+  END IF;
+-+
+-+  SELECT * INTO _membership FROM public.customer_memberships
+-+  WHERE customer_memberships.store_id = _store_id AND customer_memberships.customer_id = _customer_id
+-+  FOR UPDATE;
+-+  IF _membership.id IS NULL THEN RAISE EXCEPTION 'MEMBERSHIP_NOT_FOUND'; END IF;
+-+
+-+  SELECT COALESCE(lp.stamp_cooldown_minutes, 15) INTO _cooldown
+-+  FROM public.loyalty_programs lp WHERE lp.id = _membership.program_id;
+-+  _cooldown := COALESCE(_cooldown, 15);
+-+
+-+  SELECT max(tx.created_at) INTO _last_at FROM public.transactions tx
+-+  WHERE tx.store_id = _store_id AND tx.customer_id = _customer_id AND tx.type = 'stamp_awarded'
+-+    AND NOT EXISTS (SELECT 1 FROM public.transactions r WHERE r.type = 'stamp_reversed'
+-+                    AND (r.metadata->>'reversed_transaction_id') = tx.id::text);
+-+  IF _cooldown > 0 AND _last_at IS NOT NULL AND _last_at > now() - make_interval(mins => _cooldown) THEN
+-+    RAISE EXCEPTION 'COOLDOWN_ACTIVE:%', GREATEST(1, CEIL(EXTRACT(EPOCH FROM (_last_at + make_interval(mins => _cooldown) - now())) / 60));
+-+  END IF;
+-+
+-+  INSERT INTO public.transactions (store_id, customer_id, staff_id, type, amount)
+-+  VALUES (_store_id, _customer_id, _staff_id, 'stamp_awarded', _amt)
+-+  RETURNING id INTO _tx_id;
+-+
+-+  UPDATE public.customer_memberships cm SET stamp_balance = cm.stamp_balance + _amt, last_visit_at = now()
+-+  WHERE cm.id = _membership.id RETURNING cm.stamp_balance INTO _new_balance;
+-+
+-+  SELECT lp.stamps_required, lp.referrer_bonus_stamps, lp.welcome_bonus_stamps
+-+    INTO _required, _ref_bonus, _welcome_bonus
+-+  FROM public.loyalty_programs lp WHERE lp.id = _membership.program_id;
+-+
+-+  -- First qualifying stamp of a referred customer: qualify + reward both sides atomically.
+-+  SELECT * INTO _ref FROM public.referrals r
+-+   WHERE r.store_id = _store_id AND r.referred_customer_id = _customer_id AND r.status = 'pending'
+-+   FOR UPDATE;
+-+  IF _ref.id IS NOT NULL THEN
+-+    UPDATE public.referrals SET status = 'qualified', qualifying_transaction_id = _tx_id, rewarded_at = now()
+-+     WHERE id = _ref.id;
+-+    IF COALESCE(_welcome_bonus, 0) > 0 THEN
+-+      UPDATE public.customer_memberships cm SET stamp_balance = cm.stamp_balance + _welcome_bonus
+-+       WHERE cm.id = _membership.id RETURNING cm.stamp_balance INTO _new_balance;
+-+      INSERT INTO public.transactions (store_id, customer_id, staff_id, type, amount, metadata)
+-+      VALUES (_store_id, _customer_id, _staff_id, 'referral_reward', _welcome_bonus,
+-+              jsonb_build_object('referral_id', _ref.id, 'role', 'referred'));
+-+    END IF;
+-+    IF COALESCE(_ref_bonus, 0) > 0 AND EXISTS (SELECT 1 FROM public.customer_memberships
+-+         WHERE store_id = _store_id AND customer_id = _ref.referrer_customer_id) THEN
+-+      UPDATE public.customer_memberships cm SET stamp_balance = cm.stamp_balance + _ref_bonus
+-+       WHERE cm.store_id = _store_id AND cm.customer_id = _ref.referrer_customer_id;
+-+      INSERT INTO public.transactions (store_id, customer_id, staff_id, type, amount, metadata)
+-+      VALUES (_store_id, _ref.referrer_customer_id, _staff_id, 'referral_reward', _ref_bonus,
+-+              jsonb_build_object('referral_id', _ref.id, 'role', 'referrer'));
+-+    END IF;
+-+  END IF;
+-+
+-+  membership_id := _membership.id;
+-+  stamp_balance := _new_balance;
+-+  stamps_required := COALESCE(_required, 10);
+-+  transaction_id := _tx_id;
+-+  RETURN NEXT;
+-+END;
+-+$function$;
+-+
+-+-- 6) Cashiers may be barred from undoing stamps (based on the referral-aware undo).
+-+CREATE OR REPLACE FUNCTION public.undo_last_stamp(_store_id uuid, _customer_id uuid)
+-+ RETURNS TABLE(membership_id uuid, stamp_balance integer, stamps_required integer)
+-+ LANGUAGE plpgsql
+-+ SECURITY DEFINER
+-+ SET search_path TO 'public'
+-+AS $function$
+-+DECLARE
+-+  _staff_id uuid := auth.uid();
+-+  _membership public.customer_memberships;
+-+  _tx public.transactions;
+-+  _required integer;
+-+  _new_balance integer;
+-+  _ref public.referrals;
+-+  _bonus public.transactions;
+-+BEGIN
+-+  IF _staff_id IS NULL THEN RAISE EXCEPTION 'AUTH_REQUIRED'; END IF;
+-+  IF NOT (public.is_store_member(_store_id, _staff_id) OR public.is_store_owner(_store_id, _staff_id)) THEN
+-+    RAISE EXCEPTION 'NOT_STORE_STAFF';
+-+  END IF;
+-+
+-+  -- Team rule: the owner can take the undo button away from cashiers.
+-+  IF NOT public.is_store_owner(_store_id, _staff_id)
+-+     AND NOT COALESCE((SELECT s.staff_can_undo FROM public.stores s WHERE s.id = _store_id), true) THEN
+-+    RAISE EXCEPTION 'UNDO_NOT_ALLOWED';
+-+  END IF;
+-+
+-+  SELECT * INTO _membership FROM public.customer_memberships
+-+  WHERE customer_memberships.store_id = _store_id AND customer_memberships.customer_id = _customer_id
+-+  FOR UPDATE;
+-+  IF _membership.id IS NULL THEN RAISE EXCEPTION 'MEMBERSHIP_NOT_FOUND'; END IF;
+-+
+-+  SELECT * INTO _tx FROM public.transactions tx
+-+  WHERE tx.store_id = _store_id AND tx.customer_id = _customer_id AND tx.type = 'stamp_awarded'
+-+    AND tx.created_at > now() - interval '30 minutes'
+-+  ORDER BY tx.created_at DESC LIMIT 1;
+-+  IF _tx.id IS NULL THEN RAISE EXCEPTION 'NOTHING_TO_UNDO'; END IF;
+-+  IF EXISTS (SELECT 1 FROM public.transactions r WHERE r.type = 'stamp_reversed'
+-+             AND (r.metadata->>'reversed_transaction_id') = _tx.id::text) THEN
+-+    RAISE EXCEPTION 'NOTHING_TO_UNDO';
+-+  END IF;
+-+
+-+  INSERT INTO public.transactions (store_id, customer_id, staff_id, type, amount, metadata)
+-+  VALUES (_store_id, _customer_id, _staff_id, 'stamp_reversed', _tx.amount,
+-+          jsonb_build_object('reversed_transaction_id', _tx.id));
+-+  UPDATE public.customer_memberships cm SET stamp_balance = GREATEST(0, cm.stamp_balance - _tx.amount)
+-+  WHERE cm.id = _membership.id;
+-+
+-+  -- If this stamp qualified a referral, revert it and claw back both bonuses.
+-+  SELECT * INTO _ref FROM public.referrals r WHERE r.qualifying_transaction_id = _tx.id FOR UPDATE;
+-+  IF _ref.id IS NOT NULL THEN
+-+    FOR _bonus IN
+-+      SELECT * FROM public.transactions b
+-+      WHERE b.type = 'referral_reward' AND b.store_id = _store_id
+-+        AND (b.metadata->>'referral_id') = _ref.id::text
+-+        AND NOT EXISTS (SELECT 1 FROM public.transactions x WHERE x.type = 'stamp_reversed'
+-+                        AND (x.metadata->>'reversed_transaction_id') = b.id::text)
+-+    LOOP
+-+      INSERT INTO public.transactions (store_id, customer_id, staff_id, type, amount, metadata)
+-+      VALUES (_store_id, _bonus.customer_id, _staff_id, 'stamp_reversed', _bonus.amount,
+-+              jsonb_build_object('reversed_transaction_id', _bonus.id, 'referral_id', _ref.id));
+-+      UPDATE public.customer_memberships cm SET stamp_balance = GREATEST(0, cm.stamp_balance - _bonus.amount)
+-+      WHERE cm.store_id = _store_id AND cm.customer_id = _bonus.customer_id;
+-+    END LOOP;
+-+    UPDATE public.referrals SET status = 'pending', qualifying_transaction_id = NULL, rewarded_at = NULL
+-+    WHERE id = _ref.id;
+-+  END IF;
+-+
+-+  SELECT cm.stamp_balance INTO _new_balance FROM public.customer_memberships cm WHERE cm.id = _membership.id;
+-+  SELECT lp.stamps_required INTO _required FROM public.loyalty_programs lp WHERE lp.id = _membership.program_id;
+-+
+-+  membership_id := _membership.id;
+-+  stamp_balance := _new_balance;
+-+  stamps_required := COALESCE(_required, 10);
+-+  RETURN NEXT;
+-+END;
+-+$function$;
+-+
+-+NOTIFY pgrst, 'reload schema';
+diff --git a/src/lib/customer-views.ts b/src/lib/customer-views.ts
+new file mode 100644
+index 0000000..f133f42
+--- /dev/null
++++ b/src/lib/customer-views.ts
+@@ -0,0 +1,122 @@
++/** How the owner slices the customer list: filters, sort orders and the CSV/TSV export. Pure, so it is testable. */
++export type CustomerRow = {
++  customerId: string;
++  name: string | null;
++  username: string | null;
++  balance: number;
++  required: number;
++  joinedAt: string;
++  lastVisitAt: string | null;
++};
++
++export const FILTERS = ["all", "ready", "close", "inactive", "new"] as const;
++export const SORTS = ["recent", "closest", "stamps", "newest", "name"] as const;
++export type Filter = (typeof FILTERS)[number];
++export type Sort = (typeof SORTS)[number];
++
++export const INACTIVE_DAYS = 30;
++export const NEW_DAYS = 7;
++/** "Close to reward" means one or two stamps short. */
++export const CLOSE_WITHIN = 2;
++
++export const isFilter = (value: unknown): value is Filter => typeof value === "string" && (FILTERS as readonly string[]).includes(value);
++export const isSort = (value: unknown): value is Sort => typeof value === "string" && (SORTS as readonly string[]).includes(value);
++
++const DAY = 864e5;
++const time = (iso: string | null) => (iso ? new Date(iso).getTime() : 0);
++
++export function matchesFilter(row: CustomerRow, filter: Filter, now = Date.now()): boolean {
++  switch (filter) {
++    case "all":
++      return true;
++    case "ready":
++      return row.balance >= row.required;
++    case "close":
++      return row.balance < row.required && row.required - row.balance <= CLOSE_WITHIN;
++    case "inactive":
++      return time(row.lastVisitAt ?? row.joinedAt) < now - INACTIVE_DAYS * DAY;
++    case "new":
++      return time(row.joinedAt) >= now - NEW_DAYS * DAY;
++  }
++}
++
++export function filterCounts(rows: CustomerRow[], now = Date.now()): Record<Filter, number> {
++  const counts = { all: 0, ready: 0, close: 0, inactive: 0, new: 0 } satisfies Record<Filter, number>;
++  for (const row of rows) for (const filter of FILTERS) if (matchesFilter(row, filter, now)) counts[filter] += 1;
++  return counts;
++}
++
++const progress = (row: CustomerRow) => row.balance / Math.max(1, row.required);
++const label = (row: CustomerRow) => (row.name ?? row.username ?? "").toLowerCase();
++
++/** Returns a new array; ties keep a stable, predictable order (most recent visit first). */
++export function sortRows(rows: CustomerRow[], sort: Sort): CustomerRow[] {
++  const byRecent = (a: CustomerRow, b: CustomerRow) => time(b.lastVisitAt ?? b.joinedAt) - time(a.lastVisitAt ?? a.joinedAt);
++  const compare: Record<Sort, (a: CustomerRow, b: CustomerRow) => number> = {
++    recent: byRecent,
++    // Customers who already have their reward come first, then the nearest to it.
++    closest: (a, b) => progress(b) - progress(a) || byRecent(a, b),
++    stamps: (a, b) => b.balance - a.balance || byRecent(a, b),
++    newest: (a, b) => time(b.joinedAt) - time(a.joinedAt),
++    name: (a, b) => {
++      // Customers without any name sort last instead of first.
++      if (!label(a) !== !label(b)) return label(a) ? -1 : 1;
++      return label(a).localeCompare(label(b)) || byRecent(a, b);
++    },
++  };
++  return [...rows].sort(compare[sort]);
++}
++
++/**
++ * A spreadsheet runs a cell that starts with = + - @ as a formula, and a customer controls their own
++ * name. Prefixing an apostrophe keeps it plain text.
++ */
++function guard(value: string): string {
++  return /^[=+\-@\t\r]/.test(value) ? `'${value}` : value;
++}
++
++export function csvCell(value: string | number): string {
++  const text = guard(String(value));
++  return /[",\r\n;]/.test(text) ? `"${text.replace(/"/g, '""')}"` : text;
++}
++
++/** Tab-separated cells paste straight into Google Sheets / Excel columns. */
++export function tsvCell(value: string | number): string {
++  return guard(String(value)).replace(/[\t\r\n]+/g, " ");
++}
++
++export type Locale2 = "ar" | "en";
++
++const HEADERS: Record<Locale2, string[]> = {
++  en: ["Name", "Username", "Stamps", "Stamps needed", "Reward ready", "Last visit", "Joined"],
++  ar: ["الاسم", "المعرّف", "الطوابع", "الطوابع المطلوبة", "المكافأة جاهزة", "آخر زيارة", "تاريخ الانضمام"],
++};
++const YES_NO: Record<Locale2, [string, string]> = { en: ["yes", "no"], ar: ["نعم", "لا"] };
++
++const day = (iso: string | null) => (iso ? iso.slice(0, 10) : "");
++
++export function exportRows(rows: CustomerRow[], locale: Locale2, format: "csv" | "tsv"): string {
++  const cell = format === "csv" ? csvCell : tsvCell;
++  const separator = format === "csv" ? "," : "\t";
++  const [yes, no] = YES_NO[locale];
++  const lines = [
++    HEADERS[locale].map(cell).join(separator),
++    ...rows.map((row) =>
++      [
++        row.name ?? "",
++        // Without the "@": a leading @ looks like a formula to a spreadsheet and would get the apostrophe guard.
++        row.username ?? "",
++        row.balance,
++        row.required,
++        row.balance >= row.required ? yes : no,
++        day(row.lastVisitAt),
++        day(row.joinedAt),
++      ]
++        .map(cell)
++        .join(separator),
++    ),
++  ];
++  // CSV gets a byte-order mark so Excel reads Arabic names correctly; pasted text must not start with one.
++  const eol = format === "csv" ? "\r\n" : "\n";
++  return (format === "csv" ? "\uFEFF" : "") + lines.join(eol) + eol;
++}
+diff --git a/src/lib/i18n.ts b/src/lib/i18n.ts
+index 4dea29e..d125107 100644
+--- a/src/lib/i18n.ts
++++ b/src/lib/i18n.ts
+@@ -473,6 +473,25 @@ const en = {
+   "team.rules.saved": "Rules saved",
+   "cashier.dailyLimit": "Daily stamp limit reached. Ask the owner.",
+   "cashier.undoNotAllowed": "The owner turned off undo for cashiers.",
++  "customers.filter.label": "Filter customers",
++  "customers.filter.all": "All",
++  "customers.filter.ready": "Reward ready",
++  "customers.filter.close": "Close to reward",
++  "customers.filter.inactive": "Inactive 30 days",
++  "customers.filter.new": "New this week",
++  "customers.sort": "Sort by",
++  "customers.sort.recent": "Latest visit",
++  "customers.sort.closest": "Closest to reward",
++  "customers.sort.stamps": "Most stamps",
++  "customers.sort.newest": "Newest members",
++  "customers.sort.name": "Name (A–Z)",
++  "customers.capped": "Only the first 3,000 customers are loaded.",
++  "customers.export.hint": "Includes names, @usernames and visit dates. Keep the file private.",
++  "customers.export.copy": "Copy for a spreadsheet",
++  "customers.export.download": "Download CSV",
++  "customers.export.copied": "{count} customers copied. Paste them into Google Sheets or Excel.",
++  "customers.export.downloaded": "File downloaded",
++  "customers.export.failed": "Couldn't export. Try the other option.",
+ } satisfies Record<string, string>;
+ 
+ export type TranslationKey = keyof typeof en;
+@@ -935,6 +954,25 @@ const ar: Record<TranslationKey, string> = {
+   "team.rules.saved": "حُفظت القواعد",
+   "cashier.dailyLimit": "بلغتَ السقف اليومي للطوابع. اطلب من المالك.",
+   "cashier.undoNotAllowed": "أوقف المالك التراجع للكاشير.",
++  "customers.filter.label": "تصفية العملاء",
++  "customers.filter.all": "الكل",
++  "customers.filter.ready": "المكافأة جاهزة",
++  "customers.filter.close": "قريبون من المكافأة",
++  "customers.filter.inactive": "غائبون 30 يوماً",
++  "customers.filter.new": "جدد هذا الأسبوع",
++  "customers.sort": "ترتيب حسب",
++  "customers.sort.recent": "آخر زيارة",
++  "customers.sort.closest": "الأقرب للمكافأة",
++  "customers.sort.stamps": "الأكثر طوابع",
++  "customers.sort.newest": "الأحدث انضماماً",
++  "customers.sort.name": "الاسم (أ–ي)",
++  "customers.capped": "حُمّل أول 3000 عميل فقط.",
++  "customers.export.hint": "يتضمن الأسماء ومعرّفات Telegram وتواريخ الزيارة. حافظ على خصوصية الملف.",
++  "customers.export.copy": "نسخ لجدول بيانات",
++  "customers.export.download": "تنزيل CSV",
++  "customers.export.copied": "نُسخ {count} عميلاً. الصقهم في Google Sheets أو Excel.",
++  "customers.export.downloaded": "تم تنزيل الملف",
++  "customers.export.failed": "تعذّر التصدير. جرّب الخيار الآخر.",
+ };
+ 
+ const dictionaries: Record<Locale, Record<TranslationKey, string>> = { en, ar };
+diff --git a/src/lib/insights.functions.ts b/src/lib/insights.functions.ts
+index 1a1d36c..c584661 100644
+--- a/src/lib/insights.functions.ts
++++ b/src/lib/insights.functions.ts
+@@ -3,6 +3,7 @@ import { ownedIdOrNil } from "@/lib/current-store";
+ 
+ import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+ import { check, throwIfError, type Db } from "@/lib/db";
++import { exportRows, filterCounts, isFilter, isSort, matchesFilter, sortRows, type CustomerRow, type Filter, type Sort } from "@/lib/customer-views";
+ import { loadNames, matchesPerson } from "@/lib/people";
+ 
+ async function ownedStoreId(supabase: Db, userId: string): Promise<string> {
+@@ -14,39 +15,80 @@ async function ownedStoreId(supabase: Db, userId: string): Promise<string> {
+   return store.id as string;
+ }
+ 
+-/** Owner: customers of the store, most recent visitors first, optionally filtered by name. */
+-export const getStoreCustomers = createServerFn({ method: "POST" })
+-  .middleware([requireSupabaseAuth])
+-  .inputValidator((data: { q?: string }) => ({ q: String(data?.q ?? "").trim().slice(0, 60) }))
+-  .handler(async ({ data, context }) => {
+-    const { supabase, userId } = context;
+-    const storeId = await ownedStoreId(supabase, userId);
++const PAGE_SIZE = 1000;
++/** The database returns at most 1000 rows per request; read a few pages so bigger stores are complete. */
++const MAX_CUSTOMERS = 3000;
++const LIST_LIMIT = 300;
+ 
+-    const [rows, count] = await Promise.all([
+-      supabase
++async function loadCustomerRows(supabase: Db, storeId: string): Promise<CustomerRow[]> {
++  const members: { customer_id: string; stamp_balance: number | null; joined_at: string; last_visit_at: string | null; loyalty_programs: { stamps_required: number } | null }[] = [];
++  for (let from = 0; from < MAX_CUSTOMERS; from += PAGE_SIZE) {
++    const { data } = check(
++      await supabase
+         .from("customer_memberships")
+         .select("customer_id, stamp_balance, joined_at, last_visit_at, loyalty_programs(stamps_required)")
+         .eq("store_id", storeId)
+-        .order("last_visit_at", { ascending: false, nullsFirst: false })
+-        .limit(300),
+-      supabase.from("customer_memberships").select("id", { count: "exact", head: true }).eq("store_id", storeId),
+-    ]);
+-    throwIfError(rows.error ?? count.error, "CUSTOMERS_LOOKUP_FAILED");
++        .order("joined_at", { ascending: false })
++        .order("customer_id")
++        .range(from, from + PAGE_SIZE - 1),
++      "CUSTOMERS_LOOKUP_FAILED",
++    );
++    members.push(...(data ?? []));
++    if ((data?.length ?? 0) < PAGE_SIZE) break;
++  }
++  const names = await loadNames(supabase, members.map((m) => m.customer_id));
++  return members.map((m) => ({
++    customerId: m.customer_id,
++    name: names.get(m.customer_id)?.name ?? null,
++    username: names.get(m.customer_id)?.username ?? null,
++    balance: m.stamp_balance ?? 0,
++    required: m.loyalty_programs?.stamps_required ?? 10,
++    joinedAt: m.joined_at,
++    lastVisitAt: m.last_visit_at,
++  }));
++}
+ 
+-    const members = rows.data ?? [];
+-    const names = await loadNames(supabase, members.map((m) => m.customer_id));
+-    const customers = members
+-      .filter((m) => matchesPerson(names.get(m.customer_id), data.q))
+-      .map((m) => ({
+-        customerId: m.customer_id,
+-        name: names.get(m.customer_id)?.name ?? null,
+-        username: names.get(m.customer_id)?.username ?? null,
+-        balance: m.stamp_balance ?? 0,
+-        required: m.loyalty_programs?.stamps_required ?? 10,
+-        joinedAt: m.joined_at,
+-        lastVisitAt: m.last_visit_at,
+-      }));
+-    return { customers, total: count.count ?? members.length, truncated: (count.count ?? 0) > members.length };
++/** Owner: the store's customers, filtered, searched and sorted, plus how many fall in each filter. */
++export const getStoreCustomers = createServerFn({ method: "POST" })
++  .middleware([requireSupabaseAuth])
++  .inputValidator((data: { q?: string; filter?: string; sort?: string }) => ({
++    q: String(data?.q ?? "").trim().slice(0, 60),
++    filter: isFilter(data?.filter) ? data.filter : ("all" as Filter),
++    sort: isSort(data?.sort) ? data.sort : ("recent" as Sort),
++  }))
++  .handler(async ({ data, context }) => {
++    const storeId = await ownedStoreId(context.supabase, context.userId);
++    const rows = await loadCustomerRows(context.supabase, storeId);
++    const now = Date.now();
++
++    const view = sortRows(
++      rows.filter((row) => matchesFilter(row, data.filter, now) && matchesPerson({ name: row.name, username: row.username }, data.q)),
++      data.sort,
++    );
++    return {
++      customers: view.slice(0, LIST_LIMIT),
++      shown: view.length,
++      total: rows.length,
++      counts: filterCounts(rows, now),
++      capped: rows.length >= MAX_CUSTOMERS,
++    };
++  });
++
++/** Owner: every customer as a file (CSV) or as text that pastes into spreadsheet columns (TSV). */
++export const exportStoreCustomers = createServerFn({ method: "POST" })
++  .middleware([requireSupabaseAuth])
++  .inputValidator((data: { locale?: string; format?: string }) => ({
++    locale: data?.locale === "ar" ? ("ar" as const) : ("en" as const),
++    format: data?.format === "tsv" ? ("tsv" as const) : ("csv" as const),
++  }))
++  .handler(async ({ data, context }) => {
++    const storeId = await ownedStoreId(context.supabase, context.userId);
++    const rows = sortRows(await loadCustomerRows(context.supabase, storeId), "recent");
++    return {
++      text: exportRows(rows, data.locale, data.format),
++      filename: `customers-${new Date().toISOString().slice(0, 10)}.csv`,
++      count: rows.length,
++    };
+   });
+ 
+ /** Owner: latest stamp/redeem activity with who did it. */
+diff --git a/src/lib/people.ts b/src/lib/people.ts
+index c9f6063..d5cee39 100644
+--- a/src/lib/people.ts
++++ b/src/lib/people.ts
+@@ -6,15 +6,20 @@ export type PersonName = { name: string | null; username: string | null };
+ export async function loadNames(supabase: Db, ids: string[]): Promise<Map<string, PersonName>> {
+   const unique = [...new Set(ids.filter(Boolean))];
+   const result = new Map<string, PersonName>();
+-  for (let i = 0; i < unique.length; i += 80) {
+-    const chunk = unique.slice(i, i + 80);
+-    const { data } = check(
+-      await supabase.from("profiles").select("id, first_name, last_name, username").in("id", chunk),
+-      "PROFILES_LOOKUP_FAILED",
++  const chunks: string[][] = [];
++  for (let i = 0; i < unique.length; i += 80) chunks.push(unique.slice(i, i + 80));
++  // Five requests at a time: fast for big stores without hammering the API.
++  for (let i = 0; i < chunks.length; i += 5) {
++    const results = await Promise.all(
++      chunks.slice(i, i + 5).map(async (chunk) =>
++        check(await supabase.from("profiles").select("id, first_name, last_name, username").in("id", chunk), "PROFILES_LOOKUP_FAILED"),
++      ),
+     );
+-    for (const row of (data ?? []) as { id: string; first_name: string | null; last_name: string | null; username: string | null }[]) {
+-      const name = [row.first_name, row.last_name].filter(Boolean).join(" ").trim();
+-      result.set(row.id, { name: name || null, username: row.username ?? null });
++    for (const { data } of results) {
++      for (const row of (data ?? []) as { id: string; first_name: string | null; last_name: string | null; username: string | null }[]) {
++        const name = [row.first_name, row.last_name].filter(Boolean).join(" ").trim();
++        result.set(row.id, { name: name || null, username: row.username ?? null });
++      }
+     }
+   }
+   return result;
+diff --git a/src/routes/merchant/customers.tsx b/src/routes/merchant/customers.tsx
+index 56e25b8..449677e 100644
+--- a/src/routes/merchant/customers.tsx
++++ b/src/routes/merchant/customers.tsx
+@@ -1,18 +1,21 @@
+ import { createFileRoute, Link } from "@tanstack/react-router";
+-import { useQuery } from "@tanstack/react-query";
++import { useMutation, useQuery } from "@tanstack/react-query";
+ import { useServerFn } from "@tanstack/react-start";
+ import { useEffect, useState } from "react";
+-import { Gift, Search, Sparkles, Stamp, Undo2, Users } from "lucide-react";
++import { ClipboardCopy, Download, Gift, Search, Sparkles, Stamp, Undo2, Users } from "lucide-react";
++import { toast } from "sonner";
+ 
+ import { AppHeader } from "@/components/BrandMark";
+ import { QueryError } from "@/components/QueryError";
+ import { ReminderCard } from "@/components/ReminderCard";
+ import { SplashScreen } from "@/components/SplashScreen";
++import { Button } from "@/components/ui/button";
+ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+ import { useFellogramAuth } from "@/hooks/useFellogramAuth";
+ import { formatRelative } from "@/lib/format";
+-import { getStoreActivity, getStoreCustomers } from "@/lib/insights.functions";
+-import { t } from "@/lib/i18n";
++import { FILTERS, SORTS, type Filter, type Sort } from "@/lib/customer-views";
++import { exportStoreCustomers, getStoreActivity, getStoreCustomers } from "@/lib/insights.functions";
++import { getLocale, t, type TranslationKey } from "@/lib/i18n";
+ 
+ export const Route = createFileRoute("/merchant/customers")({
+   ssr: false,
+@@ -64,8 +67,11 @@ function CustomersPage() {
+ 
+ function CustomersTab({ ready }: { ready: boolean }) {
+   const load = useServerFn(getStoreCustomers);
++  const exportFn = useServerFn(exportStoreCustomers);
+   const [input, setInput] = useState("");
+   const [q, setQ] = useState("");
++  const [filter, setFilter] = useState<Filter>("all");
++  const [sort, setSort] = useState<Sort>("recent");
+ 
+   useEffect(() => {
+     const id = setTimeout(() => setQ(input.trim()), 300);
+@@ -73,17 +79,39 @@ function CustomersTab({ ready }: { ready: boolean }) {
+   }, [input]);
+ 
+   const { data, isLoading, error, refetch } = useQuery({
+-    queryKey: ["store-customers", q],
+-    queryFn: () => load({ data: { q } }),
++    queryKey: ["store-customers", q, filter, sort],
++    queryFn: () => load({ data: { q, filter, sort } }),
+     enabled: ready,
+     placeholderData: (previous) => previous,
+   });
+ 
++  // "Copy" gives tab-separated text that pastes into spreadsheet columns; "Download" gives a CSV file.
++  const exportMutation = useMutation({
++    mutationFn: async (mode: "copy" | "download") => ({ mode, result: await exportFn({ data: { locale: getLocale(), format: mode === "copy" ? "tsv" : "csv" } }) }),
++    onSuccess: async ({ mode, result }) => {
++      if (mode === "copy") {
++        await navigator.clipboard.writeText(result.text);
++        toast.success(t("customers.export.copied", { count: result.count }));
++        return;
++      }
++      const url = URL.createObjectURL(new Blob([result.text], { type: "text/csv;charset=utf-8" }));
++      const link = document.createElement("a");
++      link.href = url;
++      link.download = result.filename;
++      document.body.appendChild(link);
++      link.click();
++      link.remove();
++      setTimeout(() => URL.revokeObjectURL(url), 1000);
++      toast.success(t("customers.export.downloaded"));
++    },
++    onError: () => toast.error(t("customers.export.failed")),
++  });
++
+   if (error) return <QueryError error={error} onRetry={() => refetch()} />;
+   if (!ready || isLoading || !data) return <SplashScreen />;
+ 
+   return (
+-    <div>
++    <div className="min-w-0">
+       <ReminderCard ready={ready} />
+       <div className="relative">
+         <Search className="pointer-events-none absolute start-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" aria-hidden="true" />
+@@ -96,11 +124,46 @@ function CustomersTab({ ready }: { ready: boolean }) {
+           className="w-full rounded-md border border-border bg-card py-3 ps-9 pe-3 text-sm outline-none focus:ring-2 focus:ring-ring"
+         />
+       </div>
++
++      <div className="mt-3 flex min-w-0 gap-2 overflow-x-auto pb-1" role="group" aria-label={t("customers.filter.label")}>
++        {FILTERS.map((item) => (
++          <button
++            key={item}
++            type="button"
++            aria-pressed={filter === item}
++            onClick={() => setFilter(item)}
++            className={`touch-action shrink-0 rounded-full border px-3.5 py-2 text-xs font-semibold ${
++              filter === item ? "border-primary bg-primary text-primary-foreground" : "border-border bg-card text-foreground"
++            }`}
++          >
++            {t(`customers.filter.${item}` as TranslationKey)} <span className="opacity-80">{data.counts[item]}</span>
++          </button>
++        ))}
++      </div>
++
++      <div className="mt-3 flex items-center gap-2">
++        <label htmlFor="customerSort" className="shrink-0 text-xs font-semibold text-muted-foreground">
++          {t("customers.sort")}
++        </label>
++        <select
++          id="customerSort"
++          value={sort}
++          onChange={(event) => setSort(event.target.value as Sort)}
++          className="min-w-0 flex-1 rounded-md border border-border bg-card px-3 py-2.5 text-sm outline-none focus:ring-2 focus:ring-ring"
++        >
++          {SORTS.map((item) => (
++            <option key={item} value={item}>
++              {t(`customers.sort.${item}` as TranslationKey)}
++            </option>
++          ))}
++        </select>
++      </div>
++
+       <p className="mt-3 text-xs font-semibold text-muted-foreground">{t("customers.count", { count: data.total })}</p>
+ 
+       {data.customers.length === 0 ? (
+         <p className="mt-3 rounded-lg border border-dashed border-border bg-card p-6 text-center text-sm text-muted-foreground">
+-          {q ? t("customers.noMatch") : t("customers.empty")}
++          {q || filter !== "all" ? t("customers.noMatch") : t("customers.empty")}
+         </p>
+       ) : (
+         <ul className="mt-3 space-y-2">
+@@ -141,7 +204,26 @@ function CustomersTab({ ready }: { ready: boolean }) {
+           })}
+         </ul>
+       )}
+-      {data.truncated && <p className="mt-3 text-center text-xs text-muted-foreground">{t("customers.truncated", { count: data.customers.length })}</p>}
++      {data.shown > data.customers.length && (
++        <p className="mt-3 text-center text-xs text-muted-foreground">{t("customers.truncated", { count: data.customers.length })}</p>
++      )}
++      {data.capped && <p className="mt-2 text-center text-xs text-muted-foreground">{t("customers.capped")}</p>}
++
++      {data.total > 0 && (
++        <div className="mt-6 rounded-lg border border-border bg-card p-4">
++          <p className="text-xs text-muted-foreground">{t("customers.export.hint")}</p>
++          <div className="mt-3 grid grid-cols-2 gap-2">
++            <Button type="button" variant="outline" disabled={exportMutation.isPending} className="touch-action h-11 gap-2 px-2 text-xs font-semibold" onClick={() => exportMutation.mutate("copy")}>
++              <ClipboardCopy className="h-4 w-4" />
++              {t("customers.export.copy")}
++            </Button>
++            <Button type="button" variant="outline" disabled={exportMutation.isPending} className="touch-action h-11 gap-2 px-2 text-xs font-semibold" onClick={() => exportMutation.mutate("download")}>
++              <Download className="h-4 w-4" />
++              {t("customers.export.download")}
++            </Button>
++          </div>
++        </div>
++      )}
+     </div>
+   );
+ }
