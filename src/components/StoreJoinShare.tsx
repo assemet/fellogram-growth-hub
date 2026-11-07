@@ -5,7 +5,7 @@ import { Copy, Printer, Share2 } from "lucide-react";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
-import { getLocale, t } from "@/lib/i18n";
+import { dirOf, getLocale, t } from "@/lib/i18n";
 import { getStoreJoinLink } from "@/lib/store.functions";
 import { shareViaTelegram } from "@/lib/telegram";
 
@@ -16,7 +16,7 @@ function escapeHtml(value: string) {
 /** Prints the join QR as a simple poster through a hidden iframe (no pop-up needed). */
 function printPoster(opts: { qr: string; headline: string; rewardLine: string; powered: string }) {
   const locale = getLocale();
-  const html = `<!doctype html><html lang="${locale}" dir="${locale === "ar" ? "rtl" : "ltr"}"><head><meta charset="utf-8"><title>${escapeHtml(opts.headline)}</title>
+  const html = `<!doctype html><html lang="${locale}" dir="${dirOf(locale)}"><head><meta charset="utf-8"><title>${escapeHtml(opts.headline)}</title>
 <style>@page{margin:16mm}body{font-family:system-ui,-apple-system,"Segoe UI",sans-serif;text-align:center;color:#1b1b3a;margin:0;padding:24px}
 h1{font-size:44px;margin:0 0 10px}p{font-size:24px;margin:8px 0}img{width:440px;height:440px;margin:28px auto;display:block}small{color:#555;font-size:16px}</style></head>
 <body><h1>${escapeHtml(opts.headline)}</h1><p>${escapeHtml(opts.rewardLine)}</p><img src="${opts.qr}" alt=""><small>${escapeHtml(opts.powered)}</small></body></html>`;
@@ -102,21 +102,21 @@ export function StoreJoinShare({
       </div>
 
       <div className="mt-4 grid grid-cols-3 gap-2">
-        <Button type="button" variant="outline" className="touch-action h-12 flex-col gap-0.5 px-1 text-xs font-semibold" onClick={copy} disabled={!data?.link}>
+        <Button type="button" variant="outline" className="touch-action h-auto min-h-12 flex-col gap-0.5 whitespace-normal px-1 py-2 text-center text-xs font-semibold leading-tight" onClick={copy} disabled={!data?.link}>
           <Copy className="h-4 w-4" />
           {t("join.share.copy")}
         </Button>
         <Button
           type="button"
           variant="outline"
-          className="touch-action h-12 flex-col gap-0.5 px-1 text-xs font-semibold"
+          className="touch-action h-auto min-h-12 flex-col gap-0.5 whitespace-normal px-1 py-2 text-center text-xs font-semibold leading-tight"
           onClick={() => data?.link && shareViaTelegram(data.link, t("join.share.text", { store: storeName }))}
           disabled={!data?.link}
         >
           <Share2 className="h-4 w-4" />
           {t("join.share.share")}
         </Button>
-        <Button type="button" variant="outline" className="touch-action h-12 flex-col gap-0.5 px-1 text-xs font-semibold" onClick={print} disabled={!qr}>
+        <Button type="button" variant="outline" className="touch-action h-auto min-h-12 flex-col gap-0.5 whitespace-normal px-1 py-2 text-center text-xs font-semibold leading-tight" onClick={print} disabled={!qr}>
           <Printer className="h-4 w-4" />
           {t("join.share.print")}
         </Button>

@@ -14,7 +14,7 @@ import { reportLovableError } from "../lib/lovable-error-reporting";
 import { Button } from "../components/ui/button";
 import { useLocale } from "../hooks/useLocale";
 import { useTelegramBackButton } from "../hooks/useTelegramBackButton";
-import { t } from "../lib/i18n";
+import { LOCALES, t } from "../lib/i18n";
 
 
 function NotFoundComponent() {
@@ -137,7 +137,7 @@ function RootShell({ children }: { children: ReactNode }) {
         {/* Set language/direction before first paint so Arabic never flashes as LTR English. */}
         <script
           dangerouslySetInnerHTML={{
-            __html: `try{var l=localStorage.getItem('fellogram.locale');if(l!=='ar'&&l!=='en'){var w=window.Telegram&&Telegram.WebApp&&Telegram.WebApp.initDataUnsafe&&Telegram.WebApp.initDataUnsafe.user;var n=(w&&w.language_code)||navigator.language||'';l=n.toLowerCase().indexOf('ar')===0?'ar':'en'}document.documentElement.lang=l;document.documentElement.dir=l==='ar'?'rtl':'ltr'}catch(e){}try{if(localStorage.getItem('fellogram.appearance')==='dark')document.documentElement.classList.add('dark');if(localStorage.getItem('fellogram.textSize')==='large')document.documentElement.style.fontSize='112.5%'}catch(e){}`,
+            __html: `try{var S=${JSON.stringify(LOCALES.map((item) => item.code))},R=${JSON.stringify(LOCALES.filter((item) => item.dir === "rtl").map((item) => item.code))};function m(t){t=String(t||'').toLowerCase().replace('_','-').split('-')[0];return S.indexOf(t)>-1?t:null}var l=m(localStorage.getItem('fellogram.locale'));if(!l){var w=window.Telegram&&Telegram.WebApp&&Telegram.WebApp.initDataUnsafe&&Telegram.WebApp.initDataUnsafe.user;var c=[w&&w.language_code].concat(navigator.languages&&navigator.languages.length?Array.prototype.slice.call(navigator.languages):[navigator.language]);for(var i=0;i<c.length&&!l;i++)l=m(c[i])}l=l||'en';document.documentElement.lang=l;document.documentElement.dir=R.indexOf(l)>-1?'rtl':'ltr'}catch(e){}try{if(localStorage.getItem('fellogram.appearance')==='dark')document.documentElement.classList.add('dark');if(localStorage.getItem('fellogram.textSize')==='large')document.documentElement.style.fontSize='112.5%'}catch(e){}`,
           }}
         />
         <HeadContent />

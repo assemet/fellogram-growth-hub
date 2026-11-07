@@ -39,7 +39,7 @@ type EnableResult = { ok: true } | { ok: false; reason: "no_chat" | "migration" 
 /** Customer: turn notifications on, proven by actually delivering a confirmation message. */
 export const enableNotifications = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((data: { locale?: string }) => ({ locale: data?.locale === "ar" ? ("ar" as const) : ("en" as const) }))
+  .inputValidator((data: { locale?: string }) => ({ locale: localeFor(data?.locale) }))
   .handler(async ({ data, context }): Promise<EnableResult> => {
     const db = await adminClient();
     const { data: profile } = check(await db.from("profiles").select("*").eq("id", context.userId).maybeSingle(), "PROFILE_LOOKUP_FAILED");
@@ -145,4 +145,15 @@ export const sendReminders = createServerFn({ method: "POST" })
 
     await logSent(db, delivered.map((target) => ({ store_id: store.id, customer_id: target.customerId, kind: "reminder" })));
     return { sent: delivered.length, failed: batch.length - delivered.length, remaining: targets.length - batch.length };
+  });
+
+/** Best effort: keep the person's chosen app language so bot messages are written in it too. */
+export const saveLanguage = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((data: { locale?: string }) => ({ locale: localeFor(data?.locale) }))
+  .handler(async ({ data, context }) => {
+    const db = await adminClient();
+    // Ignore the result on purpose: a database without the column must never break changing the language.
+    await db.from("profiles").update({ language_code: data.locale }).eq("id", context.userId);
+    return { ok: true };
   });

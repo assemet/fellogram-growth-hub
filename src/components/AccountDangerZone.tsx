@@ -6,11 +6,10 @@ import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
 import { resetAuthCache } from "@/hooks/useFellogramAuth";
+import { isDeleteWord } from "@/lib/confirm-words";
 import { supabase } from "@/integrations/supabase/client";
 import { t } from "@/lib/i18n";
 import { deleteMyAccount, leaveTeam } from "@/lib/privacy.functions";
-
-const CONFIRM_WORDS = ["delete", "حذف"];
 
 /** A cashier stops working for their store (two taps). */
 export function LeaveTeamRow({ storeName }: { storeName: string }) {
@@ -60,7 +59,7 @@ export function DeleteAccountSection({ isOwner }: { isOwner: boolean }) {
   const navigate = useNavigate();
   const remove = useServerFn(deleteMyAccount);
   const [typed, setTyped] = useState("");
-  const confirmed = CONFIRM_WORDS.includes(typed.trim().toLowerCase());
+  const confirmed = isDeleteWord(typed);
 
   const mutation = useMutation({
     mutationFn: () => remove({ data: { confirm: typed } }),

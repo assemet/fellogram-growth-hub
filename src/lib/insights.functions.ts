@@ -3,7 +3,7 @@ import { ownedIdOrNil } from "@/lib/current-store";
 
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { check, throwIfError, type Db } from "@/lib/db";
-import { exportRows, filterCounts, isFilter, isSort, matchesFilter, sortRows, type CustomerRow, type Filter, type Sort } from "@/lib/customer-views";
+import { exportLocale, exportRows, filterCounts, isFilter, isSort, matchesFilter, sortRows, type CustomerRow, type Filter, type Sort } from "@/lib/customer-views";
 import { loadNames, matchesPerson } from "@/lib/people";
 
 async function ownedStoreId(supabase: Db, userId: string): Promise<string> {
@@ -78,7 +78,7 @@ export const getStoreCustomers = createServerFn({ method: "POST" })
 export const exportStoreCustomers = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((data: { locale?: string; format?: string }) => ({
-    locale: data?.locale === "ar" ? ("ar" as const) : ("en" as const),
+    locale: exportLocale(data?.locale),
     format: data?.format === "tsv" ? ("tsv" as const) : ("csv" as const),
   }))
   .handler(async ({ data, context }) => {

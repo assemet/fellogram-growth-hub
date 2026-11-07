@@ -246,7 +246,7 @@ function ProgramEditor() {
         <Tabs value={tab} onValueChange={(next) => setTab(next as Tab)} className="mt-3">
           <TabsList className="grid h-auto w-full grid-cols-3 p-1">
             {tabs.map((id) => (
-              <TabsTrigger key={id} value={id} className="touch-action py-2.5 text-xs font-semibold sm:text-sm">
+              <TabsTrigger key={id} value={id} className="touch-action whitespace-normal px-1.5 py-2.5 text-center text-xs font-semibold leading-tight sm:text-sm">
                 {t(`program.tab.${id}` as TranslationKey)}
               </TabsTrigger>
             ))}

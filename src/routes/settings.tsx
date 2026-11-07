@@ -5,16 +5,16 @@ import { ChevronRight } from "lucide-react";
 import { DeleteAccountSection, LeaveTeamRow } from "@/components/AccountDangerZone";
 import { AppHeader } from "@/components/BrandMark";
 import { BottomNav } from "@/components/BottomNav";
+import { LanguagePicker } from "@/components/LanguageControls";
 import { QueryError } from "@/components/QueryError";
 import { SegmentedControl } from "@/components/SegmentedControl";
 import { SplashScreen } from "@/components/SplashScreen";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { useFellogramAuth } from "@/hooks/useFellogramAuth";
-import { useLocale } from "@/hooks/useLocale";
 import { useMyContext } from "@/hooks/useMyContext";
 import { useNotifications } from "@/hooks/useNotifications";
-import { setLocale, t, type Locale } from "@/lib/i18n";
+import { t } from "@/lib/i18n";
 import {
   readAppearance,
   readBool,
@@ -64,7 +64,6 @@ function SwitchRow({ label, checked, disabled, onChange }: { label: string; chec
 
 function SettingsPage() {
   const { state } = useFellogramAuth();
-  const locale = useLocale();
   const { data: context, error, refetch } = useMyContext(state === "ready");
   const { data: notifications, needsStart, enableMutation, disableMutation } = useNotifications();
 
@@ -96,15 +95,7 @@ function SettingsPage() {
         <h1 className="text-xl font-bold">{t("settings.title")}</h1>
 
         <Section title={t("settings.language")}>
-          <SegmentedControl<Locale>
-            label={t("settings.language")}
-            value={locale}
-            onChange={(next) => setLocale(next)}
-            options={[
-              { value: "ar", label: "العربية" },
-              { value: "en", label: "English" },
-            ]}
-          />
+          <LanguagePicker />
         </Section>
 
         <Section title={t("settings.appearance")} hint={t("settings.appearance.hint")}>

@@ -85,17 +85,32 @@ export function tsvCell(value: string | number): string {
   return guard(String(value)).replace(/[\t\r\n]+/g, " ");
 }
 
-export type Locale2 = "ar" | "en";
+export const EXPORT_LOCALES = ["ar", "en", "ru", "es", "tr"] as const;
+export type ExportLocale = (typeof EXPORT_LOCALES)[number];
 
-const HEADERS: Record<Locale2, string[]> = {
+/** Anything that is not one of our languages is exported in English. */
+export function exportLocale(value: unknown): ExportLocale {
+  return (EXPORT_LOCALES as readonly string[]).includes(String(value)) ? (value as ExportLocale) : "en";
+}
+
+const HEADERS: Record<ExportLocale, string[]> = {
   en: ["Name", "Username", "Stamps", "Stamps needed", "Reward ready", "Last visit", "Joined"],
   ar: ["الاسم", "المعرّف", "الطوابع", "الطوابع المطلوبة", "المكافأة جاهزة", "آخر زيارة", "تاريخ الانضمام"],
+  ru: ["Имя", "Имя пользователя", "Штампы", "Нужно штампов", "Награда готова", "Последний визит", "Дата вступления"],
+  es: ["Nombre", "Usuario", "Sellos", "Sellos necesarios", "Recompensa lista", "Última visita", "Se unió"],
+  tr: ["Ad", "Kullanıcı adı", "Damga", "Gereken damga", "Ödül hazır", "Son ziyaret", "Katılım"],
 };
-const YES_NO: Record<Locale2, [string, string]> = { en: ["yes", "no"], ar: ["نعم", "لا"] };
+const YES_NO: Record<ExportLocale, [string, string]> = {
+  en: ["yes", "no"],
+  ar: ["نعم", "لا"],
+  ru: ["да", "нет"],
+  es: ["sí", "no"],
+  tr: ["evet", "hayır"],
+};
 
 const day = (iso: string | null) => (iso ? iso.slice(0, 10) : "");
 
-export function exportRows(rows: CustomerRow[], locale: Locale2, format: "csv" | "tsv"): string {
+export function exportRows(rows: CustomerRow[], locale: ExportLocale, format: "csv" | "tsv"): string {
   const cell = format === "csv" ? csvCell : tsvCell;
   const separator = format === "csv" ? "," : "\t";
   const [yes, no] = YES_NO[locale];

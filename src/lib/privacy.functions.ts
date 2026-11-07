@@ -2,6 +2,7 @@ import { createServerFn } from "@tanstack/react-start";
 
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { currentOwnedStoreId, resolveCurrentStore } from "@/lib/current-store";
+import { isDeleteWord } from "@/lib/confirm-words";
 import { check, throwIfError } from "@/lib/db";
 import { adminClient } from "@/lib/notify";
 
@@ -9,7 +10,6 @@ const ID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 /** The shared preview identity belongs to everybody who opens the app in a plain browser. */
 const PREVIEW_TELEGRAM_ID = 100000001;
 /** Typed to confirm deleting an account: the same word in both app languages. */
-const CONFIRM_WORDS = ["delete", "حذف"];
 
 /** Customer: remove my own card for a store (the store keeps its stamp history). */
 export const leaveStore = createServerFn({ method: "POST" })
@@ -43,9 +43,9 @@ export const leaveTeam = createServerFn({ method: "POST" })
  */
 export const deleteMyAccount = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((data: { confirm: string }) => ({ confirm: String(data?.confirm ?? "").trim().toLowerCase() }))
+  .inputValidator((data: { confirm: string }) => ({ confirm: String(data?.confirm ?? "") }))
   .handler(async ({ data, context }) => {
-    if (!CONFIRM_WORDS.includes(data.confirm)) throw new Error("CONFIRM_MISMATCH");
+    if (!isDeleteWord(data.confirm)) throw new Error("CONFIRM_MISMATCH");
 
     const admin = await adminClient();
     const { data: profile } = check(await admin.from("profiles").select("telegram_user_id").eq("id", context.userId).maybeSingle(), "PROFILE_LOOKUP_FAILED");
