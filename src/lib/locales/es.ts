@@ -485,4 +485,5 @@ export const es: Record<TranslationKey, string> = {
   "rewards.tierTooHigh": "Una recompensa extra necesita menos sellos que la tarjeta.",
   "rewards.tierNone": "Con una tarjeta de 1 sello no hay espacio para recompensas extra.",
   "rewards.mainLocked": "La recompensa principal no se puede quitar. Edítala en la pestaña del programa.",
+  "cashier.searchMin": "Escribe al menos 2 letras.",
 };

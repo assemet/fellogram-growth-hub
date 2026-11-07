@@ -600,6 +600,18 @@ export type Database = {
         Returns: boolean
       }
       join_store_program: { Args: { _store_id: string }; Returns: string }
+      normalize_search_text: { Args: { _value: string }; Returns: string }
+      search_store_customers: {
+        Args: { _store_id: string; _query: string; _limit?: number }
+        Returns: {
+          customer_id: string
+          first_name: string | null
+          last_name: string | null
+          username: string | null
+          stamp_balance: number
+          stamps_required: number
+        }[]
+      }
       staff_enroll_customer: { Args: { _store_id: string; _customer_id: string }; Returns: string }
       leave_store_program: { Args: { _store_id: string }; Returns: boolean }
       leave_team: { Args: { _store_id: string }; Returns: boolean }

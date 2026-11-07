@@ -492,6 +492,7 @@ export const en = {
   "rewards.tierTooHigh": "An extra reward needs fewer stamps than the card.",
   "rewards.tierNone": "With a 1-stamp card there is no room for extra rewards.",
   "rewards.mainLocked": "The main reward can't be removed. Edit it in the program tab.",
+  "cashier.searchMin": "Type at least 2 letters.",
 } satisfies Record<string, string>;
 
 export type TranslationKey = keyof typeof en;

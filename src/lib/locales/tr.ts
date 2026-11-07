@@ -485,4 +485,5 @@ export const tr: Record<TranslationKey, string> = {
   "rewards.tierTooHigh": "Ek ödül, karttan daha az damga gerektirmeli.",
   "rewards.tierNone": "1 damgalık kartta ek ödüllere yer yok.",
   "rewards.mainLocked": "Ana ödül kaldırılamaz. Program sekmesinden düzenle.",
+  "cashier.searchMin": "En az 2 harf yaz.",
 };

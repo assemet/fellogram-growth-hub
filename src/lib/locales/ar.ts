@@ -484,4 +484,5 @@ export const ar: Record<TranslationKey, string> = {
   "rewards.tierTooHigh": "المكافأة الإضافية تحتاج طوابع أقل من البطاقة.",
   "rewards.tierNone": "مع بطاقة من طابع واحد لا مجال لمكافآت إضافية.",
   "rewards.mainLocked": "لا يمكن حذف المكافأة الرئيسية. عدّلها من تبويب المكافأة.",
+  "cashier.searchMin": "اكتب حرفين على الأقل.",
 };

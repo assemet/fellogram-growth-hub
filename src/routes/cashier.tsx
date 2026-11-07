@@ -157,8 +157,9 @@ function Cashier() {
       setJustStamped(false);
       if (data.cooldownMinutesLeft > 0) {
         notify("warning");
-      } else if (autoStampRef.current) {
-        // Scan → stamp → done: no extra tap needed.
+      } else if (autoStampRef.current && viaCameraRef.current) {
+        // Scan → stamp → done. Only for a scanned QR, which is unambiguous: a name picked from a list (two
+        // "Ali"s) or a typed code is shown first and stamped with one deliberate tap.
         award.mutate(data.customerId);
       }
     },
@@ -390,6 +391,7 @@ function Cashier() {
                 placeholder={t("cashier.searchPlaceholder")}
                 className="mt-2 w-full rounded-md border border-border bg-background px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
               />
+              {nameQuery.length === 1 && <p className="mt-2 text-xs text-muted-foreground">{t("cashier.searchMin")}</p>}
               {nameQuery.length >= 2 && !searchingNames && nameResults && nameResults.results.length === 0 && (
                 <p className="mt-2 text-xs text-muted-foreground">{t("cashier.searchNone")}</p>
               )}
@@ -405,7 +407,10 @@ function Cashier() {
                         }}
                         className="touch-action flex w-full items-center justify-between gap-3 rounded-md border border-border bg-background px-3 py-3 text-start text-sm"
                       >
-                        <span className="min-w-0 truncate font-semibold">{person.name ?? (person.username ? `@${person.username}` : t("customers.anonymous"))}</span>
+                        <span className="min-w-0">
+                          <span className="block truncate font-semibold">{person.name ?? (person.username ? `@${person.username}` : t("customers.anonymous"))}</span>
+                          {person.name && person.username && <span className="block truncate text-xs text-muted-foreground">@{person.username}</span>}
+                        </span>
                         <span className="shrink-0 text-xs font-bold text-muted-foreground">
                           {person.balance}/{person.required}
                         </span>

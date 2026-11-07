@@ -485,4 +485,5 @@ export const ru: Record<TranslationKey, string> = {
   "rewards.tierTooHigh": "Дополнительная награда требует меньше штампов, чем карта.",
   "rewards.tierNone": "На карте из 1 штампа нет места для дополнительных наград.",
   "rewards.mainLocked": "Главную награду нельзя удалить. Измените её на вкладке программы.",
+  "cashier.searchMin": "Введите минимум 2 буквы.",
 };

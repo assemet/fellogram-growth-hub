@@ -2,16 +2,30 @@ import { createServerFn } from "@tanstack/react-start";
 import { resolveCurrentStore } from "@/lib/current-store";
 import { notifyStamp, withinBudget } from "@/lib/notify";
 import { check, throwIfError } from "@/lib/db";
-import { loadNames, matchesPerson } from "@/lib/people";
+import { MIN_SEARCH_LENGTH, searchStoreCustomers, type SearchHit } from "@/lib/customer-search";
+import { loadNames } from "@/lib/people";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
-/** Accepts a scanned QR payload or a pasted id and returns the customer uuid. */
+/** Whitespace of every kind plus the invisible direction/zero-width marks that pasted text often carries. */
+const INVISIBLE = /[\s\u00A0\u200B-\u200F\u202A-\u202E\u2060\uFEFF]/g;
+const UUID_ANYWHERE = /[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/i;
+
+/**
+ * Accepts a scanned QR payload or something typed/pasted by hand and returns the customer uuid. Forgiving on
+ * purpose: any case, a "fellogram:c:" prefix, spaces or line breaks inside (text wrapped on the customer's
+ * screen), invisible marks, no hyphens, or the code pasted inside a sentence.
+ */
 export function parseCustomerCode(raw: string): string | null {
-  const value = String(raw ?? "").trim();
-  const candidate = value.startsWith("fellogram:c:") ? value.slice("fellogram:c:".length) : value;
-  return UUID_RE.test(candidate) ? candidate.toLowerCase() : null;
+  const cleaned = String(raw ?? "").replace(INVISIBLE, "");
+  if (/^fellogram:r:/i.test(cleaned)) return null; // that is a reward code, not a customer
+  const bare = cleaned.replace(/^fellogram:c:/i, "");
+  const compact = bare.match(/^[0-9a-f]{32}$/i)
+    ? `${bare.slice(0, 8)}-${bare.slice(8, 12)}-${bare.slice(12, 16)}-${bare.slice(16, 20)}-${bare.slice(20)}`
+    : bare;
+  const found = UUID_RE.test(compact) ? compact : cleaned.match(UUID_ANYWHERE)?.[0];
+  return found ? found.toLowerCase() : null;
 }
 
 /** Resolves the store the signed-in user can stamp for (staff or owner only). */
@@ -248,30 +262,8 @@ export const searchCustomers = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((data: { q: string }) => ({ q: String(data?.q ?? "").trim().slice(0, 60) }))
   .handler(async ({ data, context }) => {
-    if (data.q.length < 2) return { results: [] as { customerId: string; name: string | null; username: string | null; balance: number; required: number }[] };
+    if (data.q.length < MIN_SEARCH_LENGTH) return { results: [] as SearchHit[] };
     const store = await resolveStaffStore(context.supabase, context.userId);
     if (!store) throw new Error("NOT_STORE_STAFF");
-
-    const { data: rows } = check(
-      await context.supabase
-        .from("customer_memberships")
-        .select("customer_id, stamp_balance, loyalty_programs(stamps_required)")
-        .eq("store_id", store.storeId)
-        .order("last_visit_at", { ascending: false, nullsFirst: false })
-        .limit(300),
-      "CUSTOMERS_LOOKUP_FAILED",
-    );
-    const members = (rows ?? []) as { customer_id: string; stamp_balance: number | null; loyalty_programs: { stamps_required: number } | null }[];
-    const names = await loadNames(context.supabase, members.map((m) => m.customer_id));
-    const results = members
-      .filter((m) => matchesPerson(names.get(m.customer_id), data.q))
-      .slice(0, 8)
-      .map((m) => ({
-        customerId: m.customer_id,
-        name: names.get(m.customer_id)?.name ?? null,
-        username: names.get(m.customer_id)?.username ?? null,
-        balance: m.stamp_balance ?? 0,
-        required: m.loyalty_programs?.stamps_required ?? 10,
-      }));
-    return { results };
+    return { results: await searchStoreCustomers(context.supabase, store.storeId, data.q) };
   });

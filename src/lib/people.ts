@@ -25,10 +25,31 @@ export async function loadNames(supabase: Db, ids: string[]): Promise<Map<string
   return result;
 }
 
-/** Case-insensitive match against a person's name and @username. */
+/**
+ * Folds a name for searching, mirroring public.normalize_search_text in the database: lower case, no accents,
+ * Arabic diacritics and letter variants merged (أ إ آ → ا, ى → ي, ة → ه), Turkish ı/İ → i, Russian ё/й → е/и.
+ */
+export function normalizeForSearch(value: string): string {
+  return value
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f\u064B-\u065F\u0670\u0640\u200B-\u200F\u202A-\u202E\u2060\uFEFF]/g, "")
+    .replace(/ı/g, "i")
+    .replace(/ٱ/g, "ا")
+    .replace(/ى/g, "ي")
+    .replace(/ة/g, "ه")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+/** The words typed (a leading @ is ignored): every word must appear in the name or username, in any order. */
+export function searchTokens(query: string): string[] {
+  return normalizeForSearch(query.replace(/^\s*@/, "")).split(" ").filter(Boolean);
+}
+
 export function matchesPerson(person: PersonName | undefined, query: string): boolean {
-  const needle = query.trim().toLowerCase();
-  if (!needle) return true;
-  const haystack = `${person?.name ?? ""} ${person?.username ?? ""}`.toLowerCase();
-  return haystack.includes(needle);
+  const tokens = searchTokens(query);
+  if (tokens.length === 0) return true;
+  const haystack = normalizeForSearch(`${person?.name ?? ""} ${person?.username ?? ""}`);
+  return tokens.every((token) => haystack.includes(token));
 }

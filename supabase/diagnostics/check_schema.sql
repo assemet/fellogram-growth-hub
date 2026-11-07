@@ -18,7 +18,7 @@ expected_functions(item) AS (
   VALUES ('award_stamp'), ('undo_last_stamp'), ('join_store_program'), ('staff_enroll_customer'),
          ('create_staff_invitation'), ('revoke_staff_invitation'), ('accept_staff_invitation'),
          ('create_redemption'), ('redeem_reward'), ('accept_referral'), ('get_referral_code'),
-         ('is_store_member'), ('is_store_owner'), ('grant_join_bonus'), ('leave_store_program'), ('leave_team')
+         ('is_store_member'), ('is_store_owner'), ('grant_join_bonus'), ('leave_store_program'), ('leave_team'), ('normalize_search_text'), ('search_store_customers')
 ),
 problems AS (
   SELECT 'missing table' AS problem, item FROM expected_tables
