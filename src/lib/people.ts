@@ -6,15 +6,20 @@ export type PersonName = { name: string | null; username: string | null };
 export async function loadNames(supabase: Db, ids: string[]): Promise<Map<string, PersonName>> {
   const unique = [...new Set(ids.filter(Boolean))];
   const result = new Map<string, PersonName>();
-  for (let i = 0; i < unique.length; i += 80) {
-    const chunk = unique.slice(i, i + 80);
-    const { data } = check(
-      await supabase.from("profiles").select("id, first_name, last_name, username").in("id", chunk),
-      "PROFILES_LOOKUP_FAILED",
+  const chunks: string[][] = [];
+  for (let i = 0; i < unique.length; i += 80) chunks.push(unique.slice(i, i + 80));
+  // Five requests at a time: fast for big stores without hammering the API.
+  for (let i = 0; i < chunks.length; i += 5) {
+    const results = await Promise.all(
+      chunks.slice(i, i + 5).map(async (chunk) =>
+        check(await supabase.from("profiles").select("id, first_name, last_name, username").in("id", chunk), "PROFILES_LOOKUP_FAILED"),
+      ),
     );
-    for (const row of (data ?? []) as { id: string; first_name: string | null; last_name: string | null; username: string | null }[]) {
-      const name = [row.first_name, row.last_name].filter(Boolean).join(" ").trim();
-      result.set(row.id, { name: name || null, username: row.username ?? null });
+    for (const { data } of results) {
+      for (const row of (data ?? []) as { id: string; first_name: string | null; last_name: string | null; username: string | null }[]) {
+        const name = [row.first_name, row.last_name].filter(Boolean).join(" ").trim();
+        result.set(row.id, { name: name || null, username: row.username ?? null });
+      }
     }
   }
   return result;

@@ -3,6 +3,7 @@ import { ownedIdOrNil } from "@/lib/current-store";
 
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { check, throwIfError, type Db } from "@/lib/db";
+import { exportRows, filterCounts, isFilter, isSort, matchesFilter, sortRows, type CustomerRow, type Filter, type Sort } from "@/lib/customer-views";
 import { loadNames, matchesPerson } from "@/lib/people";
 
 async function ownedStoreId(supabase: Db, userId: string): Promise<string> {
@@ -14,39 +15,80 @@ async function ownedStoreId(supabase: Db, userId: string): Promise<string> {
   return store.id as string;
 }
 
-/** Owner: customers of the store, most recent visitors first, optionally filtered by name. */
-export const getStoreCustomers = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
-  .inputValidator((data: { q?: string }) => ({ q: String(data?.q ?? "").trim().slice(0, 60) }))
-  .handler(async ({ data, context }) => {
-    const { supabase, userId } = context;
-    const storeId = await ownedStoreId(supabase, userId);
+const PAGE_SIZE = 1000;
+/** The database returns at most 1000 rows per request; read a few pages so bigger stores are complete. */
+const MAX_CUSTOMERS = 3000;
+const LIST_LIMIT = 300;
 
-    const [rows, count] = await Promise.all([
-      supabase
+async function loadCustomerRows(supabase: Db, storeId: string): Promise<CustomerRow[]> {
+  const members: { customer_id: string; stamp_balance: number | null; joined_at: string; last_visit_at: string | null; loyalty_programs: { stamps_required: number } | null }[] = [];
+  for (let from = 0; from < MAX_CUSTOMERS; from += PAGE_SIZE) {
+    const { data } = check(
+      await supabase
         .from("customer_memberships")
         .select("customer_id, stamp_balance, joined_at, last_visit_at, loyalty_programs(stamps_required)")
         .eq("store_id", storeId)
-        .order("last_visit_at", { ascending: false, nullsFirst: false })
-        .limit(300),
-      supabase.from("customer_memberships").select("id", { count: "exact", head: true }).eq("store_id", storeId),
-    ]);
-    throwIfError(rows.error ?? count.error, "CUSTOMERS_LOOKUP_FAILED");
+        .order("joined_at", { ascending: false })
+        .order("customer_id")
+        .range(from, from + PAGE_SIZE - 1),
+      "CUSTOMERS_LOOKUP_FAILED",
+    );
+    members.push(...(data ?? []));
+    if ((data?.length ?? 0) < PAGE_SIZE) break;
+  }
+  const names = await loadNames(supabase, members.map((m) => m.customer_id));
+  return members.map((m) => ({
+    customerId: m.customer_id,
+    name: names.get(m.customer_id)?.name ?? null,
+    username: names.get(m.customer_id)?.username ?? null,
+    balance: m.stamp_balance ?? 0,
+    required: m.loyalty_programs?.stamps_required ?? 10,
+    joinedAt: m.joined_at,
+    lastVisitAt: m.last_visit_at,
+  }));
+}
 
-    const members = rows.data ?? [];
-    const names = await loadNames(supabase, members.map((m) => m.customer_id));
-    const customers = members
-      .filter((m) => matchesPerson(names.get(m.customer_id), data.q))
-      .map((m) => ({
-        customerId: m.customer_id,
-        name: names.get(m.customer_id)?.name ?? null,
-        username: names.get(m.customer_id)?.username ?? null,
-        balance: m.stamp_balance ?? 0,
-        required: m.loyalty_programs?.stamps_required ?? 10,
-        joinedAt: m.joined_at,
-        lastVisitAt: m.last_visit_at,
-      }));
-    return { customers, total: count.count ?? members.length, truncated: (count.count ?? 0) > members.length };
+/** Owner: the store's customers, filtered, searched and sorted, plus how many fall in each filter. */
+export const getStoreCustomers = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((data: { q?: string; filter?: string; sort?: string }) => ({
+    q: String(data?.q ?? "").trim().slice(0, 60),
+    filter: isFilter(data?.filter) ? data.filter : ("all" as Filter),
+    sort: isSort(data?.sort) ? data.sort : ("recent" as Sort),
+  }))
+  .handler(async ({ data, context }) => {
+    const storeId = await ownedStoreId(context.supabase, context.userId);
+    const rows = await loadCustomerRows(context.supabase, storeId);
+    const now = Date.now();
+
+    const view = sortRows(
+      rows.filter((row) => matchesFilter(row, data.filter, now) && matchesPerson({ name: row.name, username: row.username }, data.q)),
+      data.sort,
+    );
+    return {
+      customers: view.slice(0, LIST_LIMIT),
+      shown: view.length,
+      total: rows.length,
+      counts: filterCounts(rows, now),
+      capped: rows.length >= MAX_CUSTOMERS,
+    };
+  });
+
+/** Owner: every customer as a file (CSV) or as text that pastes into spreadsheet columns (TSV). */
+export const exportStoreCustomers = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((data: { locale?: string; format?: string }) => ({
+    locale: data?.locale === "ar" ? ("ar" as const) : ("en" as const),
+    format: data?.format === "tsv" ? ("tsv" as const) : ("csv" as const),
+  }))
+  .handler(async ({ data, context }) => {
+    const storeId = await ownedStoreId(context.supabase, context.userId);
+    const rows = sortRows(await loadCustomerRows(context.supabase, storeId), "recent");
+    return {
+      text: exportRows(rows, data.locale, data.format),
+      filename: `customers-${new Date().toISOString().slice(0, 10)}.csv`,
+      count: rows.length,
+    };
   });
 
 /** Owner: latest stamp/redeem activity with who did it. */

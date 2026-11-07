@@ -470,7 +470,7 @@ function ProgramEditor() {
           </form>
 
           <TabsContent value="reward">
-            <RewardsManager rewards={data.rewards} />
+            <RewardsManager rewards={data.rewards} cardStamps={data.program?.stamps_required ?? 10} />
           </TabsContent>
           <TabsContent value="growth" className="mt-1">
             <ReferralSettings program={data.program} />

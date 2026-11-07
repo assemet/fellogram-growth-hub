@@ -1,5 +1,6 @@
 import { createServerFn } from "@tanstack/react-start";
 import { currentOwnedStoreId, ownedIdOrNil } from "@/lib/current-store";
+import { isValidTier, mainRewardId, visibleRewards } from "@/lib/rewards";
 import { miniAppLink } from "@/lib/bot-link";
 import { check, throwIfError, type Db } from "@/lib/db";
 import { isStampIconId, STAMP_LOGO_ID } from "@/lib/stamp-icons";
@@ -171,10 +172,10 @@ export const getMyCards = createServerFn({ method: "POST" })
     const { data: rewards, error: rewardsError } = storeIds.length
       ? await supabase
           .from("rewards")
-          .select("id, store_id, name, description, stamps_required, kind, active")
+          .select("id, store_id, name, description, stamps_required, kind, active, created_at")
           .in("store_id", storeIds)
           .eq("active", true)
-      : { data: [] as { id: string; store_id: string; name: string; description: string | null; stamps_required: number; kind: string; active: boolean }[], error: null };
+      : { data: [] as { id: string; store_id: string; name: string; description: string | null; stamps_required: number; kind: string; active: boolean; created_at: string }[], error: null };
     throwIfError(rewardsError, "REWARDS_LOOKUP_FAILED");
 
     const logoPaths = (memberships ?? []).flatMap((m) => m.stores?.logo_url ? [m.stores.logo_url] : []);
@@ -205,8 +206,11 @@ export const getMyCards = createServerFn({ method: "POST" })
         (rewards ?? []).find((r) => r.store_id === m.store_id && r.kind === "standard")?.name ??
         (rewards ?? []).find((r) => r.store_id === m.store_id)?.name ??
         null,
-      rewards: (rewards ?? [])
-        .filter((r) => r.store_id === m.store_id)
+      // Tiers that need as many stamps as the card (or more) can never be earned "on the way": hide them.
+      rewards: visibleRewards(
+        (rewards ?? []).filter((r) => r.store_id === m.store_id),
+        m.loyalty_programs?.stamps_required ?? 10,
+      )
         .sort((a, b) => a.stamps_required - b.stamps_required)
         .map((r) => ({ id: r.id, name: r.name, description: r.description, stampsRequired: r.stamps_required })),
       visits: (visits ?? [])
@@ -487,6 +491,14 @@ export const saveReward = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     const storeId = await ownedStore(context.supabase, context.userId);
     const payload = { name: data.name, description: data.description, stamps_required: data.stampsRequired };
+
+    // Extra rewards must be earnable before the card is complete (the main reward itself is edited in the program form).
+    const { data: cardProgram } = check(await context.supabase.from("loyalty_programs").select("stamps_required").eq("store_id", storeId).order("created_at").limit(1).maybeSingle(), "PROGRAM_LOOKUP_FAILED");
+    const cardStamps = cardProgram?.stamps_required ?? 10;
+    const { data: allRewards } = check(await context.supabase.from("rewards").select("id, stamps_required, created_at").eq("store_id", storeId), "REWARD_LOOKUP_FAILED");
+    const isMain = data.id !== undefined && data.id === mainRewardId(allRewards ?? [], cardStamps);
+    if (!isMain && !isValidTier(data.stampsRequired, cardStamps)) throw new Error("TIER_TOO_HIGH");
+
     if (data.id) {
       const { error } = await context.supabase.from("rewards").update(payload).eq("id", data.id).eq("store_id", storeId);
       if (error) throw new Error(error.message);
@@ -506,6 +518,12 @@ export const archiveReward = createServerFn({ method: "POST" })
   .inputValidator((data: { id: string }) => ({ id: String(data?.id ?? "") }))
   .handler(async ({ data, context }) => {
     const storeId = await ownedStore(context.supabase, context.userId);
+
+    // Removing the main reward would leave a card with no end reward; it is edited in the program form instead.
+    const { data: cardProgram } = check(await context.supabase.from("loyalty_programs").select("stamps_required").eq("store_id", storeId).order("created_at").limit(1).maybeSingle(), "PROGRAM_LOOKUP_FAILED");
+    const { data: allRewards } = check(await context.supabase.from("rewards").select("id, stamps_required, created_at").eq("store_id", storeId), "REWARD_LOOKUP_FAILED");
+    if (data.id === mainRewardId(allRewards ?? [], cardProgram?.stamps_required ?? 10)) throw new Error("CANNOT_ARCHIVE_MAIN");
+
     const { error } = await context.supabase.from("rewards").update({ active: false }).eq("id", data.id).eq("store_id", storeId);
     if (error) throw new Error(error.message);
     return { ok: true };

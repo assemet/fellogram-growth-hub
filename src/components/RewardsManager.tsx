@@ -5,19 +5,24 @@ import { Trash2 } from "lucide-react";
 import { toast } from "sonner";
 
 import { t } from "@/lib/i18n";
+import { isValidTier, mainRewardId } from "@/lib/rewards";
 import { archiveReward, saveReward } from "@/lib/store.functions";
 import { Button } from "@/components/ui/button";
 
-type Reward = { id: string; name: string; description: string | null; stamps_required: number; active: boolean };
+type Reward = { id: string; name: string; description: string | null; stamps_required: number; active: boolean; created_at?: string | null };
 
-/** Extra reward tiers (the main reward is edited in the program form above). */
-export function RewardsManager({ rewards }: { rewards: Reward[] }) {
+/**
+ * Extra reward tiers (the main reward is edited in the program form above). A tier must need fewer stamps
+ * than the card: one that needs as many, or more, can never be earned on the way, so customers never see it.
+ */
+export function RewardsManager({ rewards, cardStamps }: { rewards: Reward[]; cardStamps: number }) {
   const queryClient = useQueryClient();
   const save = useServerFn(saveReward);
   const archive = useServerFn(archiveReward);
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
-  const [stamps, setStamps] = useState("5");
+  const maxTier = cardStamps - 1;
+  const [stamps, setStamps] = useState(String(Math.max(1, Math.min(5, maxTier))));
 
   const refresh = async () => {
     await queryClient.invalidateQueries({ queryKey: ["my-store"] });
@@ -32,16 +37,19 @@ export function RewardsManager({ rewards }: { rewards: Reward[] }) {
       toast.success(t("program.saved"));
       await refresh();
     },
-    onError: () => toast.error(t("common.error")),
+    onError: (e: Error) => toast.error(e.message.includes("TIER_TOO_HIGH") ? t("rewards.tierTooHigh") : t("common.error")),
   });
 
   const remove = useMutation({
     mutationFn: (id: string) => archive({ data: { id } }),
     onSuccess: refresh,
-    onError: () => toast.error(t("common.error")),
+    onError: (e: Error) => toast.error(e.message.includes("CANNOT_ARCHIVE_MAIN") ? t("rewards.mainLocked") : t("common.error")),
   });
 
   const active = rewards.filter((r) => r.active).sort((a, b) => a.stamps_required - b.stamps_required);
+  const mainId = mainRewardId(active, cardStamps);
+  const stampsNumber = Math.round(Number(stamps)) || 0;
+  const tierOk = isValidTier(stampsNumber, cardStamps) && stampsNumber >= 1;
 
   return (
     <div className="mt-8 rounded-lg border border-border bg-card p-4 shadow-[var(--shadow-card)]">
@@ -55,9 +63,15 @@ export function RewardsManager({ rewards }: { rewards: Reward[] }) {
               <p className="truncate text-sm font-semibold text-secondary-foreground">{r.name}</p>
               <p className="text-xs text-muted-foreground">
                 {r.stamps_required} {t("rewards.stamps").toLowerCase()}
+                {r.id === mainId && ` · ${t("rewards.main")}`}
               </p>
+              {r.id !== mainId && !isValidTier(r.stamps_required, cardStamps) && (
+                <p className="mt-1 text-xs font-semibold text-destructive">
+                  {t("rewards.hidden")} — {t("rewards.hiddenWhy")}
+                </p>
+              )}
             </div>
-            {active.length > 1 && (
+            {r.id !== mainId && (
               <Button
                 type="button"
                 aria-label={t("rewards.remove")}
@@ -79,6 +93,10 @@ export function RewardsManager({ rewards }: { rewards: Reward[] }) {
             toast.error(t("common.error"));
             return;
           }
+          if (!tierOk) {
+            toast.error(t("rewards.tierTooHigh"));
+            return;
+          }
           add.mutate();
         }}
       >
@@ -94,7 +112,7 @@ export function RewardsManager({ rewards }: { rewards: Reward[] }) {
             aria-label={t("rewards.stamps")}
             type="number"
             min={1}
-            max={50}
+            max={Math.max(1, maxTier)}
             value={stamps}
             onChange={(e) => setStamps(e.target.value)}
             className="w-20 rounded-md border border-border bg-background px-3 py-3 text-center text-sm outline-none focus:ring-2 focus:ring-ring"
@@ -107,9 +125,12 @@ export function RewardsManager({ rewards }: { rewards: Reward[] }) {
           onChange={(e) => setDescription(e.target.value)}
           className="w-full rounded-md border border-border bg-background px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-ring"
         />
+        <p className={`text-xs ${tierOk || maxTier < 1 ? "text-muted-foreground" : "font-semibold text-destructive"}`}>
+          {maxTier < 1 ? t("rewards.tierNone") : t("rewards.tierHint", { count: cardStamps })}
+        </p>
         <Button
           type="submit"
-          disabled={add.isPending}
+          disabled={add.isPending || maxTier < 1}
           variant="secondary" className="touch-action h-12 w-full font-semibold"
         >
           {t("rewards.add")}

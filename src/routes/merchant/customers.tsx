@@ -1,18 +1,21 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useEffect, useState } from "react";
-import { Gift, Search, Sparkles, Stamp, Undo2, Users } from "lucide-react";
+import { ClipboardCopy, Download, Gift, Search, Sparkles, Stamp, Undo2, Users } from "lucide-react";
+import { toast } from "sonner";
 
 import { AppHeader } from "@/components/BrandMark";
 import { QueryError } from "@/components/QueryError";
 import { ReminderCard } from "@/components/ReminderCard";
 import { SplashScreen } from "@/components/SplashScreen";
+import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useFellogramAuth } from "@/hooks/useFellogramAuth";
 import { formatRelative } from "@/lib/format";
-import { getStoreActivity, getStoreCustomers } from "@/lib/insights.functions";
-import { t } from "@/lib/i18n";
+import { FILTERS, SORTS, type Filter, type Sort } from "@/lib/customer-views";
+import { exportStoreCustomers, getStoreActivity, getStoreCustomers } from "@/lib/insights.functions";
+import { getLocale, t, type TranslationKey } from "@/lib/i18n";
 
 export const Route = createFileRoute("/merchant/customers")({
   ssr: false,
@@ -64,8 +67,11 @@ function CustomersPage() {
 
 function CustomersTab({ ready }: { ready: boolean }) {
   const load = useServerFn(getStoreCustomers);
+  const exportFn = useServerFn(exportStoreCustomers);
   const [input, setInput] = useState("");
   const [q, setQ] = useState("");
+  const [filter, setFilter] = useState<Filter>("all");
+  const [sort, setSort] = useState<Sort>("recent");
 
   useEffect(() => {
     const id = setTimeout(() => setQ(input.trim()), 300);
@@ -73,17 +79,39 @@ function CustomersTab({ ready }: { ready: boolean }) {
   }, [input]);
 
   const { data, isLoading, error, refetch } = useQuery({
-    queryKey: ["store-customers", q],
-    queryFn: () => load({ data: { q } }),
+    queryKey: ["store-customers", q, filter, sort],
+    queryFn: () => load({ data: { q, filter, sort } }),
     enabled: ready,
     placeholderData: (previous) => previous,
+  });
+
+  // "Copy" gives tab-separated text that pastes into spreadsheet columns; "Download" gives a CSV file.
+  const exportMutation = useMutation({
+    mutationFn: async (mode: "copy" | "download") => ({ mode, result: await exportFn({ data: { locale: getLocale(), format: mode === "copy" ? "tsv" : "csv" } }) }),
+    onSuccess: async ({ mode, result }) => {
+      if (mode === "copy") {
+        await navigator.clipboard.writeText(result.text);
+        toast.success(t("customers.export.copied", { count: result.count }));
+        return;
+      }
+      const url = URL.createObjectURL(new Blob([result.text], { type: "text/csv;charset=utf-8" }));
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = result.filename;
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      setTimeout(() => URL.revokeObjectURL(url), 1000);
+      toast.success(t("customers.export.downloaded"));
+    },
+    onError: () => toast.error(t("customers.export.failed")),
   });
 
   if (error) return <QueryError error={error} onRetry={() => refetch()} />;
   if (!ready || isLoading || !data) return <SplashScreen />;
 
   return (
-    <div>
+    <div className="min-w-0">
       <ReminderCard ready={ready} />
       <div className="relative">
         <Search className="pointer-events-none absolute start-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" aria-hidden="true" />
@@ -96,11 +124,46 @@ function CustomersTab({ ready }: { ready: boolean }) {
           className="w-full rounded-md border border-border bg-card py-3 ps-9 pe-3 text-sm outline-none focus:ring-2 focus:ring-ring"
         />
       </div>
+
+      <div className="mt-3 flex min-w-0 gap-2 overflow-x-auto pb-1" role="group" aria-label={t("customers.filter.label")}>
+        {FILTERS.map((item) => (
+          <button
+            key={item}
+            type="button"
+            aria-pressed={filter === item}
+            onClick={() => setFilter(item)}
+            className={`touch-action shrink-0 rounded-full border px-3.5 py-2 text-xs font-semibold ${
+              filter === item ? "border-primary bg-primary text-primary-foreground" : "border-border bg-card text-foreground"
+            }`}
+          >
+            {t(`customers.filter.${item}` as TranslationKey)} <span className="opacity-80">{data.counts[item]}</span>
+          </button>
+        ))}
+      </div>
+
+      <div className="mt-3 flex items-center gap-2">
+        <label htmlFor="customerSort" className="shrink-0 text-xs font-semibold text-muted-foreground">
+          {t("customers.sort")}
+        </label>
+        <select
+          id="customerSort"
+          value={sort}
+          onChange={(event) => setSort(event.target.value as Sort)}
+          className="min-w-0 flex-1 rounded-md border border-border bg-card px-3 py-2.5 text-sm outline-none focus:ring-2 focus:ring-ring"
+        >
+          {SORTS.map((item) => (
+            <option key={item} value={item}>
+              {t(`customers.sort.${item}` as TranslationKey)}
+            </option>
+          ))}
+        </select>
+      </div>
+
       <p className="mt-3 text-xs font-semibold text-muted-foreground">{t("customers.count", { count: data.total })}</p>
 
       {data.customers.length === 0 ? (
         <p className="mt-3 rounded-lg border border-dashed border-border bg-card p-6 text-center text-sm text-muted-foreground">
-          {q ? t("customers.noMatch") : t("customers.empty")}
+          {q || filter !== "all" ? t("customers.noMatch") : t("customers.empty")}
         </p>
       ) : (
         <ul className="mt-3 space-y-2">
@@ -141,7 +204,26 @@ function CustomersTab({ ready }: { ready: boolean }) {
           })}
         </ul>
       )}
-      {data.truncated && <p className="mt-3 text-center text-xs text-muted-foreground">{t("customers.truncated", { count: data.customers.length })}</p>}
+      {data.shown > data.customers.length && (
+        <p className="mt-3 text-center text-xs text-muted-foreground">{t("customers.truncated", { count: data.customers.length })}</p>
+      )}
+      {data.capped && <p className="mt-2 text-center text-xs text-muted-foreground">{t("customers.capped")}</p>}
+
+      {data.total > 0 && (
+        <div className="mt-6 rounded-lg border border-border bg-card p-4">
+          <p className="text-xs text-muted-foreground">{t("customers.export.hint")}</p>
+          <div className="mt-3 grid grid-cols-2 gap-2">
+            <Button type="button" variant="outline" disabled={exportMutation.isPending} className="touch-action h-11 gap-2 px-2 text-xs font-semibold" onClick={() => exportMutation.mutate("copy")}>
+              <ClipboardCopy className="h-4 w-4" />
+              {t("customers.export.copy")}
+            </Button>
+            <Button type="button" variant="outline" disabled={exportMutation.isPending} className="touch-action h-11 gap-2 px-2 text-xs font-semibold" onClick={() => exportMutation.mutate("download")}>
+              <Download className="h-4 w-4" />
+              {t("customers.export.download")}
+            </Button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
