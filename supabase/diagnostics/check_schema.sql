@@ -3,20 +3,22 @@
 WITH expected_tables(item) AS (
   VALUES ('profiles'), ('stores'), ('store_members'), ('loyalty_programs'), ('rewards'),
          ('customer_memberships'), ('transactions'), ('redemptions'), ('referrals'),
-         ('referral_links'), ('staff_invitations')
+         ('referral_links'), ('staff_invitations'), ('notification_log')
 ),
 expected_columns(tbl, col) AS (
   VALUES ('stores', 'card_theme'), ('stores', 'brand_primary'), ('stores', 'brand_accent'),
          ('stores', 'background_tint'), ('stores', 'logo_url'),
          ('loyalty_programs', 'stamp_icon'), ('loyalty_programs', 'stamp_cooldown_minutes'),
          ('loyalty_programs', 'referrals_enabled'), ('loyalty_programs', 'referrer_bonus_stamps'),
-         ('loyalty_programs', 'welcome_bonus_stamps')
+         ('loyalty_programs', 'welcome_bonus_stamps'), ('loyalty_programs', 'join_bonus_stamps'),
+         ('profiles', 'notifications_enabled'), ('profiles', 'language_code'),
+         ('stores', 'staff_can_undo'), ('stores', 'staff_daily_stamp_limit')
 ),
 expected_functions(item) AS (
   VALUES ('award_stamp'), ('undo_last_stamp'), ('join_store_program'), ('staff_enroll_customer'),
          ('create_staff_invitation'), ('revoke_staff_invitation'), ('accept_staff_invitation'),
          ('create_redemption'), ('redeem_reward'), ('accept_referral'), ('get_referral_code'),
-         ('is_store_member'), ('is_store_owner')
+         ('is_store_member'), ('is_store_owner'), ('grant_join_bonus'), ('leave_store_program'), ('leave_team')
 ),
 problems AS (
   SELECT 'missing table' AS problem, item FROM expected_tables
@@ -41,6 +43,19 @@ problems AS (
   FROM pg_proc p JOIN pg_namespace n ON n.oid = p.pronamespace
   WHERE n.nspname = 'public' AND p.proname = 'award_stamp'
     AND pg_get_functiondef(p.oid) NOT ILIKE '%stamp_cooldown_minutes%'
+  UNION ALL
+  SELECT 'award_stamp ignores the cashier daily cap', 'run 20261030090000_privacy_and_team_rules.sql'
+  FROM pg_proc p JOIN pg_namespace n ON n.oid = p.pronamespace
+  WHERE n.nspname = 'public' AND p.proname = 'award_stamp'
+    AND pg_get_functiondef(p.oid) NOT ILIKE '%staff_daily_stamp_limit%'
+  UNION ALL
+  SELECT 'undo_last_stamp ignores the cashier undo rule', 'run 20261030090000_privacy_and_team_rules.sql'
+  FROM pg_proc p JOIN pg_namespace n ON n.oid = p.pronamespace
+  WHERE n.nspname = 'public' AND p.proname = 'undo_last_stamp'
+    AND pg_get_functiondef(p.oid) NOT ILIKE '%staff_can_undo%'
+  UNION ALL
+  SELECT 'welcome stamps trigger is missing', 'run 20261028090000_join_bonus.sql'
+  WHERE NOT EXISTS (SELECT 1 FROM pg_trigger WHERE tgname = 'customer_memberships_join_bonus')
 )
 SELECT problem, item FROM problems
 UNION ALL
