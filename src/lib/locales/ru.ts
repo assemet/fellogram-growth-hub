@@ -524,4 +524,5 @@ export const ru: Record<TranslationKey, string> = {
   "store.contact.website.ph": "yourstore.com",
   "store.contact.maps": "Ссылка на карту",
   "store.contact.maps.ph": "Ссылка Google Maps или Waze",
+  "wallet.merchantCta.hint": "Создайте магазин и запустите программу лояльности за несколько минут.",
 };

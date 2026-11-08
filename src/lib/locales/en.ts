@@ -531,6 +531,7 @@ export const en = {
   "store.contact.website.ph": "yourstore.com",
   "store.contact.maps": "Map link",
   "store.contact.maps.ph": "Google Maps or Waze link",
+  "wallet.merchantCta.hint": "Create your store and start a loyalty program in a few minutes.",
 } satisfies Record<string, string>;
 
 export type TranslationKey = keyof typeof en;

@@ -523,4 +523,5 @@ export const ar: Record<TranslationKey, string> = {
   "store.contact.website.ph": "yourstore.com",
   "store.contact.maps": "رابط الخريطة",
   "store.contact.maps.ph": "رابط Google Maps أو Waze",
+  "wallet.merchantCta.hint": "أنشئ متجرك وابدأ برنامج ولاء في دقائق قليلة.",
 };

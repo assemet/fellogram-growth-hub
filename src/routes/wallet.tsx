@@ -9,6 +9,7 @@ import { BottomNav } from "@/components/BottomNav";
 import { SplashScreen } from "@/components/SplashScreen";
 import { MyQrDialog } from "@/components/MyQrDialog";
 import { NotificationsCard } from "@/components/NotificationsCard";
+import { StartStoreCard } from "@/components/StartStoreCard";
 import { StoreContactLinks } from "@/components/StoreContactLinks";
 import { RemoveCardSection } from "@/components/RemoveCardSection";
 import { QueryError } from "@/components/QueryError";
@@ -90,6 +91,8 @@ function Wallet() {
         )}
 
 {!focusedCard && cards.length > 0 && <StoreScanButton variant="outline" label={t("wallet.addCard")} className="mt-6 w-full" />}
+
+{!focusedCard && !data.ownedStoreId && <StartStoreCard className="mt-6" />}
 
               </section>
       <BottomNav current="wallet" />

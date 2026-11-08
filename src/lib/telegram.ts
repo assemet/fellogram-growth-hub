@@ -147,7 +147,11 @@ export function getStartParam(): string | null {
 
 const PENDING_KEY = "fellogram.pendingStartParam";
 
+let startParamRemembered = false;
+
 export function rememberStartParam() {
+  if (startParamRemembered) return;
+  startParamRemembered = true;
   const value = getStartParam();
   if (value && typeof window !== "undefined") {
     window.localStorage.setItem(PENDING_KEY, value);

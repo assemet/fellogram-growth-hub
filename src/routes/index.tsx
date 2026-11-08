@@ -11,6 +11,7 @@ import { toast } from "sonner";
 import { acceptReferral, getMyContext } from "@/lib/store.functions";
 import { acceptInvite } from "@/lib/team.functions";
 import { parseStoreCode } from "@/lib/join-code";
+import { acceptWithRetry, referralLanding } from "@/lib/referral-landing";
 import { pickStartTab, readLastTab, TAB_PATH } from "@/lib/start-tab";
 import { clearPendingStartParam, readPendingStartParam } from "@/lib/telegram";
 
@@ -83,9 +84,11 @@ function SplashRouter() {
           }
         }
         if (pending?.startsWith("ref_")) {
-          clearPendingStartParam();
-          const res = await accept({ data: { param: pending } }).catch(() => ({ status: "invalid" as const }));
+          // The invitation stays saved until the server has answered for good, so a slow first launch cannot lose it.
+          const res = await acceptWithRetry(() => accept({ data: { param: pending } }), (ms) => new Promise((resolve) => setTimeout(resolve, ms)));
           if (cancelled) return;
+          if (!res) throw new Error("REFERRAL_UNREACHABLE");
+          clearPendingStartParam();
           const messages = {
             pending: t("referral.welcome"),
             self: t("referral.self"),
@@ -95,8 +98,11 @@ function SplashRouter() {
           } as const;
           if (res.status === "pending") toast.success(messages.pending);
           else toast.message(messages[res.status]);
-          // Referred customers land on their new card.
-          navigate({ to: "/wallet", replace: true });
+          // The friend lands on the store that invited them (their new card), not on the generic wallet.
+          const landing = referralLanding(res);
+          if (landing.to === "join") navigate({ to: "/join/$storeId", params: { storeId: landing.storeId }, replace: true });
+          else if (landing.storeId) navigate({ to: "/wallet", search: { store: landing.storeId }, replace: true });
+          else navigate({ to: "/wallet", replace: true });
           return;
         }
         const context = await loadContext();

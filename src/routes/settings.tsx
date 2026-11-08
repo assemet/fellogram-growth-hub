@@ -1,6 +1,5 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute } from "@tanstack/react-router";
 import { useState } from "react";
-import { ChevronRight } from "lucide-react";
 
 import { DeleteAccountSection, LeaveTeamRow } from "@/components/AccountDangerZone";
 import { AppHeader } from "@/components/BrandMark";
@@ -8,6 +7,7 @@ import { BottomNav } from "@/components/BottomNav";
 import { LanguagePicker } from "@/components/LanguageControls";
 import { QueryError } from "@/components/QueryError";
 import { SettingsCard } from "@/components/SettingsCard";
+import { StartStoreCard } from "@/components/StartStoreCard";
 import { SegmentedControl } from "@/components/SegmentedControl";
 import { SplashScreen } from "@/components/SplashScreen";
 import { Button } from "@/components/ui/button";
@@ -85,6 +85,8 @@ function SettingsPage() {
       <section className="app-shell space-y-4">
         <h1 className="text-xl font-bold">{t("settings.title")}</h1>
 
+        {!isOwner && <StartStoreCard />}
+
         <SettingsCard title={t("settings.language")}>
           <LanguagePicker />
         </SettingsCard>
@@ -147,18 +149,6 @@ function SettingsPage() {
             <SwitchRow label={t("settings.sound")} checked={prefs.sound} onChange={(next) => togglePref("sound", next)} />
             <SwitchRow label={t("settings.vibration")} checked={prefs.vibration} onChange={(next) => togglePref("vibration", next)} />
             {!isOwner && context.staffStoreName && <LeaveTeamRow storeName={context.staffStoreName} />}
-          </SettingsCard>
-        )}
-
-        {!isOwner && (
-          <SettingsCard title={t("settings.store")}>
-            <Link
-              to="/merchant/new"
-              className="touch-action flex min-h-11 items-center justify-between gap-3 text-sm font-semibold text-primary"
-            >
-              <span className="min-w-0">{t("wallet.merchantCta.link")}</span>
-              <ChevronRight className="h-4 w-4 shrink-0 rtl:rotate-180" aria-hidden="true" />
-            </Link>
           </SettingsCard>
         )}
 

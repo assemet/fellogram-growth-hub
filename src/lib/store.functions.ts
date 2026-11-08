@@ -572,8 +572,12 @@ export const acceptReferral = createServerFn({ method: "POST" })
   })
   .handler(async ({ data, context }) => {
     const { data: rows, error } = await context.supabase.rpc("accept_referral", { _code: data.code });
-    if (error) return { status: "invalid" as const, storeId: null };
-    const row = (rows as { store_id: string; status: string }[])[0];
+    if (error) {
+      // Only a code the database does not know is final; a timeout or a cold start must be retried, not reported as a bad link.
+      if (error.message.includes("REFERRAL_INVALID")) return { status: "invalid" as const, storeId: null };
+      throw new Error(`REFERRAL_FAILED: ${error.message}`);
+    }
+    const row = ((rows ?? []) as { store_id: string; status: string }[])[0];
     return { status: (row?.status ?? "invalid") as "pending" | "self" | "already_member" | "disabled" | "invalid", storeId: row?.store_id ?? null };
   });
 
