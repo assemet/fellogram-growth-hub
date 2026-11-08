@@ -6,6 +6,7 @@ import { ClipboardCopy, Download, Gift, Search, Sparkles, Stamp, Undo2, Users } 
 import { toast } from "sonner";
 
 import { AppHeader } from "@/components/BrandMark";
+import { BackLink } from "@/components/BackLink";
 import { QueryError } from "@/components/QueryError";
 import { ReminderCard } from "@/components/ReminderCard";
 import { SplashScreen } from "@/components/SplashScreen";
@@ -39,9 +40,7 @@ function CustomersPage() {
     <main className="min-h-screen pb-14">
       <AppHeader />
       <section className="app-shell">
-        <Link to="/merchant" className="touch-action text-sm font-semibold text-primary">
-          ← {t("merchant.title")}
-        </Link>
+        <BackLink to="/merchant">{t("merchant.title")}</BackLink>
         <h1 className="mt-3 text-xl font-bold">{t("dash.customers")}</h1>
 
         <Tabs value={tab} onValueChange={(value) => setTab(value as typeof tab)} className="mt-4">

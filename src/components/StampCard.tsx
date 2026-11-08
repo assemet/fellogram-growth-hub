@@ -3,6 +3,7 @@ import { useQueryClient } from "@tanstack/react-query";
 
 import { InviteFriend } from "@/components/InviteFriend";
 import { RedeemRewardQr } from "@/components/RedeemRewardQr";
+import { stampColumns } from "@/lib/stamp-layout";
 import type { ContactField } from "@/lib/store-contact";
 import { Building2, ChevronDown, Gift, UserPlus } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -80,9 +81,7 @@ export function StampCard({ card, preview = false, focused = false }: { card: St
       </div>
 
       <div className="loyalty-card-body p-5">
-        <div
-          className="grid grid-cols-5 gap-2"
-        >
+        <div className="grid justify-center gap-2" style={{ gridTemplateColumns: `repeat(${stampColumns(required)}, minmax(0, 3.75rem))` }}>
           {Array.from({ length: required }).map((_, index) => {
             const filled = index < balance;
             return (

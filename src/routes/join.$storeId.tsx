@@ -6,6 +6,7 @@ import { useEffect } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { StoreContactLinks } from "@/components/StoreContactLinks";
+import { stampColumns } from "@/lib/stamp-layout";
 import { StampIcon } from "@/components/StampIcon";
 
 import { AppHeader } from "@/components/BrandMark";
@@ -120,9 +121,7 @@ function JoinStore() {
             </p>
           )}
 
-          <div
-            className="mt-5 grid grid-cols-5 gap-2"
-          >
+          <div className="mt-5 grid justify-center gap-2" style={{ gridTemplateColumns: `repeat(${stampColumns(required)}, minmax(0, 3.75rem))` }}>
             {Array.from({ length: required }).map((_, index) => (
               <div
                 key={index}
@@ -133,8 +132,6 @@ function JoinStore() {
             ))}
           </div>
         </div>
-
-        <StoreContactLinks contact={data.store.contact} className="mt-4" />
 
         {data.alreadyJoined ? (
           <div className="mt-5 text-center">
@@ -156,6 +153,8 @@ function JoinStore() {
             {mutation.isPending ? t("join.joining") : t("join.action")}
           </Button>
         )}
+
+        <StoreContactLinks contact={data.store.contact} className="mt-6" />
       </section>
     </main>
   );

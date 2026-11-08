@@ -6,6 +6,7 @@ import { toast } from "sonner";
 import { t } from "@/lib/i18n";
 import { updateReferralSettings } from "@/lib/store.functions";
 import { Button } from "@/components/ui/button";
+import { Switch } from "@/components/ui/switch";
 
 type Program = { referrals_enabled: boolean; referrer_bonus_stamps: number; welcome_bonus_stamps: number } | null;
 
@@ -38,19 +39,16 @@ export function ReferralSettings({ program }: { program: Program }) {
   const field = "w-20 rounded-md border border-border bg-background px-3 py-2 text-center text-sm outline-none focus:ring-2 focus:ring-ring";
 
   return (
-    <div className="mt-8 rounded-lg border border-border bg-card p-4 shadow-[var(--shadow-card)]">
-      <h2 className="text-lg font-bold">{t("referral.settings")}</h2>
+    <div className="rounded-lg border border-border bg-card p-4 shadow-[var(--shadow-card)]">
+      <h2 className="text-base font-bold">{t("referral.settings")}</h2>
       <p className="text-sm text-muted-foreground">{t("referral.settingsSub")}</p>
 
-      <label className="mt-4 flex items-center justify-between gap-3 text-sm font-semibold">
-        {t("referral.enabled")}
-        <input
-          type="checkbox"
-          checked={enabled}
-          onChange={(e) => setEnabled(e.target.checked)}
-          className="h-5 w-5 accent-[var(--primary)]"
-        />
-      </label>
+      <div className="mt-4 flex min-h-11 items-center justify-between gap-3">
+        <label htmlFor="referralsEnabled" className="min-w-0 text-sm font-semibold">
+          {t("referral.enabled")}
+        </label>
+        <Switch id="referralsEnabled" checked={enabled} onCheckedChange={setEnabled} />
+      </div>
 
       <label className="mt-3 flex items-center justify-between gap-3 text-sm">
         {t("referral.referrerBonus")}

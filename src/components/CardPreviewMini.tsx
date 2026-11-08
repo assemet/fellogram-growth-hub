@@ -28,7 +28,7 @@ export function CardPreviewMini({
   stampsRequired: number;
   rewardName: string;
 }) {
-  const shown = Math.min(5, stampsRequired);
+  const shown = Math.min(4, stampsRequired);
   const filled = Math.min(2, shown);
   return (
     <div
@@ -50,7 +50,7 @@ export function CardPreviewMini({
         </span>
       </div>
       <div className="loyalty-card-body flex items-center gap-3 px-4 py-3">
-        <div className="flex flex-1 items-center gap-1.5">
+        <div className="flex min-w-0 flex-1 items-center gap-1.5">
           {Array.from({ length: shown }).map((_, index) => {
             const on = index < filled;
             return (
@@ -58,8 +58,8 @@ export function CardPreviewMini({
                 key={index}
                 className={
                   on
-                    ? "loyalty-stamp-filled flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden rounded-full border-2 border-primary/25 bg-primary text-primary-foreground"
-                    : "loyalty-stamp-empty flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden rounded-full border-2 border-dashed border-border bg-secondary/40 text-muted-foreground"
+                    ? "loyalty-stamp-filled flex h-8 w-8 shrink-0 items-center justify-center overflow-hidden rounded-full border-2 border-primary/25 bg-primary text-primary-foreground"
+                    : "loyalty-stamp-empty flex h-8 w-8 shrink-0 items-center justify-center overflow-hidden rounded-full border-2 border-dashed border-border bg-secondary/40 text-muted-foreground"
                 }
               >
                 {stampIcon === "logo" && logoUrl ? (
@@ -73,7 +73,7 @@ export function CardPreviewMini({
           {stampsRequired > shown && <span className="ps-1 text-xs font-semibold text-muted-foreground">+{stampsRequired - shown}</span>}
         </div>
         {rewardName && (
-          <p className="flex min-w-0 max-w-[45%] items-center gap-1.5 text-xs font-semibold">
+          <p className="flex min-w-0 max-w-[50%] items-center gap-1.5 text-xs font-semibold">
             <Gift className="h-3.5 w-3.5 shrink-0" />
             <span className="truncate">{rewardName}</span>
           </p>

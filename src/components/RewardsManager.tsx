@@ -52,8 +52,8 @@ export function RewardsManager({ rewards, cardStamps }: { rewards: Reward[]; car
   const tierOk = isValidTier(stampsNumber, cardStamps) && stampsNumber >= 1;
 
   return (
-    <div className="mt-8 rounded-lg border border-border bg-card p-4 shadow-[var(--shadow-card)]">
-      <h2 className="text-lg font-bold">{t("rewards.manage")}</h2>
+    <div className="rounded-lg border border-border bg-card p-4 shadow-[var(--shadow-card)]">
+      <h2 className="text-base font-bold">{t("rewards.manage")}</h2>
       <p className="text-sm text-muted-foreground">{t("rewards.manageSub")}</p>
 
       <ul className="mt-3 space-y-2">

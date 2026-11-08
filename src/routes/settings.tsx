@@ -7,6 +7,7 @@ import { AppHeader } from "@/components/BrandMark";
 import { BottomNav } from "@/components/BottomNav";
 import { LanguagePicker } from "@/components/LanguageControls";
 import { QueryError } from "@/components/QueryError";
+import { SettingsCard } from "@/components/SettingsCard";
 import { SegmentedControl } from "@/components/SegmentedControl";
 import { SplashScreen } from "@/components/SplashScreen";
 import { Button } from "@/components/ui/button";
@@ -42,16 +43,6 @@ export const Route = createFileRoute("/settings")({
 });
 
 const BOT = String(import.meta.env["VITE_TELEGRAM_BOT_USERNAME"] ?? "fellogram_bot").replace(/^@/, "").trim();
-
-function Section({ title, hint, children }: { title: string; hint?: string; children: React.ReactNode }) {
-  return (
-    <section className="rounded-lg border border-border bg-card p-5 shadow-[var(--shadow-card)]">
-      <h2 className="text-sm font-bold">{title}</h2>
-      {hint && <p className="mt-1 text-xs text-muted-foreground">{hint}</p>}
-      <div className="mt-3 space-y-3">{children}</div>
-    </section>
-  );
-}
 
 function SwitchRow({ label, checked, disabled, onChange }: { label: string; checked: boolean; disabled?: boolean; onChange: (next: boolean) => void }) {
   return (
@@ -94,11 +85,11 @@ function SettingsPage() {
       <section className="app-shell space-y-4">
         <h1 className="text-xl font-bold">{t("settings.title")}</h1>
 
-        <Section title={t("settings.language")}>
+        <SettingsCard title={t("settings.language")}>
           <LanguagePicker />
-        </Section>
+        </SettingsCard>
 
-        <Section title={t("settings.appearance")} hint={t("settings.appearance.hint")}>
+        <SettingsCard title={t("settings.appearance")} description={t("settings.appearance.hint")}>
           <SegmentedControl<Appearance>
             label={t("settings.appearance")}
             value={appearance}
@@ -127,10 +118,10 @@ function SettingsPage() {
               ]}
             />
           </div>
-        </Section>
+        </SettingsCard>
 
         {notifications?.supported && (
-          <Section title={t("settings.notifications")} hint={t("settings.notifications.hint")}>
+          <SettingsCard title={t("settings.notifications")} description={t("settings.notifications.hint")}>
             <SwitchRow
               label={t("settings.notifications")}
               checked={notifications.enabled}
@@ -147,20 +138,20 @@ function SettingsPage() {
                 </Button>
               </div>
             )}
-          </Section>
+          </SettingsCard>
         )}
 
         {isTeam && (
-          <Section title={t("settings.cashier")} hint={t("settings.cashier.hint")}>
+          <SettingsCard title={t("settings.cashier")} description={t("settings.cashier.hint")}>
             <SwitchRow label={t("cashier.autoStamp")} checked={prefs.autoStamp} onChange={(next) => togglePref("autoStamp", next)} />
             <SwitchRow label={t("settings.sound")} checked={prefs.sound} onChange={(next) => togglePref("sound", next)} />
             <SwitchRow label={t("settings.vibration")} checked={prefs.vibration} onChange={(next) => togglePref("vibration", next)} />
             {!isOwner && context.staffStoreName && <LeaveTeamRow storeName={context.staffStoreName} />}
-          </Section>
+          </SettingsCard>
         )}
 
         {!isOwner && (
-          <Section title={t("settings.store")}>
+          <SettingsCard title={t("settings.store")}>
             <Link
               to="/merchant/new"
               className="touch-action flex min-h-11 items-center justify-between gap-3 text-sm font-semibold text-primary"
@@ -168,15 +159,15 @@ function SettingsPage() {
               <span className="min-w-0">{t("wallet.merchantCta.link")}</span>
               <ChevronRight className="h-4 w-4 shrink-0 rtl:rotate-180" aria-hidden="true" />
             </Link>
-          </Section>
+          </SettingsCard>
         )}
 
-        <Section title={t("settings.data")}>
+        <SettingsCard title={t("settings.data")}>
           <p className="text-sm font-semibold text-destructive">{t("settings.delete.title")}</p>
           <DeleteAccountSection isOwner={isOwner} />
-        </Section>
+        </SettingsCard>
 
-        <Section title={t("settings.about")}>
+        <SettingsCard title={t("settings.about")}>
           <div>
             <p className="font-display text-lg font-bold">{t("app.name")}</p>
             <p className="text-xs text-muted-foreground">{t("app.tagline")}</p>
@@ -184,7 +175,7 @@ function SettingsPage() {
           <Button asChild variant="outline" className="touch-action h-11 w-full font-semibold">
             <a href={`https://t.me/${bot}`}>{t("notify.openBot")}</a>
           </Button>
-        </Section>
+        </SettingsCard>
       </section>
 
       <BottomNav current="settings" />

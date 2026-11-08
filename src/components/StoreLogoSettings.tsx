@@ -52,7 +52,7 @@ export function StoreLogoSettings({ logoUrl, onPreviewChange }: { logoUrl: strin
 
   return (
     <section className="rounded-lg border border-border bg-card p-4 shadow-[var(--shadow-card)]">
-      <h2 className="text-lg font-bold">{t("store.profile")}</h2>
+      <h2 className="text-base font-bold">{t("store.profile")}</h2>
       <p className="text-sm text-muted-foreground">{t("store.logoHelp")}</p>
       <div className="mt-4 flex items-center gap-4">
         <div className="flex h-20 w-20 shrink-0 items-center justify-center overflow-hidden rounded-lg border border-border bg-secondary">

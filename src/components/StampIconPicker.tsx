@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { ImageIcon, Search } from "lucide-react";
 
 import { StampIcon } from "@/components/StampIcon";
@@ -19,6 +19,10 @@ export function StampIconPicker({
 }) {
   const [category, setCategory] = useState<StampIconCategoryId>(() => categoryOfIcon(value));
   const [query, setQuery] = useState("");
+  // The saved icon often arrives after the first render: follow it so the selected icon is always visible.
+  useEffect(() => {
+    setCategory(categoryOfIcon(value));
+  }, [value]);
 
   const visible = useMemo<readonly string[]>(() => {
     const needle = query.trim().toLowerCase();

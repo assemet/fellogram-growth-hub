@@ -6,6 +6,7 @@ import { Trash2 } from "lucide-react";
 import { toast } from "sonner";
 
 import { AppHeader } from "@/components/BrandMark";
+import { BackLink } from "@/components/BackLink";
 import { QueryError } from "@/components/QueryError";
 import { StoreLogoSettings } from "@/components/StoreLogoSettings";
 import { SplashScreen } from "@/components/SplashScreen";
@@ -146,7 +147,7 @@ function StoreSettingsPage() {
           placeholder={t(placeholder)}
           onChange={(event) => setContact((current) => ({ ...current, [field]: event.target.value }))}
           onBlur={() => setTouched((current) => ({ ...current, [field]: true }))}
-          className={`mt-1 w-full rounded-md border bg-background px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-ring ${invalid ? "border-destructive" : "border-border"}`}
+          className={`mt-1 w-full rounded-md border bg-background px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-ring ${ltr ? "rtl:text-right" : ""} ${invalid ? "border-destructive" : "border-border"}`}
         />
         {invalid ? (
           <p id={`${id}-error`} role="alert" className="mt-1 text-xs font-semibold text-destructive">
@@ -167,9 +168,7 @@ function StoreSettingsPage() {
       <AppHeader subtitle={data.store.name} />
 
       <section className="app-shell">
-        <Link to="/merchant" className="touch-action text-sm font-semibold text-primary">
-          ← {t("merchant.title")}
-        </Link>
+        <BackLink to="/merchant">{t("merchant.title")}</BackLink>
         <h1 className="mt-3 text-xl font-bold">{t("store.title")}</h1>
         <p className="mt-1 text-sm text-muted-foreground">{t("store.subtitle")}</p>
 

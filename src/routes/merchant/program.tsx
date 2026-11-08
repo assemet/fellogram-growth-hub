@@ -2,12 +2,14 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useEffect, useRef, useState } from "react";
-import { Check, Minus, Plus } from "lucide-react";
+import { Check, ChevronDown, Gift, Minus, Palette, Plus, Users } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 
 import { AppHeader } from "@/components/BrandMark";
+import { BackLink } from "@/components/BackLink";
+import { SettingsCard } from "@/components/SettingsCard";
 import { CardPreviewMini } from "@/components/CardPreviewMini";
 import { StampIconPicker } from "@/components/StampIconPicker";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -38,6 +40,8 @@ export const Route = createFileRoute("/merchant/program")({
 
 type Tab = "design" | "reward" | "growth";
 const tabs: readonly Tab[] = ["design", "reward", "growth"];
+const TAB_ICONS = { design: Palette, reward: Gift, growth: Users } as const;
+const INPUT = "w-full rounded-md border border-border bg-background px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-ring";
 
 type FormValues = {
   programName: string;
@@ -217,42 +221,53 @@ function ProgramEditor() {
       <AppHeader subtitle={data.store.name} />
 
       <section className="app-shell">
-        <h1 className="text-xl font-bold">{t("program.title")}</h1>
+        <BackLink to="/merchant">{t("merchant.title")}</BackLink>
+        <h1 className="mt-3 text-xl font-bold">{t("program.title")}</h1>
         <p className="mt-1 text-sm text-muted-foreground">{t("program.subtitle")}</p>
 
-        {tab !== "growth" && (
-          <div className="sticky top-0 z-20 -mx-5 mt-4 bg-background/90 px-5 pb-3 pt-2 backdrop-blur">
-            <div className="flex items-center justify-between pb-1.5">
-              <span className="text-xs font-semibold text-muted-foreground">{t("program.livePreview")}</span>
-              <button type="button" onClick={() => setPreviewOpen((open) => !open)} className="touch-action px-1 py-1 text-xs font-semibold text-primary">
-                {previewOpen ? t("program.previewHide") : t("program.previewShow")}
-              </button>
-            </div>
-            {previewOpen && (
-              <CardPreviewMini
-                storeName={data.store.name}
-                programName={programName}
-                logoUrl={previewLogo}
-                stampIcon={stampIcon}
-                cardTheme={cardTheme}
-                colors={brandColors}
-                stampsRequired={values.stampsRequired}
-                rewardName={rewardName}
-              />
-            )}
-          </div>
-        )}
-
-        <Tabs value={tab} onValueChange={(next) => setTab(next as Tab)} className="mt-3">
-          <TabsList className="grid h-auto w-full grid-cols-3 p-1">
-            {tabs.map((id) => (
-              <TabsTrigger key={id} value={id} className="touch-action whitespace-normal px-1.5 py-2.5 text-center text-xs font-semibold leading-tight sm:text-sm">
-                {t(`program.tab.${id}` as TranslationKey)}
-              </TabsTrigger>
-            ))}
+        <Tabs value={tab} onValueChange={(next) => setTab(next as Tab)} className="mt-4">
+          {/* Tabs come first and look like tabs: icon, label, and a clear line under the active one. */}
+          <TabsList className="grid h-auto w-full grid-cols-3 rounded-none border-b border-border bg-transparent p-0">
+            {tabs.map((id) => {
+              const Icon = TAB_ICONS[id];
+              return (
+                <TabsTrigger
+                  key={id}
+                  value={id}
+                  className="touch-action flex flex-col items-center gap-1 whitespace-normal rounded-none border-b-2 border-transparent bg-transparent px-1 py-3 text-center text-xs font-semibold leading-tight text-muted-foreground shadow-none focus-visible:ring-inset focus-visible:ring-offset-0 data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:text-primary data-[state=active]:shadow-none"
+                >
+                  <Icon className="h-5 w-5" aria-hidden="true" />
+                  <span>{t(`program.tab.${id}` as TranslationKey)}</span>
+                </TabsTrigger>
+              );
+            })}
           </TabsList>
 
-          <TabsContent value="design" className="mt-5">
+          {/* The preview follows the tabs. It stays in view only while designing, and is hidden on the growth tab. */}
+          {tab !== "growth" && (
+            <div className={`${tab === "design" ? "sticky top-0 z-20" : ""} -mx-5 mt-3 bg-background/90 px-5 pb-3 pt-2 backdrop-blur`}>
+              <div className="flex items-center justify-between pb-1.5">
+                <span className="text-xs font-semibold text-muted-foreground">{t("program.livePreview")}</span>
+                <button type="button" onClick={() => setPreviewOpen((open) => !open)} className="touch-action px-1 py-1 text-xs font-semibold text-primary">
+                  {previewOpen ? t("program.previewHide") : t("program.previewShow")}
+                </button>
+              </div>
+              {previewOpen && (
+                <CardPreviewMini
+                  storeName={data.store.name}
+                  programName={programName}
+                  logoUrl={previewLogo}
+                  stampIcon={stampIcon}
+                  cardTheme={cardTheme}
+                  colors={brandColors}
+                  stampsRequired={values.stampsRequired}
+                  rewardName={rewardName}
+                />
+              )}
+            </div>
+          )}
+
+          <TabsContent value="design" className="mt-4">
             <StoreLogoSettings logoUrl={data.logoUrl} onPreviewChange={setPreviewLogo} />
           </TabsContent>
 
@@ -268,27 +283,17 @@ function ProgramEditor() {
               mutation.mutate();
             }}
           >
-            <TabsContent value="design" className="mt-5 space-y-6">
-              <div className="settings-section">
-                <label htmlFor="programName" className="text-sm font-semibold">
-                  {t("program.name")}
-                </label>
-                <input
-                  id="programName"
-                  value={programName}
-                  onChange={(event) => setProgramName(event.target.value)}
-                  className="mt-1 w-full rounded-md border border-border bg-card px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-ring"
-                />
-              </div>
+            <TabsContent value="design" className="mt-4 space-y-4">
+              <SettingsCard title={t("program.name")}>
+                <input id="programName" aria-label={t("program.name")} value={programName} onChange={(event) => setProgramName(event.target.value)} className={INPUT} />
+              </SettingsCard>
 
-              <fieldset className="settings-section min-w-0">
-                <legend className="text-sm font-semibold">{t("program.stampIcon")}</legend>
+              <SettingsCard title={t("program.stampIcon")}>
                 <StampIconPicker value={stampIcon} onChange={setStampIcon} logoUrl={previewLogo} />
-              </fieldset>
+              </SettingsCard>
 
-              <fieldset className="settings-section min-w-0">
-                <legend className="text-sm font-semibold">{t("program.cardTheme")}</legend>
-                <div className="mt-3 flex flex-wrap gap-3">
+              <SettingsCard title={t("program.cardTheme")}>
+                <div className="grid grid-cols-7 gap-1.5">
                   {cardThemes.map((theme) => (
                     <button
                       key={theme}
@@ -302,85 +307,105 @@ function ProgramEditor() {
                         setBrandAccent(null);
                         setBackgroundTint(null);
                       }}
-                      className={`touch-action relative h-11 w-11 rounded-full border border-border ring-offset-2 ring-offset-background ${cardTheme === theme ? "ring-2 ring-ring" : ""}`}
+                      className={`touch-action relative aspect-square w-full rounded-full border border-border ring-offset-2 ring-offset-card ${cardTheme === theme ? "ring-2 ring-ring" : ""}`}
                     >
                       <span data-card-theme={theme} className="card-theme-swatch absolute inset-0.5 rounded-full" aria-hidden="true" />
                       {cardTheme === theme && <Check className="absolute inset-0 m-auto h-4 w-4 text-white drop-shadow" aria-hidden="true" />}
                     </button>
                   ))}
                 </div>
-                <p className="mt-2 text-xs text-muted-foreground">{t(`cardTheme.${cardTheme}` as TranslationKey)}</p>
-              </fieldset>
+                <p className="text-xs font-semibold text-muted-foreground">{t(`cardTheme.${cardTheme}` as TranslationKey)}</p>
 
-              <details className="settings-section group" open={hasCustomColors}>
-                <summary className="flex min-h-11 cursor-pointer items-center justify-between text-sm font-semibold">
-                  {t("program.customColors")}
-                  {hasCustomColors && <span className="h-2 w-2 rounded-full bg-primary" aria-hidden="true" />}
-                </summary>
-                <div className="mt-2 space-y-2">
-                  {([
-                    ["brandPrimary", brandPrimary, setBrandPrimary, brandPalettes[cardTheme].primary],
-                    ["brandAccent", brandAccent, setBrandAccent, brandPalettes[cardTheme].accent],
-                    ["backgroundTint", backgroundTint, setBackgroundTint, brandPalettes[cardTheme].tint],
-                  ] as const).map(([fieldKey, value, setter, fallback]) => (
-                    <label key={fieldKey} className="color-field text-sm font-semibold">
-                      <span className="min-w-0">
-                        <span className="block">{t(`program.${fieldKey}`)}</span>
-                      </span>
-                      <input type="color" aria-label={t(`program.${fieldKey}`)} value={value ?? fallback} onChange={(event) => setter(event.target.value)} className="cursor-pointer" />
-                    </label>
-                  ))}
-                  {hasCustomColors && (
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="sm"
-                      className="touch-action font-semibold text-primary"
-                      onClick={() => {
-                        setBrandPrimary(null);
-                        setBrandAccent(null);
-                        setBackgroundTint(null);
-                      }}
-                    >
-                      {t("program.resetColors")}
-                    </Button>
-                  )}
-                </div>
-              </details>
+                <details className="group border-t border-border pt-1" open={hasCustomColors}>
+                  <summary className="flex min-h-11 cursor-pointer list-none items-center justify-between gap-2 text-sm font-semibold [&::-webkit-details-marker]:hidden">
+                    <span className="flex items-center gap-2">
+                      {t("program.customColors")}
+                      {hasCustomColors && <span className="h-2 w-2 rounded-full bg-primary" aria-hidden="true" />}
+                    </span>
+                    <ChevronDown className="h-4 w-4 text-muted-foreground transition-transform group-open:rotate-180" aria-hidden="true" />
+                  </summary>
+                  <div className="mt-2 space-y-2">
+                    {([
+                      ["brandPrimary", brandPrimary, setBrandPrimary, brandPalettes[cardTheme].primary],
+                      ["brandAccent", brandAccent, setBrandAccent, brandPalettes[cardTheme].accent],
+                      ["backgroundTint", backgroundTint, setBackgroundTint, brandPalettes[cardTheme].tint],
+                    ] as const).map(([fieldKey, value, setter, fallback]) => (
+                      <label key={fieldKey} className="color-field text-sm font-semibold">
+                        <span className="min-w-0">
+                          <span className="block">{t(`program.${fieldKey}`)}</span>
+                        </span>
+                        <input type="color" aria-label={t(`program.${fieldKey}`)} value={value ?? fallback} onChange={(event) => setter(event.target.value)} className="cursor-pointer" />
+                      </label>
+                    ))}
+                    {hasCustomColors && (
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        className="touch-action font-semibold text-primary"
+                        onClick={() => {
+                          setBrandPrimary(null);
+                          setBrandAccent(null);
+                          setBackgroundTint(null);
+                        }}
+                      >
+                        {t("program.resetColors")}
+                      </Button>
+                    )}
+                  </div>
+                </details>
+              </SettingsCard>
             </TabsContent>
 
-            <TabsContent value="reward" className="mt-5 min-w-0 space-y-6">
-              <div>
-                <span className="text-sm font-semibold">{t("program.stamps")}</span>
-                <div className="mt-1 flex items-center gap-3">
-                  <Button type="button" aria-label={t("program.decrease")} onClick={() => changeStamps(-1)} variant="secondary" size="icon" className="touch-action h-11 w-11 shrink-0">
-                    <Minus className="h-4 w-4" />
-                  </Button>
-                  <input
-                    id="stampsRequired"
-                    type="number"
-                    min={1}
-                    max={50}
-                    value={stampsText}
-                    onChange={(event) => setStampsText(event.target.value)}
-                    onBlur={() => {
-                      const parsed = clampStamps(stampsText, 10);
-                      setStampsRequired(parsed);
-                      setStampsText(String(parsed));
-                    }}
-                    className="w-20 rounded-md border border-border bg-card px-4 py-3 text-center text-sm outline-none focus:ring-2 focus:ring-ring"
-                  />
-                  <Button type="button" aria-label={t("program.increase")} onClick={() => changeStamps(1)} variant="secondary" size="icon" className="touch-action h-11 w-11 shrink-0">
-                    <Plus className="h-4 w-4" />
-                  </Button>
-                </div>
-              </div>
-
-              <div className="settings-section">
-                <div className="flex items-center justify-between gap-3">
-                  <label htmlFor="joinBonusOn" className="min-w-0 text-sm font-semibold">
-                    {t("program.joinBonus.title")}
+            <TabsContent value="reward" className="mt-4 min-w-0 space-y-4">
+              <SettingsCard title={t("program.reward")}>
+                <input
+                  id="rewardName"
+                  aria-label={t("program.reward")}
+                  value={rewardName}
+                  onChange={(event) => setRewardName(event.target.value)}
+                  placeholder={t("onboarding.program.rewardPlaceholder")}
+                  className={INPUT}
+                />
+                <div>
+                  <label htmlFor="rewardDescription" className="text-xs font-semibold text-muted-foreground">
+                    {t("program.rewardDescription")}
                   </label>
+                  <textarea id="rewardDescription" value={rewardDescription} onChange={(event) => setRewardDescription(event.target.value)} rows={2} className={`mt-1 ${INPUT}`} />
+                </div>
+                <div>
+                  <label htmlFor="stampsRequired" className="text-xs font-semibold text-muted-foreground">
+                    {t("program.stamps")}
+                  </label>
+                  <div className="mt-1 flex items-center gap-3">
+                    <Button type="button" aria-label={t("program.decrease")} onClick={() => changeStamps(-1)} variant="secondary" size="icon" className="touch-action h-11 w-11 shrink-0">
+                      <Minus className="h-4 w-4" />
+                    </Button>
+                    <input
+                      id="stampsRequired"
+                      type="number"
+                      min={1}
+                      max={50}
+                      value={stampsText}
+                      onChange={(event) => setStampsText(event.target.value)}
+                      onBlur={() => {
+                        const parsed = clampStamps(stampsText, 10);
+                        setStampsRequired(parsed);
+                        setStampsText(String(parsed));
+                      }}
+                      className="w-20 rounded-md border border-border bg-background px-4 py-3 text-center text-sm outline-none focus:ring-2 focus:ring-ring"
+                    />
+                    <Button type="button" aria-label={t("program.increase")} onClick={() => changeStamps(1)} variant="secondary" size="icon" className="touch-action h-11 w-11 shrink-0">
+                      <Plus className="h-4 w-4" />
+                    </Button>
+                  </div>
+                </div>
+              </SettingsCard>
+
+              <SettingsCard
+                title={t("program.joinBonus.title")}
+                description={t("program.joinBonus.hint")}
+                action={
                   <span className="relative inline-flex shrink-0">
                     <Switch
                       id="joinBonusOn"
@@ -392,10 +417,11 @@ function ProgramEditor() {
                       aria-label={t("program.joinBonus.toggle")}
                     />
                   </span>
-                </div>
+                }
+              >
                 {joinBonusOn && (
-                  <div className="mt-3 flex items-center gap-3">
-                    <label htmlFor="joinBonusCount" className="text-sm text-muted-foreground">
+                  <div className="flex items-center justify-between gap-3">
+                    <label htmlFor="joinBonusCount" className="min-w-0 text-sm font-semibold">
                       {t("program.joinBonus.count")}
                     </label>
                     <input
@@ -406,55 +432,25 @@ function ProgramEditor() {
                       max={Math.max(1, Math.min(20, clampStamps(stampsText, stampsRequired) - 1))}
                       value={joinBonusText}
                       onChange={(event) => setJoinBonusText(event.target.value)}
-                      className="w-20 rounded-md border border-border bg-card px-3 py-2 text-center text-sm outline-none focus:ring-2 focus:ring-ring"
+                      className="w-20 rounded-md border border-border bg-background px-3 py-2 text-center text-sm outline-none focus:ring-2 focus:ring-ring"
                     />
                   </div>
                 )}
-                <p className="mt-2 text-xs text-muted-foreground">{t("program.joinBonus.hint")}</p>
-              </div>
+              </SettingsCard>
 
-              <div className="settings-section">
-                <label htmlFor="cooldown" className="text-sm font-semibold">
-                  {t("program.cooldown")}
-                </label>
+              <SettingsCard title={t("program.cooldown")} description={t("program.cooldownHint")}>
                 <input
                   id="cooldown"
+                  aria-label={t("program.cooldown")}
                   type="number"
                   inputMode="numeric"
                   min={0}
                   max={1440}
                   value={cooldownText}
                   onChange={(event) => setCooldownText(event.target.value)}
-                  className="mt-1 w-28 rounded-md border border-border bg-card px-4 py-3 text-center text-sm outline-none focus:ring-2 focus:ring-ring"
+                  className="w-28 rounded-md border border-border bg-background px-4 py-3 text-center text-sm outline-none focus:ring-2 focus:ring-ring"
                 />
-                <p className="mt-1 text-xs text-muted-foreground">{t("program.cooldownHint")}</p>
-              </div>
-
-              <div className="settings-section">
-                <label htmlFor="rewardName" className="text-sm font-semibold">
-                  {t("program.reward")}
-                </label>
-                <input
-                  id="rewardName"
-                  value={rewardName}
-                  onChange={(event) => setRewardName(event.target.value)}
-                  placeholder={t("onboarding.program.rewardPlaceholder")}
-                  className="mt-1 w-full rounded-md border border-border bg-card px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-ring"
-                />
-              </div>
-
-              <div className="settings-section">
-                <label htmlFor="rewardDescription" className="text-sm font-semibold">
-                  {t("program.rewardDescription")}
-                </label>
-                <textarea
-                  id="rewardDescription"
-                  value={rewardDescription}
-                  onChange={(event) => setRewardDescription(event.target.value)}
-                  rows={2}
-                  className="mt-1 w-full rounded-md border border-border bg-card px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-ring"
-                />
-              </div>
+              </SettingsCard>
             </TabsContent>
 
             {dirty && (
@@ -469,17 +465,13 @@ function ProgramEditor() {
             )}
           </form>
 
-          <TabsContent value="reward">
+          <TabsContent value="reward" className="mt-4">
             <RewardsManager rewards={data.rewards} cardStamps={data.program?.stamps_required ?? 10} />
           </TabsContent>
-          <TabsContent value="growth" className="mt-1">
+          <TabsContent value="growth" className="mt-4">
             <ReferralSettings program={data.program} />
           </TabsContent>
         </Tabs>
-
-        <Link to="/merchant" className="mt-6 block text-center text-sm font-semibold text-primary">
-          {t("merchant.title")}
-        </Link>
       </section>
     </main>
   );

@@ -6,6 +6,7 @@ import { Copy, UserPlus } from "lucide-react";
 import { toast } from "sonner";
 
 import { AppHeader } from "@/components/BrandMark";
+import { BackLink } from "@/components/BackLink";
 import { InviteLinkCard } from "@/components/InviteLinkCard";
 import { QueryError } from "@/components/QueryError";
 import { TeamRulesCard } from "@/components/TeamRulesCard";
@@ -105,9 +106,7 @@ function TeamPage() {
       <AppHeader subtitle={data.storeName} />
 
       <section className="app-shell">
-        <Link to="/merchant" className="touch-action text-sm font-semibold text-primary">
-          ← {t("merchant.title")}
-        </Link>
+        <BackLink to="/merchant">{t("merchant.title")}</BackLink>
         <h1 className="mt-3 text-xl font-bold">{t("team.title")}</h1>
         <p className="mt-1 text-sm text-muted-foreground">{t("team.subtitle")}</p>
 

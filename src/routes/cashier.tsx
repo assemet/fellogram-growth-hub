@@ -7,6 +7,7 @@ import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 
 import { AppHeader } from "@/components/BrandMark";
+import { Switch } from "@/components/ui/switch";
 import { BottomNav } from "@/components/BottomNav";
 import { QueryError } from "@/components/QueryError";
 import { SplashScreen } from "@/components/SplashScreen";
@@ -318,13 +319,10 @@ function Cashier() {
 
   return (
     <main className="min-h-[100dvh] pb-[calc(2.5rem+env(safe-area-inset-bottom))]">
-      <AppHeader subtitle={`${t("cashier.title")} · ${store.storeName}`} />
+      <AppHeader subtitle={store.storeName} />
 
       <section className="app-shell space-y-4">
-        <div className="flex items-center justify-between gap-3">
-          <h1 className="text-2xl font-bold">{t("cashier.title")}</h1>
-          <span className="shrink-0 rounded-md bg-growth/15 px-2.5 py-1 text-xs font-bold text-foreground">{store.storeName}</span>
-        </div>
+        <h1 className="text-2xl font-bold">{t("cashier.title")}</h1>
         {!customer && !newCustomerId && (
           <div className="animate-arrive rounded-lg border border-border bg-card p-5 shadow-[var(--shadow-card)]">
             <div className={scanning ? "overflow-hidden rounded-md bg-foreground" : "hidden"}>
@@ -366,15 +364,12 @@ function Cashier() {
               </div>
             )}
 
-            <label className="mt-4 flex min-h-11 cursor-pointer items-center gap-3 text-sm font-semibold">
-              <input
-                type="checkbox"
-                checked={autoStamp}
-                onChange={(event) => toggleAutoStamp(event.target.checked)}
-                className="h-5 w-5 shrink-0 accent-[var(--primary)]"
-              />
-              {t("cashier.autoStamp")}
-            </label>
+            <div className="mt-4 flex min-h-11 items-center justify-between gap-3">
+              <label htmlFor="autoStamp" className="min-w-0 text-sm font-semibold">
+                {t("cashier.autoStamp")}
+              </label>
+              <Switch id="autoStamp" checked={autoStamp} onCheckedChange={toggleAutoStamp} />
+            </div>
 
             <div className="mt-3 border-t border-border pt-4">
               <label htmlFor="nameSearch" className="text-xs font-semibold text-muted-foreground">
