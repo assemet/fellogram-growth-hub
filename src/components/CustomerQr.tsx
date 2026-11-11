@@ -13,7 +13,7 @@ export function CustomerQr({ customerId }: { customerId: string }) {
       const url = await QRCode.toDataURL(`fellogram:c:${customerId}`, {
         width: 512,
         margin: 1,
-        color: { dark: "#1b1b3a", light: "#ffffff" },
+        color: { dark: "#0b1f5c", light: "#ffffff" },
       });
       if (!cancelled) setSrc(url);
     })().catch((error) => console.error(error));

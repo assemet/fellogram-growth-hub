@@ -86,7 +86,7 @@ export function watchTelegramTheme() {
     }
     try {
       // Keep Telegram's own header and overscroll area matching whatever the app now looks like.
-      const chrome = appearance === "auto" ? "secondary_bg_color" : appearance === "dark" ? "#16132a" : "#f7f4ff";
+      const chrome = appearance === "auto" ? "secondary_bg_color" : appearance === "dark" ? "#0d1636" : "#f3f7ff";
       app?.setHeaderColor?.(chrome);
       app?.setBackgroundColor?.(chrome);
     } catch {

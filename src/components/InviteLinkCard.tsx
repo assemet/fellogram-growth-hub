@@ -14,7 +14,7 @@ export function InviteLinkCard({ link, storeName }: { link: string; storeName: s
     let cancelled = false;
     (async () => {
       const QRCode = (await import("qrcode")).default;
-      const url = await QRCode.toDataURL(link, { width: 480, margin: 1, color: { dark: "#1b1b3a", light: "#ffffff" } });
+      const url = await QRCode.toDataURL(link, { width: 480, margin: 1, color: { dark: "#0b1f5c", light: "#ffffff" } });
       if (!cancelled) setQr(url);
     })().catch((error) => console.error(error));
     return () => {

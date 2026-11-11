@@ -33,7 +33,7 @@ export function RedeemRewardQr({
       const url = await QRCode.toDataURL(`fellogram:r:${res.token}`, {
         width: 512,
         margin: 1,
-        color: { dark: "#1b1b3a", light: "#ffffff" },
+        color: { dark: "#0b1f5c", light: "#ffffff" },
       });
       if (cancelled) return;
       setSrc(url);

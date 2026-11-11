@@ -17,6 +17,7 @@ export function AppHeader({ subtitle, action }: { subtitle?: string; action?: Re
   return (
     <header className="app-header app-shell mb-7 grid grid-cols-[minmax(0,1fr)_auto] items-center gap-3 border-b border-border py-4 [padding-top:calc(1rem+env(safe-area-inset-top))]">
       <div className="flex min-w-0 items-center gap-3">
+        <img src="/logo-mascot.png" alt="" width={36} height={39} className="h-10 w-auto shrink-0" decoding="async" />
         <div className="min-w-0">
           <BrandMark />
           {subtitle ? (

@@ -6,9 +6,9 @@
 export const POSTER_WIDTH = 1240; // A4 at 150 dpi
 export const POSTER_HEIGHT = 1754;
 
-const NAVY = "#1b1b3a";
-const MUTED = "#5b5b78";
-const TINT = "#eef0fb";
+const NAVY = "#0b1f5c";
+const MUTED = "#4a5a86";
+const TINT = "#eaf1fe";
 const FONT = `"Segoe UI", system-ui, -apple-system, "Noto Sans Arabic", "Noto Sans", Roboto, Arial, sans-serif`;
 
 export type PosterText = { name: string; caption: string; powered: string; address: string };
@@ -73,7 +73,7 @@ function roundRect(ctx: CanvasRenderingContext2D, x: number, y: number, w: numbe
 }
 
 /** Draws the poster and returns it as a PNG blob. `link` is encoded as a crisp QR (square modules, no smoothing). */
-export async function renderPoster(link: string, text: PosterText, dir: "rtl" | "ltr", logoUrl = "/logo-mark.png"): Promise<Blob> {
+export async function renderPoster(link: string, text: PosterText, dir: "rtl" | "ltr", logoUrl = "/logo-mascot.png"): Promise<Blob> {
   const [{ default: QRCode }, logo] = await Promise.all([import("qrcode"), loadLogo(logoUrl)]);
   const qr = QRCode.create(link, { errorCorrectionLevel: "M" });
   const count = qr.modules.size;
@@ -104,26 +104,27 @@ export async function renderPoster(link: string, text: PosterText, dir: "rtl" | 
   };
 
   // Footer: a thin rule, then the app mark with "Powered by Fellogram" and the app's Telegram address.
-  const footerRuleY = POSTER_HEIGHT - 250;
-  ctx.strokeStyle = "#d6d8ea";
+  const footerRuleY = POSTER_HEIGHT - 290;
+  ctx.strokeStyle = "#d3dcf2";
   ctx.lineWidth = 3;
   ctx.beginPath();
   ctx.moveTo(220, footerRuleY);
   ctx.lineTo(POSTER_WIDTH - 220, footerRuleY);
   ctx.stroke();
 
-  const logoSize = logo ? 120 : 0;
-  const gap = logo ? 28 : 0;
+  const logoHeight = logo ? 170 : 0;
+  const logoWidth = logo ? Math.round((logoHeight * logo.naturalWidth) / logo.naturalHeight) : 0;
+  const gap = logo ? 34 : 0;
   ctx.direction = "ltr"; // brand and address are Latin text in every language
   ctx.font = `700 46px ${FONT}`;
   const poweredWidth = ctx.measureText(text.powered).width;
   ctx.font = `500 36px ${FONT}`;
   const addressWidth = ctx.measureText(text.address).width;
-  const blockWidth = logoSize + gap + Math.max(poweredWidth, addressWidth);
+  const blockWidth = logoWidth + gap + Math.max(poweredWidth, addressWidth);
   const left = cx - blockWidth / 2;
-  const footerMid = footerRuleY + 100;
-  if (logo) ctx.drawImage(logo, Math.round(left), Math.round(footerMid - logoSize / 2), logoSize, logoSize);
-  const textCenter = left + logoSize + gap + Math.max(poweredWidth, addressWidth) / 2;
+  const footerMid = footerRuleY + 40 + logoHeight / 2;
+  if (logo) ctx.drawImage(logo, Math.round(left), Math.round(footerMid - logoHeight / 2), logoWidth, logoHeight);
+  const textCenter = left + logoWidth + gap + Math.max(poweredWidth, addressWidth) / 2;
   draw(text.powered, textCenter, footerMid - 6, 46, 700, NAVY);
   draw(text.address, textCenter, footerMid + 44, 36, 500, MUTED);
   ctx.direction = dir;
@@ -160,7 +161,7 @@ export async function renderPoster(link: string, text: PosterText, dir: "rtl" | 
   const qrLeft = Math.round(cx - qrSize / 2);
   ctx.fillStyle = "#ffffff";
   ctx.fillRect(qrLeft, qrTop, qrSize, qrSize);
-  ctx.strokeStyle = "#d6d8ea";
+  ctx.strokeStyle = "#d3dcf2";
   ctx.lineWidth = 4;
   roundRect(ctx, qrLeft - 14, qrTop - 14, qrSize + 28, qrSize + 28, 24);
   ctx.stroke();

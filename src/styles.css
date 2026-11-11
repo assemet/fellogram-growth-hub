@@ -36,6 +36,8 @@
   --color-muted-foreground: var(--muted-foreground);
   --color-accent: var(--accent);
   --color-accent-foreground: var(--accent-foreground);
+  --color-gold: var(--gold);
+  --color-gold-foreground: var(--gold-foreground);
   --color-growth: var(--growth);
   --color-growth-foreground: var(--growth-foreground);
   --color-destructive: var(--destructive);
@@ -53,93 +55,97 @@
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-ring: var(--sidebar-ring);
 
-  --shadow-card: 0 16px 32px -24px oklch(0.3 0.12 285 / 0.35), 0 1px 3px oklch(0.3 0.1 285 / 0.1);
-  --shadow-float: 0 24px 50px -28px oklch(0.35 0.18 285 / 0.5);
+  --shadow-card: 0 16px 32px -24px oklch(0.3 0.12 262 / 0.35), 0 1px 3px oklch(0.3 0.1 262 / 0.1);
+  --shadow-float: 0 24px 50px -28px oklch(0.35 0.18 262 / 0.5);
 }
 
 :root {
   --radius: 0.75rem;
-  /* Palette taken from the Fellogram logo: vivid violet, navy ink, teal growth accent. */
-  --background: oklch(0.975 0.008 295);
-  --foreground: oklch(0.24 0.06 280);
+  /* Palette taken from the Fellogram mascot: royal blue, navy ink, sky-cyan, gold star. */
+  --background: oklch(0.975 0.009 250);
+  --foreground: oklch(0.24 0.075 265);
   --card: oklch(1 0 0);
-  --card-foreground: oklch(0.24 0.06 280);
+  --card-foreground: oklch(0.24 0.075 265);
   --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.24 0.06 280);
-  --primary: oklch(0.52 0.24 286);
-  --primary-foreground: oklch(0.99 0.004 290);
-  --secondary: oklch(0.945 0.025 292);
-  --secondary-foreground: oklch(0.3 0.09 285);
-  --muted: oklch(0.955 0.015 292);
-  --muted-foreground: oklch(0.47 0.04 285);
-  --accent: oklch(0.925 0.05 292);
-  --accent-foreground: oklch(0.3 0.12 286);
+  --popover-foreground: oklch(0.24 0.075 265);
+  --primary: oklch(0.52 0.215 261);
+  --primary-foreground: oklch(0.99 0.004 250);
+  --secondary: oklch(0.948 0.022 252);
+  --secondary-foreground: oklch(0.3 0.1 263);
+  --muted: oklch(0.955 0.015 252);
+  --muted-foreground: oklch(0.47 0.05 262);
+  --accent: oklch(0.925 0.05 250);
+  --accent-foreground: oklch(0.3 0.12 262);
+  --gold: oklch(0.83 0.165 80);
+  --gold-foreground: oklch(0.28 0.07 70);
   --growth: oklch(0.71 0.12 178);
   --growth-foreground: oklch(0.2 0.05 190);
   --destructive: oklch(0.6 0.22 22);
   --destructive-foreground: oklch(0.99 0.005 285);
-  --border: oklch(0.9 0.02 292);
-  --input: oklch(0.85 0.025 292);
-  --ring: oklch(0.52 0.24 286);
-  --brand-gradient: linear-gradient(135deg, oklch(0.55 0.24 290) 0%, oklch(0.42 0.21 280) 62%, oklch(0.5 0.13 220) 115%);
-  --brand-foreground: oklch(0.99 0.005 285);
-  --sidebar: oklch(0.985 0.005 285);
-  --sidebar-foreground: oklch(0.22 0.06 275);
-  --sidebar-primary: oklch(0.53 0.22 291);
-  --sidebar-primary-foreground: oklch(0.99 0.005 285);
-  --sidebar-accent: oklch(0.94 0.03 290);
-  --sidebar-accent-foreground: oklch(0.34 0.12 288);
-  --sidebar-border: oklch(0.92 0.015 288);
-  --sidebar-ring: oklch(0.53 0.22 291);
+  --border: oklch(0.9 0.022 252);
+  --input: oklch(0.85 0.028 252);
+  --ring: oklch(0.52 0.215 261);
+  --brand-gradient: linear-gradient(135deg, oklch(0.56 0.22 258) 0%, oklch(0.4 0.18 265) 62%, oklch(0.3 0.12 268) 115%);
+  --brand-foreground: oklch(0.99 0.005 250);
+  --sidebar: oklch(0.985 0.006 250);
+  --sidebar-foreground: oklch(0.22 0.07 265);
+  --sidebar-primary: oklch(0.53 0.21 260);
+  --sidebar-primary-foreground: oklch(0.99 0.005 250);
+  --sidebar-accent: oklch(0.94 0.03 250);
+  --sidebar-accent-foreground: oklch(0.34 0.12 262);
+  --sidebar-border: oklch(0.92 0.018 250);
+  --sidebar-ring: oklch(0.53 0.21 260);
 }
 
 .dark {
-  --background: oklch(0.17 0.03 285);
-  --foreground: oklch(0.97 0.01 290);
-  --card: oklch(0.22 0.04 285);
-  --card-foreground: oklch(0.97 0.01 290);
-  --popover: oklch(0.24 0.045 285);
-  --popover-foreground: oklch(0.97 0.01 290);
-  --primary: oklch(0.74 0.16 290);
-  --primary-foreground: oklch(0.17 0.05 285);
-  --secondary: oklch(0.28 0.04 285);
-  --secondary-foreground: oklch(0.97 0.01 290);
-  --muted: oklch(0.27 0.035 285);
-  --muted-foreground: oklch(0.76 0.03 290);
-  --accent: oklch(0.33 0.07 288);
-  --accent-foreground: oklch(0.97 0.01 290);
+  --background: oklch(0.17 0.04 264);
+  --foreground: oklch(0.97 0.01 250);
+  --card: oklch(0.22 0.05 264);
+  --card-foreground: oklch(0.97 0.01 250);
+  --popover: oklch(0.24 0.055 264);
+  --popover-foreground: oklch(0.97 0.01 250);
+  --primary: oklch(0.72 0.15 252);
+  --primary-foreground: oklch(0.16 0.06 265);
+  --secondary: oklch(0.28 0.05 264);
+  --secondary-foreground: oklch(0.97 0.01 250);
+  --muted: oklch(0.27 0.045 264);
+  --muted-foreground: oklch(0.76 0.035 252);
+  --accent: oklch(0.33 0.08 262);
+  --accent-foreground: oklch(0.97 0.01 250);
+  --gold: oklch(0.84 0.16 82);
+  --gold-foreground: oklch(0.25 0.07 70);
   --growth: oklch(0.76 0.13 178);
   --growth-foreground: oklch(0.18 0.05 200);
   --destructive: oklch(0.68 0.19 22);
   --destructive-foreground: oklch(0.99 0.005 285);
   --border: oklch(1 0 0 / 12%);
   --input: oklch(1 0 0 / 16%);
-  --ring: oklch(0.74 0.16 290);
-  --brand-gradient: linear-gradient(135deg, oklch(0.46 0.22 290), oklch(0.33 0.17 280) 65%, oklch(0.4 0.1 220));
-  --brand-foreground: oklch(0.99 0.005 285);
-  --sidebar: oklch(0.22 0.03 245);
-  --sidebar-foreground: oklch(0.97 0.008 285);
-  --sidebar-primary: oklch(0.68 0.19 292);
-  --sidebar-primary-foreground: oklch(0.18 0.05 280);
-  --sidebar-accent: oklch(0.32 0.08 288);
-  --sidebar-accent-foreground: oklch(0.97 0.008 285);
+  --ring: oklch(0.72 0.15 252);
+  --brand-gradient: linear-gradient(135deg, oklch(0.46 0.21 260), oklch(0.33 0.16 266) 65%, oklch(0.25 0.1 268));
+  --brand-foreground: oklch(0.99 0.005 250);
+  --sidebar: oklch(0.22 0.04 255);
+  --sidebar-foreground: oklch(0.97 0.008 250);
+  --sidebar-primary: oklch(0.68 0.17 255);
+  --sidebar-primary-foreground: oklch(0.16 0.05 265);
+  --sidebar-accent: oklch(0.32 0.08 262);
+  --sidebar-accent-foreground: oklch(0.97 0.008 250);
   --sidebar-border: oklch(1 0 0 / 12%);
-  --sidebar-ring: oklch(0.68 0.19 292);
+  --sidebar-ring: oklch(0.68 0.17 255);
 }
 
 /* Telegram provides these properties inside the Mini App; native theme changes update them live. */
 .telegram-theme {
-  --background: var(--tg-theme-secondary-bg-color, var(--tg-theme-bg-color, oklch(0.977 0.007 210)));
-  --foreground: var(--tg-theme-text-color, oklch(0.22 0.06 275));
+  --background: var(--tg-theme-secondary-bg-color, var(--tg-theme-bg-color, oklch(0.977 0.008 250)));
+  --foreground: var(--tg-theme-text-color, oklch(0.24 0.075 265));
   --card: var(--tg-theme-bg-color, oklch(1 0 0));
-  --card-foreground: var(--tg-theme-text-color, oklch(0.22 0.06 275));
+  --card-foreground: var(--tg-theme-text-color, oklch(0.24 0.075 265));
   --popover: var(--tg-theme-bg-color, oklch(1 0 0));
-  --popover-foreground: var(--tg-theme-text-color, oklch(0.22 0.06 275));
-  --muted-foreground: var(--tg-theme-hint-color, oklch(0.52 0.04 280));
+  --popover-foreground: var(--tg-theme-text-color, oklch(0.24 0.075 265));
+  --muted-foreground: var(--tg-theme-hint-color, oklch(0.5 0.05 262));
 }
-/* Surfaces and text follow the user's Telegram theme; buttons and links keep the Fellogram violet
+/* Surfaces and text follow the user's Telegram theme; buttons and links keep the Fellogram blue
    (Telegram's own button color would make every app look the same). */
-.telegram-theme.dark { --primary: oklch(0.74 0.16 290); --primary-foreground: oklch(0.17 0.05 285); }
+.telegram-theme.dark { --primary: oklch(0.72 0.15 252); --primary-foreground: oklch(0.16 0.06 265); }
 
 @layer base {
   * {
@@ -372,33 +378,117 @@
 
 /* ---------- Splash ---------- */
 .splash-bg {
-  background-image: radial-gradient(70% 45% at 50% 0%, oklch(1 0 0 / 0.2), transparent 70%), var(--brand-gradient);
-  color: oklch(0.99 0.005 285);
+  position: relative;
+  overflow: hidden;
+  isolation: isolate;
+  background-image:
+    radial-gradient(62% 38% at 50% 36%, oklch(0.66 0.2 250 / 0.55), transparent 72%),
+    radial-gradient(90% 50% at 50% 110%, oklch(0.78 0.14 226 / 0.28), transparent 70%),
+    linear-gradient(172deg, oklch(0.34 0.15 262), oklch(0.2 0.09 266));
+  color: oklch(0.99 0.005 250);
 }
-.splash-tile {
-  display: grid;
-  place-items: center;
-  width: 7rem;
-  height: 7rem;
-  border-radius: 1.75rem;
-  background: oklch(1 0 0);
-  box-shadow: 0 24px 48px -20px oklch(0.2 0.1 285 / 0.6), 0 0 0 1px oklch(1 0 0 / 0.5);
+.splash-stage { position: relative; display: grid; place-items: center; width: min(78vw, 17rem); aspect-ratio: 1; }
+.splash-float { position: relative; width: 82%; animation: splash-float 3600ms ease-in-out infinite; }
+.splash-logo { display: block; width: 100%; height: auto; filter: drop-shadow(0 18px 28px oklch(0.15 0.1 265 / 0.55)); }
+.splash-logo-wrap { position: relative; z-index: 2; display: grid; place-items: center; width: 100%; }
+.splash-play .splash-logo-wrap { animation: splash-logo-in 1100ms cubic-bezier(.2,1.1,.3,1) both; }
+/* A single light sweep across the logo, clipped to the logo's own shape. */
+.splash-float::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(105deg, transparent 38%, oklch(1 0 0 / 0.85) 50%, transparent 62%) no-repeat;
+  background-size: 260% 100%;
+  background-position: 130% 0;
+  -webkit-mask: url(/logo-mascot.png) center / contain no-repeat;
+  mask: url(/logo-mascot.png) center / contain no-repeat;
+  pointer-events: none;
 }
-.splash-tile img { width: 5.75rem; height: 5.75rem; object-fit: contain; }
-.splash-dots { display: flex; gap: 0.6rem; }
-.splash-dot {
-  width: 0.7rem;
-  height: 0.7rem;
+.splash-play .splash-float::after { animation: splash-shine 1300ms 1000ms ease-out both; }
+.splash-glow {
+  position: absolute;
+  inset: -12%;
+  z-index: 0;
   border-radius: 9999px;
+  background: radial-gradient(closest-side, oklch(0.8 0.15 232 / 0.55), oklch(0.7 0.18 255 / 0.2) 60%, transparent 100%);
+  animation: splash-glow 3200ms ease-in-out infinite;
+}
+.splash-ring {
+  position: absolute;
+  inset: 8%;
+  z-index: 1;
+  border-radius: 9999px;
+  border: 2px solid oklch(0.85 0.12 230 / 0.7);
+  opacity: 0;
+}
+.splash-play .splash-ring { animation: splash-ring 1500ms 450ms cubic-bezier(.2,.7,.3,1) both; }
+.splash-play .splash-ring + .splash-ring { animation-delay: 750ms; border-color: oklch(0.86 0.16 85 / 0.6); }
+/* Gold stars thrown outwards when the logo lands. */
+.splash-burst {
+  position: absolute;
+  z-index: 3;
+  top: 50%;
+  left: 50%;
+  width: 1.1rem;
+  height: 1.1rem;
+  margin: -0.55rem 0 0 -0.55rem;
+  background: var(--gold);
+  clip-path: polygon(50% 0, 62% 36%, 100% 38%, 70% 60%, 81% 98%, 50% 76%, 19% 98%, 30% 60%, 0 38%, 38% 36%);
+  opacity: 0;
+}
+.splash-play .splash-burst { animation: splash-burst 1100ms calc(500ms + var(--i) * 40ms) cubic-bezier(.15,.8,.3,1) both; }
+.splash-sparkles { position: absolute; inset: 0; z-index: -1; pointer-events: none; }
+.splash-spark {
+  position: absolute;
+  left: var(--x);
+  top: var(--y);
+  width: var(--s);
+  height: var(--s);
+  background: oklch(1 0 0 / 0.9);
+  clip-path: polygon(50% 0, 60% 40%, 100% 50%, 60% 60%, 50% 100%, 40% 60%, 0 50%, 40% 40%);
+  opacity: 0;
+  animation: splash-twinkle 3200ms ease-in-out infinite;
+  animation-delay: var(--d);
+}
+.splash-spark.is-gold { background: var(--gold); }
+.splash-copy { animation: splash-copy 800ms 700ms cubic-bezier(.2,.8,.2,1) both; }
+.splash-dots { display: flex; gap: 0.7rem; }
+.splash-dot {
+  width: 0.9rem;
+  height: 0.9rem;
   background: oklch(1 0 0 / 0.28);
+  clip-path: polygon(50% 0, 62% 36%, 100% 38%, 70% 60%, 81% 98%, 50% 76%, 19% 98%, 30% 60%, 0 38%, 38% 36%);
   animation: splash-dot 2400ms ease-in-out infinite;
   animation-delay: calc(var(--i) * 260ms - var(--phase, 0ms));
 }
 @keyframes splash-dot {
   0%, 6% { background: oklch(1 0 0 / 0.28); transform: scale(1); }
-  16% { background: var(--growth); transform: scale(1.35); }
-  26%, 86% { background: var(--growth); transform: scale(1); }
+  16% { background: var(--gold); transform: scale(1.4); }
+  26%, 86% { background: var(--gold); transform: scale(1); }
   96%, 100% { background: oklch(1 0 0 / 0.28); transform: scale(1); }
+}
+@keyframes splash-logo-in {
+  0% { opacity: 0; transform: translateY(24px) scale(0.35) rotate(-8deg); filter: blur(8px); }
+  55% { opacity: 1; transform: translateY(-6px) scale(1.09) rotate(2deg); filter: blur(0); }
+  78% { transform: translateY(2px) scale(0.98) rotate(-1deg); }
+  100% { opacity: 1; transform: none; filter: blur(0); }
+}
+@keyframes splash-float { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-9px); } }
+@keyframes splash-shine { from { background-position: 130% 0; } to { background-position: -30% 0; } }
+@keyframes splash-glow { 0%, 100% { opacity: 0.7; transform: scale(0.94); } 50% { opacity: 1; transform: scale(1.06); } }
+@keyframes splash-ring { 0% { opacity: 0.9; transform: scale(0.55); } 100% { opacity: 0; transform: scale(1.55); } }
+@keyframes splash-burst {
+  0% { opacity: 0; transform: rotate(var(--a)) translateY(0) scale(0.3); }
+  25% { opacity: 1; }
+  100% { opacity: 0; transform: rotate(var(--a)) translateY(calc(var(--r) * -1)) scale(1) rotate(calc(var(--a) * -1 + 140deg)); }
+}
+@keyframes splash-twinkle { 0%, 100% { opacity: 0; transform: scale(0.4) rotate(0); } 45%, 55% { opacity: 0.95; transform: scale(1) rotate(45deg); } }
+@keyframes splash-copy { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: none; } }
+@media (prefers-reduced-motion: reduce) {
+  .splash-float, .splash-glow, .splash-spark, .splash-dot { animation: none !important; }
+  .splash-spark { opacity: 0.5; }
+  .splash-ring, .splash-burst, .splash-float::after { display: none; }
+  .splash-dot:nth-child(-n + 3) { background: var(--gold); }
 }
 
 /* Pinch-zoom is allowed (accessibility), so keep text fields at 16px on touch devices:
