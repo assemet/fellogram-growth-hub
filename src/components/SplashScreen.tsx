@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 
 import { PageSkeleton } from "@/components/PageSkeleton";
 import { hasBooted } from "@/lib/boot";
@@ -6,8 +6,11 @@ import { t } from "@/lib/i18n";
 
 const CYCLE_MS = 2400;
 
-/** True once any splash has played its entrance, so later mounts do not replay it. */
-let entrancePlayed = false;
+/**
+ * When the entrance began (page clock). Every splash that mounts later continues the same timeline from here
+ * instead of starting over, so moving between routes never replays or cuts the animation.
+ */
+let playStartedAt: number | null = null;
 
 /**
  * One continuous splash: every route shows this while it loads. The entrance only
@@ -37,18 +40,18 @@ const SPARKS = [
 const BURST = Array.from({ length: 8 }, (_, index) => ({ angle: index * 45 + 22, radius: index % 2 ? 128 : 158 }));
 
 function BrandedSplash({ message }: { message?: string | undefined }) {
-  const entrance = useRef(!entrancePlayed);
+  // Frozen at mount: how far into the shared timeline this splash begins (0 for the very first one).
+  const [elapsed] = useState(() => (playStartedAt === null || typeof performance === "undefined" ? 0 : Math.round(performance.now() - playStartedAt)));
   // The entrance starts only once the logo is decoded: a half-loaded image looked blurry and jumpy.
-  const [logoReady, setLogoReady] = useState(!entrance.current);
+  const [logoReady, setLogoReady] = useState(playStartedAt !== null);
   useEffect(() => {
-    entrancePlayed = true;
     if (logoReady) return;
     let done = false;
     const finish = () => {
-      if (!done) {
-        done = true;
-        setLogoReady(true);
-      }
+      if (done) return;
+      done = true;
+      if (playStartedAt === null) playStartedAt = performance.now();
+      setLogoReady(true);
     };
     const image = new Image();
     image.src = "/logo-mascot.png";
@@ -61,7 +64,10 @@ function BrandedSplash({ message }: { message?: string | undefined }) {
   const phase = typeof performance === "undefined" ? 0 : Math.round(performance.now() % CYCLE_MS);
 
   return (
-    <div className={`splash-bg flex min-h-[100dvh] flex-col items-center justify-center px-8 text-center ${entrance.current ? (logoReady ? "splash-play" : "splash-wait") : ""}`}>
+    <div
+      className={`splash-bg flex min-h-[100dvh] flex-col items-center justify-center px-8 text-center ${logoReady ? "splash-play" : "splash-wait"}`}
+      style={{ ["--elapsed" as string]: `${elapsed}ms` }}
+    >
       <div className="splash-sparkles" aria-hidden="true">
         {SPARKS.map((spark, index) => (
           <span

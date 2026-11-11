@@ -388,13 +388,13 @@
   color: oklch(0.99 0.005 250);
 }
 .splash-stage { position: relative; display: grid; place-items: center; width: min(78vw, 17rem); aspect-ratio: 1; }
-.splash-float { position: relative; width: 82%; will-change: transform; animation: splash-float 3600ms ease-in-out infinite; }
+.splash-float { position: relative; width: 82%; will-change: transform; animation: splash-float 3600ms ease-in-out calc(0ms - var(--elapsed, 0ms)) infinite; }
 .splash-logo { display: block; width: 100%; height: auto; }
 .splash-logo-wrap { position: relative; z-index: 2; display: grid; place-items: center; width: 100%; }
 .splash-logo-wrap { will-change: transform, opacity; backface-visibility: hidden; }
 /* Hidden until the image is decoded, so it never pops in half-drawn. */
 .splash-wait .splash-logo-wrap { opacity: 0; }
-.splash-play .splash-logo-wrap { animation: splash-logo-in 900ms cubic-bezier(.22,.9,.3,1) both; }
+.splash-play .splash-logo-wrap { animation: splash-logo-in 900ms cubic-bezier(.22,.9,.3,1) calc(0ms - var(--elapsed, 0ms)) both; }
 /* A single light sweep across the logo, clipped to the logo's own shape. */
 .splash-float::after {
   content: "";
@@ -407,14 +407,14 @@
   mask: url(/logo-mascot.png) center / contain no-repeat;
   pointer-events: none;
 }
-.splash-play .splash-float::after { animation: splash-shine 1300ms 1000ms ease-out both; }
+.splash-play .splash-float::after { animation: splash-shine 1300ms calc(1000ms - var(--elapsed, 0ms)) ease-out both; }
 .splash-glow {
   position: absolute;
   inset: -12%;
   z-index: 0;
   border-radius: 9999px;
   background: radial-gradient(closest-side, oklch(0.8 0.15 232 / 0.55), oklch(0.7 0.18 255 / 0.2) 60%, transparent 100%);
-  animation: splash-glow 3200ms ease-in-out infinite;
+  animation: splash-glow 3200ms ease-in-out calc(0ms - var(--elapsed, 0ms)) infinite;
 }
 .splash-ring {
   position: absolute;
@@ -424,8 +424,8 @@
   border: 2px solid oklch(0.85 0.12 230 / 0.7);
   opacity: 0;
 }
-.splash-play .splash-ring { animation: splash-ring 1500ms 450ms cubic-bezier(.2,.7,.3,1) both; }
-.splash-play .splash-ring + .splash-ring { animation-delay: 750ms; border-color: oklch(0.86 0.16 85 / 0.6); }
+.splash-play .splash-ring { animation: splash-ring 1500ms calc(450ms - var(--elapsed, 0ms)) cubic-bezier(.2,.7,.3,1) both; }
+.splash-play .splash-ring + .splash-ring { animation-delay: calc(750ms - var(--elapsed, 0ms)); border-color: oklch(0.86 0.16 85 / 0.6); }
 /* Gold stars thrown outwards when the logo lands. */
 .splash-burst {
   position: absolute;
@@ -439,7 +439,7 @@
   clip-path: polygon(50% 0, 62% 36%, 100% 38%, 70% 60%, 81% 98%, 50% 76%, 19% 98%, 30% 60%, 0 38%, 38% 36%);
   opacity: 0;
 }
-.splash-play .splash-burst { animation: splash-burst 1100ms calc(500ms + var(--i) * 40ms) cubic-bezier(.15,.8,.3,1) both; }
+.splash-play .splash-burst { animation: splash-burst 1100ms calc(500ms + var(--i) * 40ms - var(--elapsed, 0ms)) cubic-bezier(.15,.8,.3,1) both; }
 .splash-sparkles { position: absolute; inset: 0; z-index: -1; pointer-events: none; }
 .splash-spark {
   position: absolute;
@@ -451,10 +451,11 @@
   clip-path: polygon(50% 0, 60% 40%, 100% 50%, 60% 60%, 50% 100%, 40% 60%, 0 50%, 40% 40%);
   opacity: 0;
   animation: splash-twinkle 3200ms ease-in-out infinite;
-  animation-delay: var(--d);
+  animation-delay: calc(var(--d) - var(--elapsed, 0ms));
 }
 .splash-spark.is-gold { background: var(--gold); }
-.splash-copy { animation: splash-copy 800ms 700ms cubic-bezier(.2,.8,.2,1) both; }
+.splash-copy { animation: splash-copy 800ms calc(700ms - var(--elapsed, 0ms)) cubic-bezier(.2,.8,.2,1) both; }
+.splash-wait .splash-copy { opacity: 0; animation: none; }
 .splash-dots { display: flex; gap: 0.7rem; }
 .splash-dot {
   width: 0.9rem;
