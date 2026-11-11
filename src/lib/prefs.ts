@@ -1,3 +1,5 @@
+import { isWalletView, type WalletView } from "@/lib/wallet-view";
+
 /** Device-level preferences (never sent to the server). */
 export type Appearance = "auto" | "light" | "dark";
 export type TextSize = "normal" | "large";
@@ -9,6 +11,7 @@ const KEYS = {
   sound: "fellogram.sound",
   vibration: "fellogram.vibration",
   autoStamp: "fellogram.autoStamp",
+  walletView: "fellogram.walletView",
 } as const;
 
 export const APPEARANCE_EVENT = "fellogram:appearance";
@@ -67,4 +70,15 @@ export function readBool(pref: BoolPref, fallback = true): boolean {
 
 export function writeBool(pref: BoolPref, value: boolean): void {
   write(KEYS[pref], value ? "1" : "0");
+}
+
+/** null means "not chosen": the wallet then picks a layout from the number of cards. */
+export function readWalletView(): WalletView | null {
+  if (typeof window === "undefined") return null;
+  const value = read(KEYS.walletView);
+  return isWalletView(value) ? value : null;
+}
+
+export function writeWalletView(view: WalletView): void {
+  write(KEYS.walletView, view);
 }
