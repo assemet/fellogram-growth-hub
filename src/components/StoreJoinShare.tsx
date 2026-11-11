@@ -1,44 +1,57 @@
 import { useEffect, useState } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { Copy, Printer, Share2 } from "lucide-react";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
 import { dirOf, getLocale, t } from "@/lib/i18n";
+import { blobToBase64, renderPoster } from "@/lib/poster";
+import { sendJoinPoster } from "@/lib/poster.functions";
 import { getStoreJoinLink } from "@/lib/store.functions";
-import { shareViaTelegram } from "@/lib/telegram";
+import { isTelegramPhone, shareViaTelegram } from "@/lib/telegram";
 
-function escapeHtml(value: string) {
-  return value.replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c] ?? c);
-}
-
-/** Prints the join QR as a simple poster through a hidden iframe (no pop-up needed). */
-function printPoster(opts: { qr: string; headline: string; rewardLine: string; powered: string }) {
-  const locale = getLocale();
-  const html = `<!doctype html><html lang="${locale}" dir="${dirOf(locale)}"><head><meta charset="utf-8"><title>${escapeHtml(opts.headline)}</title>
-<style>@page{margin:16mm}body{font-family:system-ui,-apple-system,"Segoe UI",sans-serif;text-align:center;color:#1b1b3a;margin:0;padding:24px}
-h1{font-size:44px;margin:0 0 10px}p{font-size:24px;margin:8px 0}img{width:440px;height:440px;margin:28px auto;display:block}small{color:#555;font-size:16px}</style></head>
-<body><h1>${escapeHtml(opts.headline)}</h1><p>${escapeHtml(opts.rewardLine)}</p><img src="${opts.qr}" alt=""><small>${escapeHtml(opts.powered)}</small></body></html>`;
-  const frame = document.createElement("iframe");
-  frame.style.cssText = "position:fixed;inset-inline-end:0;bottom:0;width:0;height:0;border:0";
-  document.body.appendChild(frame);
-  const doc = frame.contentDocument;
-  if (!doc || !frame.contentWindow) {
-    frame.remove();
-    throw new Error("PRINT_UNAVAILABLE");
-  }
-  doc.open();
-  doc.write(html);
-  doc.close();
-  const go = () => {
-    frame.contentWindow?.focus();
-    frame.contentWindow?.print();
-    setTimeout(() => frame.remove(), 2000);
-  };
-  const img = doc.querySelector("img");
-  if (img && !img.complete) img.onload = go;
-  else go();
+/** Prints the already-rendered poster image on a full A4 page through a hidden iframe (no pop-up needed). */
+function printPosterImage(url: string, title: string): Promise<void> {
+  return new Promise((resolve, reject) => {
+    const frame = document.createElement("iframe");
+    frame.style.cssText = "position:fixed;inset-inline-end:0;bottom:0;width:0;height:0;border:0";
+    document.body.appendChild(frame);
+    const doc = frame.contentDocument;
+    const win = frame.contentWindow;
+    if (!doc || !win || typeof win.print !== "function") {
+      frame.remove();
+      reject(new Error("PRINT_UNAVAILABLE"));
+      return;
+    }
+    const safeTitle = title.replace(/[&<>"']/g, " ");
+    doc.open();
+    doc.write(`<!doctype html><html><head><meta charset="utf-8"><title>${safeTitle}</title>
+<style>@page{size:A4;margin:0}html,body{margin:0;padding:0;background:#fff}img{display:block;width:210mm;height:297mm}</style></head><body><img alt=""></body></html>`);
+    doc.close();
+    const img = doc.querySelector("img");
+    if (!img) {
+      frame.remove();
+      reject(new Error("PRINT_UNAVAILABLE"));
+      return;
+    }
+    img.onerror = () => {
+      frame.remove();
+      reject(new Error("PRINT_UNAVAILABLE"));
+    };
+    img.onload = () => {
+      try {
+        win.focus();
+        win.print();
+        resolve();
+      } catch (error) {
+        reject(error);
+      } finally {
+        setTimeout(() => frame.remove(), 60_000);
+      }
+    };
+    img.src = url;
+  });
 }
 
 /** Merchant dashboard card: the store's join QR + link (the way customers get their card). */
@@ -53,6 +66,8 @@ export function StoreJoinShare({
 }) {
   const load = useServerFn(getStoreJoinLink);
   const { data } = useQuery({ queryKey: ["store-join-link"], queryFn: () => load(), staleTime: Infinity });
+  const sendPoster = useServerFn(sendJoinPoster);
+  const phone = isTelegramPhone();
   const [qr, setQr] = useState<string | null>(null);
 
   useEffect(() => {
@@ -78,19 +93,45 @@ export function StoreJoinShare({
     }
   };
 
-  const print = () => {
-    if (!qr) return;
-    try {
-      printPoster({
-        qr,
-        headline: t("join.poster.headline", { store: storeName }),
-        rewardLine: t("join.poster.reward", { count: stampsRequired, reward: rewardName }),
-        powered: t("join.poster.powered"),
-      });
-    } catch {
+  const poster = useMutation({
+    mutationFn: async () => {
+      if (!data?.link) throw new Error("POSTER_UNAVAILABLE");
+      const locale = getLocale();
+      const blob = await renderPoster(
+        data.link,
+        {
+          headline: t("join.poster.headline", { store: storeName }),
+          rewardLine: t("join.poster.reward", { count: stampsRequired, reward: rewardName }),
+          hint: t("join.poster.hint"),
+          powered: t("join.poster.powered"),
+        },
+        dirOf(locale),
+      );
+
+      // Telegram's phone apps cannot print: put the poster in the owner's own chat with the bot instead.
+      const sendToChat = async () => {
+        const result = await sendPoster({ data: { png: await blobToBase64(blob), caption: t("join.poster.headline", { store: storeName }) } });
+        if (result.ok) toast.success(t("join.share.sent"));
+        else if (result.reason === "no_chat" || result.reason === "blocked") toast.error(t("join.share.noChat"));
+        else toast.error(t("join.share.sendError"));
+      };
+      if (phone) return sendToChat();
+
+      const url = URL.createObjectURL(blob);
+      try {
+        await printPosterImage(url, t("join.poster.headline", { store: storeName }));
+      } catch {
+        // Printing is blocked here (some embedded browsers): fall back to the chat copy.
+        await sendToChat();
+      } finally {
+        setTimeout(() => URL.revokeObjectURL(url), 120_000);
+      }
+    },
+    onError: (error) => {
+      console.error(error);
       toast.error(t("join.share.printError"));
-    }
-  };
+    },
+  });
 
   return (
     <section className="animate-arrive mt-5 rounded-lg border border-border bg-card p-5 shadow-[var(--shadow-card)]">
@@ -116,9 +157,15 @@ export function StoreJoinShare({
           <Share2 className="h-4 w-4" />
           {t("join.share.share")}
         </Button>
-        <Button type="button" variant="outline" className="touch-action h-auto min-h-12 flex-col gap-0.5 whitespace-normal px-1 py-2 text-center text-xs font-semibold leading-tight" onClick={print} disabled={!qr}>
+        <Button
+          type="button"
+          variant="outline"
+          className="touch-action h-auto min-h-12 flex-col gap-0.5 whitespace-normal px-1 py-2 text-center text-xs font-semibold leading-tight"
+          onClick={() => poster.mutate()}
+          disabled={!data?.link || poster.isPending}
+        >
           <Printer className="h-4 w-4" />
-          {t("join.share.print")}
+          {phone ? t("join.share.sendPoster") : t("join.share.print")}
         </Button>
       </div>
     </section>

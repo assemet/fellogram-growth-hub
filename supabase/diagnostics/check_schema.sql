@@ -56,6 +56,11 @@ problems AS (
   WHERE n.nspname = 'public' AND p.proname = 'undo_last_stamp'
     AND pg_get_functiondef(p.oid) NOT ILIKE '%staff_can_undo%'
   UNION ALL
+  SELECT 'only one friend per referral link can be recorded', 'run 20261102090000_referral_code_not_unique.sql'
+  FROM pg_constraint c
+  WHERE c.conrelid = to_regclass('public.referrals') AND c.contype = 'u'
+    AND pg_get_constraintdef(c.oid) ~* '^UNIQUE \(referral_code\)$'
+  UNION ALL
   SELECT 'welcome stamps trigger is missing', 'run 20261028090000_join_bonus.sql'
   WHERE NOT EXISTS (SELECT 1 FROM pg_trigger WHERE tgname = 'customer_memberships_join_bonus')
 )

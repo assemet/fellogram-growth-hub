@@ -120,6 +120,13 @@
       "when": 1791157362386,
       "tag": "0016_store_contact",
       "breakpoints": true
+    },
+    {
+      "idx": 17,
+      "version": "7",
+      "when": 1791157962386,
+      "tag": "0017_referral_code_not_unique",
+      "breakpoints": true
     }
   ]
 }
