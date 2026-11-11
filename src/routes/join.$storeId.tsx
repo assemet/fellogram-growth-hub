@@ -154,7 +154,7 @@ function JoinStore() {
           </Button>
         )}
 
-        <StoreContactLinks contact={data.store.contact} className="mt-6" />
+        <StoreContactLinks contact={data.store.contact} withReview={false} className="mt-6" />
       </section>
     </main>
   );

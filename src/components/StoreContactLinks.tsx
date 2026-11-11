@@ -1,10 +1,10 @@
-import { Facebook, Globe, Instagram, MapPin, MessageCircle, Music2, Phone, Send } from "lucide-react";
+import { Facebook, Globe, Instagram, MapPin, MessageCircle, Music2, Phone, Send, Star } from "lucide-react";
 
 import { t, type TranslationKey } from "@/lib/i18n";
 import { contactLinks, type ContactField, type ContactLinkKind } from "@/lib/store-contact";
 import { openExternalLink } from "@/lib/telegram";
 
-const ICONS = { call: Phone, whatsapp: MessageCircle, telegram: Send, instagram: Instagram, facebook: Facebook, tiktok: Music2, website: Globe, maps: MapPin } as const;
+const ICONS = { call: Phone, whatsapp: MessageCircle, telegram: Send, instagram: Instagram, facebook: Facebook, tiktok: Music2, website: Globe, maps: MapPin, review: Star } as const;
 const LABELS: Record<ContactLinkKind, TranslationKey> = {
   call: "contact.call",
   whatsapp: "contact.whatsapp",
@@ -14,19 +14,33 @@ const LABELS: Record<ContactLinkKind, TranslationKey> = {
   tiktok: "contact.tiktok",
   website: "contact.website",
   maps: "contact.map",
+  review: "contact.review",
 };
 
 /**
  * How a customer reaches the store: call, WhatsApp, Telegram, social pages, website, map. Every link is rebuilt
  * from validated values (see store-contact.ts), so nothing a store typed can become an unsafe link.
  */
-export function StoreContactLinks({ contact, className = "" }: { contact?: Partial<Record<ContactField, string | null>> | undefined; className?: string }) {
-  const links = contactLinks(contact ?? {});
+export function StoreContactLinks({
+  contact,
+  className = "",
+  withReview = true,
+}: {
+  contact?: Partial<Record<ContactField, string | null>> | undefined;
+  className?: string;
+  /** The "Rate us" button sits below the contact box. Hidden where the customer has not had an experience yet. */
+  withReview?: boolean;
+}) {
+  const all = contactLinks(contact ?? {});
+  const links = all.filter((link) => link.kind !== "review");
+  const review = withReview ? all.find((link) => link.kind === "review") : undefined;
   const address = contact?.address?.trim();
-  if (links.length === 0 && !address) return null;
+  if (links.length === 0 && !address && !review) return null;
 
   return (
-    <section aria-label={t("contact.title")} className={`rounded-lg border border-border bg-card p-4 shadow-[var(--shadow-card)] ${className}`}>
+    <div className={className}>
+    {(links.length > 0 || address) && (
+    <section aria-label={t("contact.title")} className="rounded-lg border border-border bg-card p-4 shadow-[var(--shadow-card)]">
       <h2 className="text-sm font-bold">{t("contact.title")}</h2>
       {address && (
         <p className="mt-2 flex items-start gap-2 text-sm text-muted-foreground">
@@ -61,5 +75,22 @@ export function StoreContactLinks({ contact, className = "" }: { contact?: Parti
         </ul>
       )}
     </section>
+    )}
+    {review && (
+      <a
+        href={review.href}
+        target="_blank"
+        rel="noopener noreferrer"
+        onClick={(event) => {
+          event.preventDefault();
+          openExternalLink(review.href);
+        }}
+        className="touch-action mt-3 flex min-h-11 items-center justify-center gap-2 rounded-md border border-border bg-card px-3 text-sm font-semibold text-foreground"
+      >
+        <Star className="h-4 w-4 shrink-0 text-primary" aria-hidden="true" />
+        <span className="min-w-0 truncate">{t("contact.review")}</span>
+      </a>
+    )}
+    </div>
   );
 }

@@ -127,6 +127,13 @@
       "when": 1791157962386,
       "tag": "0017_referral_code_not_unique",
       "breakpoints": true
+    },
+    {
+      "idx": 18,
+      "version": "7",
+      "when": 1791244362386,
+      "tag": "0018_store_review_link",
+      "breakpoints": true
     }
   ]
 }

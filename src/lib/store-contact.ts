@@ -4,7 +4,7 @@
  * phone number, a social profile or a plain http(s) page: no javascript:, data:, credentials in the URL or
  * look-alike hosts (facebook.com.evil.com).
  */
-export const CONTACT_FIELDS = ["phone", "whatsapp", "address", "telegram", "instagram", "facebook", "tiktok", "website", "maps"] as const;
+export const CONTACT_FIELDS = ["phone", "whatsapp", "address", "telegram", "instagram", "facebook", "tiktok", "website", "maps", "review"] as const;
 export type ContactField = (typeof CONTACT_FIELDS)[number];
 export type ContactInput = Partial<Record<ContactField, string | null | undefined>>;
 export type ContactValues = Record<ContactField, string | null>;
@@ -95,7 +95,28 @@ function maps(raw: string): Result {
   return (googleMaps || (hostIs(url, ...MAP_HOSTS) && shortGoogle)) ? finalHref(url) : "ERR";
 }
 
-const NORMALIZERS: Record<ContactField, (raw: string) => Result> = { phone, whatsapp, address, telegram, instagram, facebook, tiktok, website, maps };
+/**
+ * A link where customers can leave a review. Only well-known review sites are accepted (never a look-alike host),
+ * so a store cannot point its "Rate us" button at an unrelated page.
+ */
+const REVIEW_HOSTS = ["g.page", "g.co", "maps.app.goo.gl", "facebook.com", "fb.com", "fb.me", "yelp.com", "trustpilot.com"];
+function review(raw: string): Result {
+  const url = parseUrl(raw);
+  if (!url) return "ERR";
+  const host = url.hostname.replace(/^www\./, "");
+  const path = url.pathname;
+  const allowed =
+    hostIs(url, ...REVIEW_HOSTS) ||
+    (host === "search.google.com" && path.startsWith("/local/")) ||
+    (/^google\.(com|co\.[a-z]{2}|com\.[a-z]{2}|[a-z]{2})$/.test(host) && (path.startsWith("/maps") || path.startsWith("/search"))) ||
+    (host === "goo.gl" && path.startsWith("/maps")) ||
+    /^tripadvisor\.[a-z]{2,3}(\.[a-z]{2})?$/.test(host) ||
+    /^2gis\.[a-z]{2,3}(\.[a-z]{2})?$/.test(host) ||
+    (/^yandex\.(com|ru|kz|by|uz|com\.tr)$/.test(host) && path.startsWith("/maps"));
+  return allowed ? finalHref(url) : "ERR";
+}
+
+const NORMALIZERS: Record<ContactField, (raw: string) => Result> = { phone, whatsapp, address, telegram, instagram, facebook, tiktok, website, maps, review };
 
 /** Empty becomes null; anything invalid is reported per field and left out of `values`. */
 export function normalizeContact(input: ContactInput): { values: ContactValues; errors: ContactErrors } {
@@ -111,7 +132,7 @@ export function normalizeContact(input: ContactInput): { values: ContactValues; 
   return { values, errors };
 }
 
-export type ContactLinkKind = "call" | "whatsapp" | "telegram" | "instagram" | "facebook" | "tiktok" | "website" | "maps";
+export type ContactLinkKind = "call" | "whatsapp" | "telegram" | "instagram" | "facebook" | "tiktok" | "website" | "maps" | "review";
 export type ContactLink = { kind: ContactLinkKind; href: string };
 
 /** The buttons a customer sees. Rebuilt from re-validated values, so a bad row in the database can never become a bad link. */
@@ -126,6 +147,7 @@ export function contactLinks(stored: ContactInput): ContactLink[] {
   if (v.tiktok) links.push({ kind: "tiktok", href: `https://www.tiktok.com/@${v.tiktok}` });
   if (v.website) links.push({ kind: "website", href: v.website });
   if (v.maps) links.push({ kind: "maps", href: v.maps });
+  if (v.review) links.push({ kind: "review", href: v.review });
   return links;
 }
 
@@ -140,6 +162,7 @@ export const CONTACT_COLUMNS: Record<ContactField, string> = {
   tiktok: "tiktok",
   website: "website_url",
   maps: "maps_url",
+  review: "review_url",
 };
 
 /** A `stores` row (any shape) → the contact fields the app uses. */

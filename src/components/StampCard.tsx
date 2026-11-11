@@ -3,8 +3,9 @@ import { useQueryClient } from "@tanstack/react-query";
 
 import { InviteFriend } from "@/components/InviteFriend";
 import { RedeemRewardQr } from "@/components/RedeemRewardQr";
+import { ReviewInvite, reviewInviteSeen } from "@/components/ReviewInvite";
 import { stampColumns } from "@/lib/stamp-layout";
-import type { ContactField } from "@/lib/store-contact";
+import { contactLinks, type ContactField } from "@/lib/store-contact";
 import { Building2, ChevronDown, Gift, UserPlus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { StampIcon } from "@/components/StampIcon";
@@ -49,6 +50,9 @@ export function StampCard({ card, preview = false, focused = false }: { card: St
   const [redeeming, setRedeeming] = useState<{ id: string; name: string } | null>(null);
   const queryClient = useQueryClient();
   const [inviting, setInviting] = useState(false);
+  const [redeemedNow, setRedeemedNow] = useState(false);
+  const [inviteDone, setInviteDone] = useState(false);
+  const reviewHref = contactLinks(card.contact ?? {}).find((link) => link.kind === "review")?.href;
   const rewards = card.rewards ?? [];
   const required = Math.max(1, card.stampsRequired);
   const balance = Math.min(required, Math.max(0, card.stampBalance));
@@ -173,11 +177,18 @@ export function StampCard({ card, preview = false, focused = false }: { card: St
           <RedeemRewardQr
             rewardId={redeeming.id}
             rewardName={redeeming.name}
+            cardId={card.id}
+            balance={card.stampBalance}
+            onRedeemed={() => setRedeemedNow(true)}
             onClose={() => {
               setRedeeming(null);
               queryClient.invalidateQueries({ queryKey: ["my-cards"] });
             }}
           />
+        )}
+
+        {!preview && !redeeming && redeemedNow && !inviteDone && reviewHref && card.storeId && !reviewInviteSeen(card.storeId) && (
+          <ReviewInvite storeId={card.storeId} storeName={card.storeName} href={reviewHref} onDone={() => setInviteDone(true)} />
         )}
 
         {!preview && <Button

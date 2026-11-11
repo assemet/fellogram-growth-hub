@@ -1,6 +1,6 @@
 import { createServerFn } from "@tanstack/react-start";
 import { resolveCurrentStore } from "@/lib/current-store";
-import { notifyStamp, withinBudget } from "@/lib/notify";
+import { notifyRedemption, notifyStamp, withinBudget } from "@/lib/notify";
 import { check, throwIfError } from "@/lib/db";
 import { MIN_SEARCH_LENGTH, searchStoreCustomers, type SearchHit } from "@/lib/customer-search";
 import { loadNames } from "@/lib/people";
@@ -217,7 +217,9 @@ export const redeemRewardToken = createServerFn({ method: "POST" })
     // Expected refusals (used/expired/invalid) are returned, not thrown, so they don't surface as crashes.
     if (error) return { ok: false as const, error: error.message };
     const row = (rows as { customer_id: string; reward_name: string; stamps_deducted: number; stamp_balance: number }[])[0]!;
+    const notified = withinBudget(notifyRedemption({ storeId: store.storeId, storeName: store.storeName, customerId: row.customer_id }));
     const state = await loadCustomerState(context.supabase, store.storeId, row.customer_id);
+    await notified;
     return { ok: true as const, rewardName: row.reward_name, stampsDeducted: row.stamps_deducted, customer: state };
   });
 

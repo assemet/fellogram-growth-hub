@@ -1,9 +1,12 @@
 import { miniAppLink } from "@/lib/bot-link";
 import { check, type Db } from "@/lib/db";
+import { contactFromRow, contactLinks } from "@/lib/store-contact";
 import {
   enabledMessage,
   localeFor,
   openCardLabel,
+  rateLabel,
+  redeemedMessage,
   reminderMessage,
   stampKind,
   stampMessage,
@@ -23,7 +26,7 @@ export type SendResult = { ok: true } | { ok: false; blocked: boolean; error: st
 export async function sendTelegramMessage(
   chatId: number,
   text: string,
-  button?: { text: string; url: string },
+  button?: { text: string; url: string } | { text: string; url: string }[],
   timeoutMs = 2500,
 ): Promise<SendResult> {
   const token = process.env["TELEGRAM_BOT_TOKEN"];
@@ -41,7 +44,7 @@ export async function sendTelegramMessage(
         text,
         parse_mode: "HTML",
         disable_web_page_preview: true,
-        ...(button ? { reply_markup: { inline_keyboard: [[{ text: button.text, url: button.url }]] } } : {}),
+        ...(button ? { reply_markup: { inline_keyboard: (Array.isArray(button) ? button : [button]).map((item) => [{ text: item.text, url: item.url }]) } } : {}),
       }),
       signal: controller.signal,
     });
@@ -121,6 +124,27 @@ export async function notifyStamp(o: {
     else if (result.blocked) await disableFor(db, o.customerId);
   } catch (error) {
     console.error("notifyStamp failed", (error as Error)?.message);
+  }
+}
+
+/** After a reward is collected: a short confirmation, plus an optional "Rate us" button when the store has a review link. Never throws. */
+export async function notifyRedemption(o: { storeId: string; storeName: string; customerId: string }): Promise<void> {
+  try {
+    const db = await adminClient();
+    const reachable = (await loadReachable(db, [o.customerId])).get(o.customerId);
+    if (!reachable) return;
+
+    const { data: store } = check(await db.from("stores").select("*").eq("id", o.storeId).maybeSingle(), "STORE_LOOKUP_FAILED");
+    // Rebuilt from the validated value, so a bad row can never become a bad link.
+    const reviewUrl = contactLinks(contactFromRow(store as Record<string, unknown> | null)).find((link) => link.kind === "review")?.href;
+
+    const text = redeemedMessage(reachable.locale, o.storeName, Boolean(reviewUrl));
+    const buttons = [{ text: openCardLabel(reachable.locale), url: miniAppLink(`join_${o.storeId}`) }, ...(reviewUrl ? [{ text: rateLabel(reachable.locale), url: reviewUrl }] : [])];
+    const result = await sendTelegramMessage(reachable.chatId, text, buttons);
+    if (result.ok) await logSent(db, [{ store_id: o.storeId, customer_id: o.customerId, kind: "reward_redeemed" }]);
+    else if (result.blocked) await disableFor(db, o.customerId);
+  } catch (error) {
+    console.error("notifyRedemption failed", (error as Error)?.message);
   }
 }
 

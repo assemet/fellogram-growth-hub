@@ -1,22 +1,43 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { X } from "lucide-react";
+import { CheckCircle2, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 import { t } from "@/lib/i18n";
-import { requestRedemption } from "@/lib/store.functions";
+import { getMyCards, requestRedemption } from "@/lib/store.functions";
 
 /** Short-lived, single-use reward QR with a live countdown. */
 export function RedeemRewardQr({
   rewardId,
   rewardName,
+  cardId,
+  balance,
+  onRedeemed,
   onClose,
 }: {
   rewardId: string;
   rewardName: string;
+  /** With the balance when the dialog opened, lets the dialog notice that the cashier collected the reward. */
+  cardId?: string;
+  balance?: number;
+  onRedeemed?: () => void;
   onClose: () => void;
 }) {
   const request = useServerFn(requestRedemption);
+  const loadCards = useServerFn(getMyCards);
+  const startBalance = useRef(balance);
+  const [done, setDone] = useState(false);
+  const watching = cardId !== undefined && balance !== undefined && !done;
+  const { data: cards } = useQuery({ queryKey: ["my-cards"], queryFn: () => loadCards(), enabled: watching, refetchInterval: watching ? 3000 : false });
+  const currentBalance = cardId ? cards?.find((card) => card.id === cardId)?.stampBalance : undefined;
+  useEffect(() => {
+    if (done || startBalance.current === undefined || currentBalance === undefined) return;
+    if (currentBalance < startBalance.current) {
+      setDone(true);
+      onRedeemed?.();
+    }
+  }, [currentBalance, done, onRedeemed]);
   const [src, setSrc] = useState<string | null>(null);
   const [expiresAt, setExpiresAt] = useState<number>(0);
   const [now, setNow] = useState(Date.now());
@@ -54,6 +75,21 @@ export function RedeemRewardQr({
   const left = Math.max(0, Math.floor((expiresAt - now) / 1000));
   const expired = src !== null && left === 0;
   const time = `${Math.floor(left / 60)}:${String(left % 60).padStart(2, "0")}`;
+
+  if (done) {
+    return (
+      <div className="fixed inset-0 z-50 flex items-end justify-center bg-foreground/50 p-4 sm:items-center" role="dialog" aria-modal="true">
+        <div className="animate-arrive w-full max-w-sm rounded-lg border border-border bg-card p-6 pb-[calc(1.5rem+env(safe-area-inset-bottom))] text-center shadow-[var(--shadow-float)]">
+          <CheckCircle2 className="mx-auto h-12 w-12 text-primary" aria-hidden="true" />
+          <p className="mt-3 font-display text-lg font-bold">{t("rewards.done")}</p>
+          <p className="mt-1 text-sm text-muted-foreground">{rewardName}</p>
+          <Button type="button" onClick={onClose} className="touch-action mt-5 h-12 w-full font-semibold">
+            {t("rewards.done.close")}
+          </Button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="fixed inset-0 z-50 flex items-end justify-center bg-foreground/50 p-4 sm:items-center" role="dialog" aria-modal="true">

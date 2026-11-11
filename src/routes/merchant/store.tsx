@@ -54,6 +54,7 @@ const LINK_INPUTS: ContactInputDef[] = [
   { field: "tiktok", label: "store.contact.tiktok", placeholder: "store.contact.tiktok.ph", error: "contact.error.tiktok", inputMode: "text", ltr: true, maxLength: 200 },
   { field: "website", label: "store.contact.website", placeholder: "store.contact.website.ph", error: "contact.error.website", inputMode: "url", ltr: true, maxLength: 300 },
   { field: "maps", label: "store.contact.maps", placeholder: "store.contact.maps.ph", error: "contact.error.maps", inputMode: "url", ltr: true, maxLength: 300 },
+  { field: "review", label: "store.contact.review", placeholder: "store.contact.review.ph", hint: "store.contact.review.hint", error: "contact.error.review", inputMode: "url", ltr: true, maxLength: 300 },
 ];
 
 const emptyContact = (): Record<ContactField, string> => Object.fromEntries(CONTACT_FIELDS.map((field) => [field, ""])) as Record<ContactField, string>;

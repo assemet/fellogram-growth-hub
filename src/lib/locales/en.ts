@@ -539,6 +539,17 @@ export const en = {
   "store.contact.website.ph": "yourstore.com",
   "store.contact.maps": "Map link",
   "store.contact.maps.ph": "Google Maps or Waze link",
+  "contact.review": "Rate us",
+  "contact.error.review": "Use a link from Google, Facebook, TripAdvisor, Trustpilot, Yelp, 2GIS or Yandex Maps.",
+  "store.contact.review": "Review link",
+  "store.contact.review.ph": "Google review link (g.page/...)",
+  "store.contact.review.hint": "Customers see a \"Rate us\" button. Google doesn't allow incentivized reviews, so never offer stamps or rewards for them.",
+  "review.invite.title": "Enjoyed your visit?",
+  "review.invite.body": "Share your opinion about {store} if you like. It's optional and doesn't affect your card.",
+  "review.invite.action": "Rate us",
+  "review.invite.later": "Maybe later",
+  "rewards.done": "Reward collected",
+  "rewards.done.close": "Done",
   "wallet.merchantCta.hint": "Create your store and start a loyalty program in a few minutes.",
 } satisfies Record<string, string>;
 
