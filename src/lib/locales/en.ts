@@ -297,6 +297,7 @@ export const en = {
   "join.share.copy": "Copy link",
   "join.share.share": "Share",
   "join.share.print": "Print poster",
+  "join.share.poster": "Print or save poster",
   "join.share.save": "Save image",
   "join.share.download": "Download image",
   "join.share.saveHint": "Press and hold the image, choose Save, then print it from your gallery.",

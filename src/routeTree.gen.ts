@@ -11,6 +11,7 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as CashierRouteImport } from './routes/cashier'
+import { Route as PosterRouteImport } from './routes/poster'
 import { Route as SettingsRouteImport } from './routes/settings'
 import { Route as WalletRouteImport } from './routes/wallet'
 import { Route as JoinStoreIdRouteImport } from './routes/join.$storeId'
@@ -29,6 +30,11 @@ const IndexRoute = IndexRouteImport.update({
 const CashierRoute = CashierRouteImport.update({
   id: '/cashier',
   path: '/cashier',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PosterRoute = PosterRouteImport.update({
+  id: '/poster',
+  path: '/poster',
   getParentRoute: () => rootRouteImport,
 } as any)
 const SettingsRoute = SettingsRouteImport.update({
@@ -80,6 +86,7 @@ const MerchantTeamRoute = MerchantTeamRouteImport.update({
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/cashier': typeof CashierRoute
+  '/poster': typeof PosterRoute
   '/settings': typeof SettingsRoute
   '/wallet': typeof WalletRoute
   '/join/$storeId': typeof JoinStoreIdRoute
@@ -93,6 +100,7 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/cashier': typeof CashierRoute
+  '/poster': typeof PosterRoute
   '/settings': typeof SettingsRoute
   '/wallet': typeof WalletRoute
   '/join/$storeId': typeof JoinStoreIdRoute
@@ -107,6 +115,7 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/cashier': typeof CashierRoute
+  '/poster': typeof PosterRoute
   '/settings': typeof SettingsRoute
   '/wallet': typeof WalletRoute
   '/join/$storeId': typeof JoinStoreIdRoute
@@ -122,6 +131,7 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/cashier'
+    | '/poster'
     | '/settings'
     | '/wallet'
     | '/join/$storeId'
@@ -135,6 +145,7 @@ export interface FileRouteTypes {
   to:
     | '/'
     | '/cashier'
+    | '/poster'
     | '/settings'
     | '/wallet'
     | '/join/$storeId'
@@ -148,6 +159,7 @@ export interface FileRouteTypes {
     | '__root__'
     | '/'
     | '/cashier'
+    | '/poster'
     | '/settings'
     | '/wallet'
     | '/join/$storeId'
@@ -162,6 +174,7 @@ export interface FileRouteTypes {
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   CashierRoute: typeof CashierRoute
+  PosterRoute: typeof PosterRoute
   SettingsRoute: typeof SettingsRoute
   WalletRoute: typeof WalletRoute
   JoinStoreIdRoute: typeof JoinStoreIdRoute
@@ -187,6 +200,13 @@ declare module '@tanstack/react-router' {
       path: '/cashier'
       fullPath: '/cashier'
       preLoaderRoute: typeof CashierRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/poster': {
+      id: '/poster'
+      path: '/poster'
+      fullPath: '/poster'
+      preLoaderRoute: typeof PosterRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/settings': {
@@ -258,6 +278,7 @@ declare module '@tanstack/react-router' {
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   CashierRoute: CashierRoute,
+  PosterRoute: PosterRoute,
   SettingsRoute: SettingsRoute,
   WalletRoute: WalletRoute,
   JoinStoreIdRoute: JoinStoreIdRoute,

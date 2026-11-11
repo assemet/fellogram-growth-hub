@@ -175,3 +175,62 @@ export async function renderPoster(link: string, text: PosterText, dir: "rtl" | 
     canvas.toBlob((blob) => (blob ? resolve(blob) : reject(new Error("POSTER_UNAVAILABLE"))), "image/png");
   });
 }
+
+/** Prints the already-rendered poster image on a full A4 page through a hidden iframe (no pop-up needed). */
+export function printPosterImage(url: string, title: string): Promise<void> {
+  return new Promise((resolve, reject) => {
+    const frame = document.createElement("iframe");
+    frame.style.cssText = "position:fixed;inset-inline-end:0;bottom:0;width:0;height:0;border:0";
+    document.body.appendChild(frame);
+    const doc = frame.contentDocument;
+    const win = frame.contentWindow;
+    if (!doc || !win || typeof win.print !== "function") {
+      frame.remove();
+      reject(new Error("PRINT_UNAVAILABLE"));
+      return;
+    }
+    const safeTitle = title.replace(/[&<>"']/g, " ");
+    doc.open();
+    doc.write(`<!doctype html><html><head><meta charset="utf-8"><title>${safeTitle}</title>
+<style>@page{size:A4;margin:0}html,body{margin:0;padding:0;background:#fff}img{display:block;width:210mm;height:297mm}</style></head><body><img alt=""></body></html>`);
+    doc.close();
+    const img = doc.querySelector("img");
+    if (!img) {
+      frame.remove();
+      reject(new Error("PRINT_UNAVAILABLE"));
+      return;
+    }
+    img.onerror = () => {
+      frame.remove();
+      reject(new Error("PRINT_UNAVAILABLE"));
+    };
+    img.onload = () => {
+      try {
+        win.focus();
+        win.print();
+        resolve();
+      } catch (error) {
+        reject(error);
+      } finally {
+        setTimeout(() => frame.remove(), 60_000);
+      }
+    };
+    img.src = url;
+  });
+}
+
+const POSTER_LINK = /^https:\/\/t\.me\/[A-Za-z0-9_]{3,64}\/[A-Za-z0-9_]{1,64}\?startapp=join_[0-9a-f-]{36}$/i;
+
+/** The address of the standalone poster page (opened in the phone's own browser, which can print and save). */
+export function posterPageUrl(origin: string, name: string, link: string, lang: string): string {
+  const query = new URLSearchParams({ n: name.slice(0, 80), l: link, lang });
+  return `${origin}/poster?${query.toString()}`;
+}
+
+/** The poster page is public, so it only accepts a store name and a real join link; anything else is refused. */
+export function readPosterParams(search: Record<string, unknown>): { name: string; link: string; lang: string } | null {
+  const name = String(search["n"] ?? "").replace(/[\u0000-\u001f\u007f]/g, " ").replace(/\s+/g, " ").trim().slice(0, 80);
+  const link = String(search["l"] ?? "");
+  if (!name || !POSTER_LINK.test(link)) return null;
+  return { name, link, lang: String(search["lang"] ?? "") };
+}

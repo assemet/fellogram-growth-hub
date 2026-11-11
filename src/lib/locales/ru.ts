@@ -290,6 +290,7 @@ export const ru: Record<TranslationKey, string> = {
   "join.share.copy": "Копировать ссылку",
   "join.share.share": "Поделиться",
   "join.share.print": "Печать плаката",
+  "join.share.poster": "Печать или сохранение плаката",
   "join.share.save": "Сохранить картинку",
   "join.share.download": "Скачать картинку",
   "join.share.saveHint": "Нажмите и удерживайте картинку, выберите «Сохранить», затем распечатайте её из галереи.",

@@ -6,6 +6,7 @@ import { APPEARANCE_EVENT, readAppearance } from "@/lib/prefs";
 
 type TelegramWebApp = {
   initData?: string;
+  platform?: string;
   initDataUnsafe?: { start_param?: string; user?: { language_code?: string } };
   ready?: () => void;
   expand?: () => void;
@@ -13,7 +14,7 @@ type TelegramWebApp = {
   onEvent?: (event: string, callback: () => void) => void;
   offEvent?: (event: string, callback: () => void) => void;
   openTelegramLink?: (url: string) => void;
-  openLink?: (url: string) => void;
+  openLink?: (url: string, options?: { try_browser?: string; try_instant_view?: boolean }) => void;
   showScanQrPopup?: (params: { text?: string }, callback?: (text: string) => boolean | void) => void;
   closeScanQrPopup?: () => void;
   setHeaderColor?: (color: string) => void;
@@ -225,6 +226,21 @@ export function requestTelegramWriteAccess(): Promise<boolean | null> {
 }
 
 /** Opens an external page the right way: t.me links inside Telegram, other links in the in-app browser. */
+/** True inside Telegram's phone apps, whose embedded browser cannot print or save files. */
+export function isTelegramPhone(): boolean {
+  const platform = String(webApp()?.platform ?? "").toLowerCase();
+  return platform === "android" || platform === "android_x" || platform === "ios";
+}
+
+/** Opens a page in the phone's own browser (Chrome / Safari) when Telegram allows it: that is where printing and saving work. */
+export function openInPhoneBrowser(url: string): void {
+  const app = webApp();
+  if (app?.openLink) {
+    const platform = String(app.platform ?? "").toLowerCase();
+    app.openLink(url, { try_browser: platform === "ios" ? "safari" : "chrome" });
+  } else window.open(url, "_blank", "noopener,noreferrer");
+}
+
 export function openExternalLink(url: string): void {
   const app = webApp();
   if (/^https:\/\/t\.me\//i.test(url) && app?.openTelegramLink) app.openTelegramLink(url);

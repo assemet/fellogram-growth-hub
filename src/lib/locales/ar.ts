@@ -289,6 +289,7 @@ export const ar: Record<TranslationKey, string> = {
   "join.share.copy": "نسخ الرابط",
   "join.share.share": "مشاركة",
   "join.share.print": "طباعة الملصق",
+  "join.share.poster": "طباعة الملصق أو حفظه",
   "join.share.save": "حفظ كصورة",
   "join.share.download": "تنزيل الصورة",
   "join.share.saveHint": "اضغط مطولًا على الصورة واختر «حفظ»، ثم اطبعها من المعرض.",

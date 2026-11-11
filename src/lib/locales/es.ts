@@ -290,6 +290,7 @@ export const es: Record<TranslationKey, string> = {
   "join.share.copy": "Copiar enlace",
   "join.share.share": "Compartir",
   "join.share.print": "Imprimir cartel",
+  "join.share.poster": "Imprimir o guardar el cartel",
   "join.share.save": "Guardar imagen",
   "join.share.download": "Descargar imagen",
   "join.share.saveHint": "Mantén pulsada la imagen, elige Guardar y luego imprímela desde la galería.",

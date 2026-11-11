@@ -290,6 +290,7 @@ export const tr: Record<TranslationKey, string> = {
   "join.share.copy": "Bağlantıyı kopyala",
   "join.share.share": "Paylaş",
   "join.share.print": "Afişi yazdır",
+  "join.share.poster": "Afişi yazdır veya kaydet",
   "join.share.save": "Görseli kaydet",
   "join.share.download": "Görseli indir",
   "join.share.saveHint": "Görsele uzun bas, Kaydet’i seç, sonra galeriden yazdır.",

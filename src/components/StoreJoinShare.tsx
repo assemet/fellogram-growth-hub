@@ -6,57 +6,15 @@ import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
 import { dirOf, getLocale, t } from "@/lib/i18n";
-import { renderPoster } from "@/lib/poster";
+import { posterPageUrl, printPosterImage, renderPoster } from "@/lib/poster";
 import { getStoreJoinLink } from "@/lib/store.functions";
-import { shareViaTelegram } from "@/lib/telegram";
-
-/** Prints the already-rendered poster image on a full A4 page through a hidden iframe (no pop-up needed). */
-function printPosterImage(url: string, title: string): Promise<void> {
-  return new Promise((resolve, reject) => {
-    const frame = document.createElement("iframe");
-    frame.style.cssText = "position:fixed;inset-inline-end:0;bottom:0;width:0;height:0;border:0";
-    document.body.appendChild(frame);
-    const doc = frame.contentDocument;
-    const win = frame.contentWindow;
-    if (!doc || !win || typeof win.print !== "function") {
-      frame.remove();
-      reject(new Error("PRINT_UNAVAILABLE"));
-      return;
-    }
-    const safeTitle = title.replace(/[&<>"']/g, " ");
-    doc.open();
-    doc.write(`<!doctype html><html><head><meta charset="utf-8"><title>${safeTitle}</title>
-<style>@page{size:A4;margin:0}html,body{margin:0;padding:0;background:#fff}img{display:block;width:210mm;height:297mm}</style></head><body><img alt=""></body></html>`);
-    doc.close();
-    const img = doc.querySelector("img");
-    if (!img) {
-      frame.remove();
-      reject(new Error("PRINT_UNAVAILABLE"));
-      return;
-    }
-    img.onerror = () => {
-      frame.remove();
-      reject(new Error("PRINT_UNAVAILABLE"));
-    };
-    img.onload = () => {
-      try {
-        win.focus();
-        win.print();
-        resolve();
-      } catch (error) {
-        reject(error);
-      } finally {
-        setTimeout(() => frame.remove(), 60_000);
-      }
-    };
-    img.src = url;
-  });
-}
+import { isTelegramPhone, openInPhoneBrowser, shareViaTelegram } from "@/lib/telegram";
 
 /** Merchant dashboard card: the store's join QR + link (the way customers get their card). */
 export function StoreJoinShare({ storeName }: { storeName: string }) {
   const load = useServerFn(getStoreJoinLink);
   const { data } = useQuery({ queryKey: ["store-join-link"], queryFn: () => load(), staleTime: Infinity });
+  const phone = isTelegramPhone();
   const [qr, setQr] = useState<string | null>(null);
   const [saved, setSaved] = useState<{ url: string; blob: Blob } | null>(null);
 
@@ -108,6 +66,12 @@ export function StoreJoinShare({ storeName }: { storeName: string }) {
     if (old) URL.revokeObjectURL(old.url);
     return null;
   });
+
+  /** Telegram's phone apps cannot print or save files: open the poster page in the phone's own browser instead. */
+  const openPosterPage = () => {
+    if (!data?.link) return;
+    openInPhoneBrowser(posterPageUrl(window.location.origin, storeName, data.link, getLocale()));
+  };
 
   const print = useMutation({
     mutationFn: async () => {
@@ -174,26 +138,41 @@ export function StoreJoinShare({ storeName }: { storeName: string }) {
           <Share2 className="h-4 w-4" />
           {t("join.share.share")}
         </Button>
+        {phone ? (
+          <Button
+            type="button"
+            variant="outline"
+            className="touch-action col-span-2 h-auto min-h-12 gap-2 whitespace-normal px-2 py-2 text-center text-sm font-semibold leading-tight"
+            onClick={openPosterPage}
+            disabled={!data?.link}
+          >
+            <Printer className="h-4 w-4" />
+            {t("join.share.poster")}
+          </Button>
+        ) : (
+          <>
         <Button
-          type="button"
-          variant="outline"
-          className="touch-action h-auto min-h-12 flex-col gap-0.5 whitespace-normal px-1 py-2 text-center text-xs font-semibold leading-tight"
-          onClick={() => print.mutate()}
-          disabled={!data?.link || print.isPending}
-        >
-          <Printer className="h-4 w-4" />
-          {t("join.share.print")}
-        </Button>
-        <Button
-          type="button"
-          variant="outline"
-          className="touch-action h-auto min-h-12 flex-col gap-0.5 whitespace-normal px-1 py-2 text-center text-xs font-semibold leading-tight"
-          onClick={() => save.mutate()}
-          disabled={!data?.link || save.isPending}
-        >
-          <Download className="h-4 w-4" />
-          {t("join.share.save")}
-        </Button>
+              type="button"
+              variant="outline"
+              className="touch-action h-auto min-h-12 flex-col gap-0.5 whitespace-normal px-1 py-2 text-center text-xs font-semibold leading-tight"
+              onClick={() => print.mutate()}
+              disabled={!data?.link || print.isPending}
+            >
+              <Printer className="h-4 w-4" />
+              {t("join.share.print")}
+            </Button>
+            <Button
+              type="button"
+              variant="outline"
+              className="touch-action h-auto min-h-12 flex-col gap-0.5 whitespace-normal px-1 py-2 text-center text-xs font-semibold leading-tight"
+              onClick={() => save.mutate()}
+              disabled={!data?.link || save.isPending}
+            >
+              <Download className="h-4 w-4" />
+              {t("join.share.save")}
+            </Button>
+          </>
+        )}
       </div>
 
       {saved && (
