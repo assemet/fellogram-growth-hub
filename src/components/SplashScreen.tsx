@@ -1,4 +1,4 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 
 import { PageSkeleton } from "@/components/PageSkeleton";
 import { hasBooted } from "@/lib/boot";
@@ -38,14 +38,30 @@ const BURST = Array.from({ length: 8 }, (_, index) => ({ angle: index * 45 + 22,
 
 function BrandedSplash({ message }: { message?: string | undefined }) {
   const entrance = useRef(!entrancePlayed);
+  // The entrance starts only once the logo is decoded: a half-loaded image looked blurry and jumpy.
+  const [logoReady, setLogoReady] = useState(!entrance.current);
   useEffect(() => {
     entrancePlayed = true;
+    if (logoReady) return;
+    let done = false;
+    const finish = () => {
+      if (!done) {
+        done = true;
+        setLogoReady(true);
+      }
+    };
+    const image = new Image();
+    image.src = "/logo-mascot.png";
+    image.decode().then(finish, finish);
+    const timer = window.setTimeout(finish, 1500); // never hold the splash for a slow network
+    return () => window.clearTimeout(timer);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const phase = typeof performance === "undefined" ? 0 : Math.round(performance.now() % CYCLE_MS);
 
   return (
-    <div className={`splash-bg flex min-h-[100dvh] flex-col items-center justify-center px-8 text-center ${entrance.current ? "splash-play" : ""}`}>
+    <div className={`splash-bg flex min-h-[100dvh] flex-col items-center justify-center px-8 text-center ${entrance.current ? (logoReady ? "splash-play" : "splash-wait") : ""}`}>
       <div className="splash-sparkles" aria-hidden="true">
         {SPARKS.map((spark, index) => (
           <span

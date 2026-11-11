@@ -119,6 +119,7 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       // The Latin text font is needed on every screen, so fetch it before the CSS asks for it.
       { rel: "preload", href: "/fonts/dm-sans-latin.woff2", as: "font", type: "font/woff2", crossOrigin: "anonymous" },
       { rel: "icon", type: "image/png", href: "/favicon.png" },
+      { rel: "preload", as: "image", href: "/logo-mascot.png" },
     ],
   }),
 
