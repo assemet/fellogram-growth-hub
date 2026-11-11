@@ -81,7 +81,7 @@ function MerchantDashboard() {
           </Link>
         </div>
 
-        <StoreJoinShare storeName={data.store.name} rewardName={reward} stampsRequired={data.program?.stamps_required ?? 10} />
+        <StoreJoinShare storeName={data.store.name} />
 
         <div className="mt-5 space-y-3">
           {(

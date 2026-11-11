@@ -60,39 +60,6 @@ export async function sendTelegramMessage(
   }
 }
 
-/** Sends a file (as a document, so Telegram keeps full quality) to a private chat. Never throws. */
-export async function sendTelegramDocument(
-  chatId: number,
-  file: { bytes: Uint8Array; filename: string; mime: string },
-  caption?: string,
-  timeoutMs = 15000,
-): Promise<SendResult> {
-  const token = process.env["TELEGRAM_BOT_TOKEN"];
-  if (!token) return { ok: false, blocked: false, error: "NO_BOT_TOKEN" };
-  if (chatId === PREVIEW_TELEGRAM_ID) return { ok: false, blocked: true, error: "PREVIEW_ACCOUNT" };
-
-  const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort(), timeoutMs);
-  try {
-    const form = new FormData();
-    form.append("chat_id", String(chatId));
-    if (caption) form.append("caption", caption);
-    form.append("document", new Blob([file.bytes as BlobPart], { type: file.mime }), file.filename);
-    const response = await fetch(`${API_BASE()}/bot${token}/sendDocument`, { method: "POST", body: form, signal: controller.signal });
-    const body = (await response.json().catch(() => null)) as { ok?: boolean; error_code?: number; description?: string } | null;
-    if (response.ok && body?.ok) return { ok: true };
-    const code = body?.error_code ?? response.status;
-    const description = body?.description ?? "telegram error";
-    const blocked = code === 403 || (code === 400 && /chat not found/i.test(description));
-    return { ok: false, blocked, error: `${code}: ${description}` };
-  } catch (error) {
-    const aborted = (error as { name?: string } | null)?.name === "AbortError";
-    return { ok: false, blocked: false, error: aborted ? "TIMEOUT" : "NETWORK_ERROR" };
-  } finally {
-    clearTimeout(timer);
-  }
-}
-
 export async function adminClient(): Promise<Db> {
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
   return supabaseAdmin as unknown as Db;

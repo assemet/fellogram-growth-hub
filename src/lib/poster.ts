@@ -1,6 +1,6 @@
 /**
  * The printable store poster, drawn on a canvas as an A4 page. One renderer feeds both ways out:
- * printing (desktop browsers) and sending the PNG to the owner's Telegram chat (phones, where printing is unavailable).
+ * printing and saving the PNG to the device.
  * Browser-only: it needs a canvas.
  */
 export const POSTER_WIDTH = 1240; // A4 at 150 dpi
@@ -11,7 +11,19 @@ const MUTED = "#5b5b78";
 const TINT = "#eef0fb";
 const FONT = `"Segoe UI", system-ui, -apple-system, "Noto Sans Arabic", "Noto Sans", Roboto, Arial, sans-serif`;
 
-export type PosterText = { headline: string; rewardLine: string; hint: string; powered: string };
+export type PosterText = { name: string; caption: string; powered: string; address: string };
+
+/** The app's own mark, drawn small in the footer. A missing logo never stops the poster from being made. */
+async function loadLogo(url: string): Promise<HTMLImageElement | null> {
+  try {
+    const img = new Image();
+    img.src = url;
+    await img.decode();
+    return img;
+  } catch {
+    return null;
+  }
+}
 
 /** Greedy word wrap that also splits a single over-long word, so a long store name never leaves the page. */
 export function wrapLines(measure: (text: string) => number, text: string, maxWidth: number, maxLines: number): string[] {
@@ -61,8 +73,8 @@ function roundRect(ctx: CanvasRenderingContext2D, x: number, y: number, w: numbe
 }
 
 /** Draws the poster and returns it as a PNG blob. `link` is encoded as a crisp QR (square modules, no smoothing). */
-export async function renderPoster(link: string, text: PosterText, dir: "rtl" | "ltr"): Promise<Blob> {
-  const QRCode = (await import("qrcode")).default;
+export async function renderPoster(link: string, text: PosterText, dir: "rtl" | "ltr", logoUrl = "/logo-mark.png"): Promise<Blob> {
+  const [{ default: QRCode }, logo] = await Promise.all([import("qrcode"), loadLogo(logoUrl)]);
   const qr = QRCode.create(link, { errorCorrectionLevel: "M" });
   const count = qr.modules.size;
 
@@ -85,48 +97,66 @@ export async function renderPoster(link: string, text: PosterText, dir: "rtl" | 
   roundRect(ctx, 44, 44, POSTER_WIDTH - 88, POSTER_HEIGHT - 88, 36);
   ctx.stroke();
 
-  const text1 = (value: string, y: number, size: number, weight: number, color: string) => {
+  const draw = (value: string, x: number, y: number, size: number, weight: number, color: string) => {
     ctx.fillStyle = color;
     ctx.font = `${weight} ${size}px ${FONT}`;
-    ctx.fillText(value, cx, y);
+    ctx.fillText(value, x, y);
   };
 
-  // Headline: up to three lines, shrinking nothing, wrapping instead.
-  const headSize = 84;
-  ctx.font = `800 ${headSize}px ${FONT}`;
-  const headLines = wrapLines((v) => ctx.measureText(v).width, text.headline, POSTER_WIDTH - 260, 3);
-  let y = 215;
-  for (const line of headLines) {
-    text1(line, y, headSize, 800, NAVY);
-    y += headSize * 1.18;
-  }
+  // Footer: a thin rule, then the app mark with "Powered by Fellogram" and the app's Telegram address.
+  const footerRuleY = POSTER_HEIGHT - 250;
+  ctx.strokeStyle = "#d6d8ea";
+  ctx.lineWidth = 3;
+  ctx.beginPath();
+  ctx.moveTo(220, footerRuleY);
+  ctx.lineTo(POSTER_WIDTH - 220, footerRuleY);
+  ctx.stroke();
 
-  // Reward pill
-  ctx.font = `600 46px ${FONT}`;
-  const rewardLines = wrapLines((v) => ctx.measureText(v).width, text.rewardLine, POSTER_WIDTH - 320, 2);
-  const pillHeight = 40 + rewardLines.length * 62;
-  const pillTop = y + 10;
-  ctx.fillStyle = TINT;
-  roundRect(ctx, 130, pillTop, POSTER_WIDTH - 260, pillHeight, 28);
-  ctx.fill();
-  let ry = pillTop + 20 + 46;
-  for (const line of rewardLines) {
-    text1(line, ry, 46, 600, NAVY);
-    ry += 62;
-  }
+  const logoSize = logo ? 120 : 0;
+  const gap = logo ? 28 : 0;
+  ctx.direction = "ltr"; // brand and address are Latin text in every language
+  ctx.font = `700 46px ${FONT}`;
+  const poweredWidth = ctx.measureText(text.powered).width;
+  ctx.font = `500 36px ${FONT}`;
+  const addressWidth = ctx.measureText(text.address).width;
+  const blockWidth = logoSize + gap + Math.max(poweredWidth, addressWidth);
+  const left = cx - blockWidth / 2;
+  const footerMid = footerRuleY + 100;
+  if (logo) ctx.drawImage(logo, Math.round(left), Math.round(footerMid - logoSize / 2), logoSize, logoSize);
+  const textCenter = left + logoSize + gap + Math.max(poweredWidth, addressWidth) / 2;
+  draw(text.powered, textCenter, footerMid - 6, 46, 700, NAVY);
+  draw(text.address, textCenter, footerMid + 44, 36, 500, MUTED);
+  ctx.direction = dir;
 
-  // Hint lines are measured first so the QR can shrink to keep everything clear of the footer.
-  ctx.font = `500 38px ${FONT}`;
-  const hintLines = wrapLines((v) => ctx.measureText(v).width, text.hint, POSTER_WIDTH - 300, 2);
-  const footerRuleY = POSTER_HEIGHT - 192;
-  const hintHeight = hintLines.length * 52;
+  // Store name: the headline. Wraps instead of shrinking, up to three lines.
+  const nameSize = 112;
+  const lineStep = nameSize * 1.18;
+  ctx.font = `800 ${nameSize}px ${FONT}`;
+  const nameLines = wrapLines((v) => ctx.measureText(v).width, text.name, POSTER_WIDTH - 220, 3);
+  const aboveBaseline = nameSize * 0.9; // room the first line needs above its baseline
+  const nameBlock = aboveBaseline + (nameLines.length - 1) * lineStep;
+  const captionGap = 92; // last name baseline -> caption baseline
+  const qrGap = 62; // caption baseline -> QR top
+
+  // The QR takes whatever height is left; the whole block is centred above the footer.
+  const quiet = 4;
+  const top = 100;
+  const bottom = footerRuleY - 40;
+  const room = bottom - top - nameBlock - captionGap - qrGap;
+  const module = Math.max(8, Math.floor(Math.min(860, room) / (count + quiet * 2)));
+  const qrSize = module * (count + quiet * 2);
+  const blockHeight = nameBlock + captionGap + qrGap + qrSize;
+  let y = Math.round(top + (bottom - top - blockHeight) / 2 + aboveBaseline);
+
+  for (const line of nameLines) {
+    draw(line, cx, y, nameSize, 800, NAVY);
+    y += lineStep;
+  }
+  y = Math.round(y - lineStep + captionGap);
+  draw(text.caption, cx, y, 42, 500, MUTED);
 
   // QR: modules are drawn as whole pixels so every edge stays sharp on paper.
-  const qrTop = Math.round(pillTop + pillHeight + 56);
-  const quiet = 4;
-  const room = footerRuleY - 36 - hintHeight - 70 - qrTop;
-  const module = Math.max(8, Math.floor(Math.min(760, room) / (count + quiet * 2)));
-  const qrSize = module * (count + quiet * 2);
+  const qrTop = Math.round(y + qrGap);
   const qrLeft = Math.round(cx - qrSize / 2);
   ctx.fillStyle = "#ffffff";
   ctx.fillRect(qrLeft, qrTop, qrSize, qrSize);
@@ -141,34 +171,7 @@ export async function renderPoster(link: string, text: PosterText, dir: "rtl" | 
     }
   }
 
-  // Hint under the code
-  let hy = qrTop + qrSize + 14 + 58;
-  for (const line of hintLines) {
-    text1(line, hy, 38, 500, MUTED);
-    hy += 52;
-  }
-
-  // Footer
-  const footerY = POSTER_HEIGHT - 120;
-  ctx.strokeStyle = "#d6d8ea";
-  ctx.lineWidth = 3;
-  ctx.beginPath();
-  ctx.moveTo(220, footerRuleY);
-  ctx.lineTo(POSTER_WIDTH - 220, footerRuleY);
-  ctx.stroke();
-  ctx.direction = "ltr"; // the brand line is Latin text in every language
-  text1(text.powered, footerY, 44, 700, NAVY);
-
   return await new Promise<Blob>((resolve, reject) => {
     canvas.toBlob((blob) => (blob ? resolve(blob) : reject(new Error("POSTER_UNAVAILABLE"))), "image/png");
-  });
-}
-
-export function blobToBase64(blob: Blob): Promise<string> {
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onerror = () => reject(new Error("POSTER_UNAVAILABLE"));
-    reader.onload = () => resolve(String(reader.result).replace(/^data:[^,]*,/, ""));
-    reader.readAsDataURL(blob);
   });
 }

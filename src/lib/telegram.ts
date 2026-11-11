@@ -6,7 +6,6 @@ import { APPEARANCE_EVENT, readAppearance } from "@/lib/prefs";
 
 type TelegramWebApp = {
   initData?: string;
-  platform?: string;
   initDataUnsafe?: { start_param?: string; user?: { language_code?: string } };
   ready?: () => void;
   expand?: () => void;
@@ -102,15 +101,6 @@ export function watchTelegramTheme() {
     media.removeEventListener("change", sync);
     window.removeEventListener(APPEARANCE_EVENT, sync);
   };
-}
-
-/**
- * True inside Telegram's phone apps. Their embedded browser has no printing at all (window.print does nothing),
- * so anything that needs a printer must go through a file the person can open elsewhere.
- */
-export function isTelegramPhone(): boolean {
-  const platform = String(webApp()?.platform ?? "").toLowerCase();
-  return platform === "android" || platform === "android_x" || platform === "ios";
 }
 
 const INIT_DATA_KEY = "fellogram.tgInitData";

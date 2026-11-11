@@ -1,15 +1,14 @@
 import { useEffect, useState } from "react";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { Copy, Printer, Share2 } from "lucide-react";
+import { Copy, Download, Printer, Share2, X } from "lucide-react";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
 import { dirOf, getLocale, t } from "@/lib/i18n";
-import { blobToBase64, renderPoster } from "@/lib/poster";
-import { sendJoinPoster } from "@/lib/poster.functions";
+import { renderPoster } from "@/lib/poster";
 import { getStoreJoinLink } from "@/lib/store.functions";
-import { isTelegramPhone, shareViaTelegram } from "@/lib/telegram";
+import { shareViaTelegram } from "@/lib/telegram";
 
 /** Prints the already-rendered poster image on a full A4 page through a hidden iframe (no pop-up needed). */
 function printPosterImage(url: string, title: string): Promise<void> {
@@ -55,20 +54,11 @@ function printPosterImage(url: string, title: string): Promise<void> {
 }
 
 /** Merchant dashboard card: the store's join QR + link (the way customers get their card). */
-export function StoreJoinShare({
-  storeName,
-  rewardName,
-  stampsRequired,
-}: {
-  storeName: string;
-  rewardName: string;
-  stampsRequired: number;
-}) {
+export function StoreJoinShare({ storeName }: { storeName: string }) {
   const load = useServerFn(getStoreJoinLink);
   const { data } = useQuery({ queryKey: ["store-join-link"], queryFn: () => load(), staleTime: Infinity });
-  const sendPoster = useServerFn(sendJoinPoster);
-  const phone = isTelegramPhone();
   const [qr, setQr] = useState<string | null>(null);
+  const [saved, setSaved] = useState<{ url: string; blob: Blob } | null>(null);
 
   useEffect(() => {
     if (!data?.link) return;
@@ -93,39 +83,66 @@ export function StoreJoinShare({
     }
   };
 
-  const poster = useMutation({
+  /** The poster as an image, drawn fresh so it always matches the current store name and language. */
+  const makePoster = async () => {
+    if (!data?.link) throw new Error("POSTER_UNAVAILABLE");
+    const link = new URL(data.link);
+    return renderPoster(
+      data.link,
+      {
+        name: storeName,
+        caption: t("join.poster.scan"),
+        powered: t("join.poster.powered"),
+        address: `${link.host}${link.pathname.split("/").slice(0, 2).join("/")}`, // t.me/<bot>
+      },
+      dirOf(getLocale()),
+    );
+  };
+
+  /** Phones: the image itself, to long-press and save (works in every embedded browser). */
+  const showImage = (blob: Blob) => setSaved((old) => {
+    if (old) URL.revokeObjectURL(old.url);
+    return { url: URL.createObjectURL(blob), blob };
+  });
+  const closeImage = () => setSaved((old) => {
+    if (old) URL.revokeObjectURL(old.url);
+    return null;
+  });
+
+  const print = useMutation({
     mutationFn: async () => {
-      if (!data?.link) throw new Error("POSTER_UNAVAILABLE");
-      const locale = getLocale();
-      const blob = await renderPoster(
-        data.link,
-        {
-          headline: t("join.poster.headline", { store: storeName }),
-          rewardLine: t("join.poster.reward", { count: stampsRequired, reward: rewardName }),
-          hint: t("join.poster.hint"),
-          powered: t("join.poster.powered"),
-        },
-        dirOf(locale),
-      );
-
-      // Telegram's phone apps cannot print: put the poster in the owner's own chat with the bot instead.
-      const sendToChat = async () => {
-        const result = await sendPoster({ data: { png: await blobToBase64(blob), caption: t("join.poster.headline", { store: storeName }) } });
-        if (result.ok) toast.success(t("join.share.sent"));
-        else if (result.reason === "no_chat" || result.reason === "blocked") toast.error(t("join.share.noChat"));
-        else toast.error(t("join.share.sendError"));
-      };
-      if (phone) return sendToChat();
-
+      const blob = await makePoster();
       const url = URL.createObjectURL(blob);
       try {
-        await printPosterImage(url, t("join.poster.headline", { store: storeName }));
+        await printPosterImage(url, storeName);
       } catch {
-        // Printing is blocked here (some embedded browsers): fall back to the chat copy.
-        await sendToChat();
+        // Printing is blocked in this browser: hand over the image instead.
+        toast.error(t("join.share.printError"));
+        showImage(blob);
       } finally {
         setTimeout(() => URL.revokeObjectURL(url), 120_000);
       }
+    },
+    onError: (error) => {
+      console.error(error);
+      toast.error(t("join.share.printError"));
+    },
+  });
+
+  const save = useMutation({
+    mutationFn: async () => {
+      const blob = await makePoster();
+      const file = new File([blob], "fellogram-poster.png", { type: "image/png" });
+      // The system share sheet (Save to Photos / Files / Print) where the browser has one.
+      try {
+        if (navigator.canShare?.({ files: [file] })) {
+          await navigator.share({ files: [file], title: storeName });
+          return;
+        }
+      } catch (error) {
+        if ((error as { name?: string } | null)?.name === "AbortError") return; // the person closed the sheet
+      }
+      showImage(blob);
     },
     onError: (error) => {
       console.error(error);
@@ -142,7 +159,7 @@ export function StoreJoinShare({
         {qr ? <img src={qr} alt={t("join.share.title")} className="h-full w-full object-contain" /> : <span className="text-xs text-muted-foreground">…</span>}
       </div>
 
-      <div className="mt-4 grid grid-cols-3 gap-2">
+      <div className="mt-4 grid grid-cols-2 gap-2">
         <Button type="button" variant="outline" className="touch-action h-auto min-h-12 flex-col gap-0.5 whitespace-normal px-1 py-2 text-center text-xs font-semibold leading-tight" onClick={copy} disabled={!data?.link}>
           <Copy className="h-4 w-4" />
           {t("join.share.copy")}
@@ -161,13 +178,43 @@ export function StoreJoinShare({
           type="button"
           variant="outline"
           className="touch-action h-auto min-h-12 flex-col gap-0.5 whitespace-normal px-1 py-2 text-center text-xs font-semibold leading-tight"
-          onClick={() => poster.mutate()}
-          disabled={!data?.link || poster.isPending}
+          onClick={() => print.mutate()}
+          disabled={!data?.link || print.isPending}
         >
           <Printer className="h-4 w-4" />
-          {phone ? t("join.share.sendPoster") : t("join.share.print")}
+          {t("join.share.print")}
+        </Button>
+        <Button
+          type="button"
+          variant="outline"
+          className="touch-action h-auto min-h-12 flex-col gap-0.5 whitespace-normal px-1 py-2 text-center text-xs font-semibold leading-tight"
+          onClick={() => save.mutate()}
+          disabled={!data?.link || save.isPending}
+        >
+          <Download className="h-4 w-4" />
+          {t("join.share.save")}
         </Button>
       </div>
+
+      {saved && (
+        <div className="fixed inset-0 z-50 flex flex-col items-center gap-3 overflow-y-auto bg-foreground/60 p-4 pb-[calc(1rem+env(safe-area-inset-bottom))]" role="dialog" aria-modal="true">
+          <div className="flex w-full max-w-sm justify-end">
+            <Button type="button" variant="secondary" size="icon" onClick={closeImage} aria-label={t("rewards.close")}>
+              <X className="h-5 w-5" />
+            </Button>
+          </div>
+          <img src={saved.url} alt={storeName} className="w-full max-w-sm rounded-md bg-white shadow-[var(--shadow-float)]" />
+          <p className="max-w-sm text-center text-sm font-medium text-background">{t("join.share.saveHint")}</p>
+          <a
+            href={saved.url}
+            download="fellogram-poster.png"
+            className="touch-action inline-flex h-12 w-full max-w-sm items-center justify-center gap-2 rounded-md bg-primary px-4 text-sm font-bold text-primary-foreground"
+          >
+            <Download className="h-4 w-4" />
+            {t("join.share.download")}
+          </a>
+        </div>
+      )}
     </section>
   );
 }
