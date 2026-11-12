@@ -602,4 +602,9 @@ export const tr: Record<TranslationKey, string> = {
   "poster.format.a6.hint": "Küçük kart veya etiket. Kartpostal boyutunda.",
   "poster.format.square.hint": "Instagram veya WhatsApp paylaşımı için. Görsel olarak kaydedin.",
   "poster.format.story.hint": "Hikâye veya durum için (9:16). Görsel olarak kaydedin.",
+  "celebrate.title": "Kart doldu!",
+  "celebrate.body": "Ödülün hazır: {reward}",
+  "celebrate.bodyNoReward": "Ödülün hazır. Kartını kasada göster.",
+  "celebrate.close": "Harika!",
+  "cashier.cardComplete": "Kart doldu! Ödül hazır",
 };

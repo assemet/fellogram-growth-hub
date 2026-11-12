@@ -4,6 +4,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { useEffect, useRef, useState } from "react";
 import { Camera, Check, Gift, ScanLine, Undo2, UserPlus } from "lucide-react";
 import { toast } from "sonner";
+import { Confetti } from "@/components/Confetti";
 import { Button } from "@/components/ui/button";
 
 import { AppHeader } from "@/components/BrandMark";
@@ -515,13 +516,17 @@ function Cashier() {
             <span className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-accent"><ScanLine className="h-6 w-6 text-primary" /></span>
             <p className="mt-2 font-display text-xl font-bold">{customer.name}</p>
             {justStamped && (
-              <div className="mt-4 rounded-md bg-growth/15 px-4 py-5" role="status" aria-live="polite">
+              <div className="relative mt-4 overflow-hidden rounded-md bg-growth/15 px-4 py-5" role="status" aria-live="polite">
+                {customer.stampBalance >= customer.stampsRequired && <Confetti fall={260} count={32} />}
                 <span className="animate-stamp-pop mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-growth text-growth-foreground">
                   <Check className="h-9 w-9" />
                 </span>
                 <p className="mt-3 font-display text-2xl font-bold">
                   {t("cashier.stampedBig", { balance: customer.stampBalance, required: customer.stampsRequired })}
                 </p>
+                {customer.stampBalance >= customer.stampsRequired && (
+                  <p className="mt-1 font-display text-lg font-bold text-primary">{t("cashier.cardComplete")}</p>
+                )}
                 {customer.lastStampAmount > 1 && (
                   <p className="mt-1 text-sm font-bold text-primary">{t("cashier.plus", { count: customer.lastStampAmount })}</p>
                 )}

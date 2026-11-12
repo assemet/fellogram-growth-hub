@@ -602,4 +602,9 @@ export const es: Record<TranslationKey, string> = {
   "poster.format.a6.hint": "Tarjeta pequeña o pegatina. Tamaño postal.",
   "poster.format.square.hint": "Para una publicación de Instagram o WhatsApp. Guárdalo como imagen.",
   "poster.format.story.hint": "Para una historia o estado (9:16). Guárdalo como imagen.",
+  "celebrate.title": "¡Tarjeta completa!",
+  "celebrate.body": "Tu recompensa está lista: {reward}",
+  "celebrate.bodyNoReward": "Tu recompensa está lista. Muestra tu tarjeta en caja.",
+  "celebrate.close": "¡Genial!",
+  "cashier.cardComplete": "¡Tarjeta completa! Recompensa lista",
 };

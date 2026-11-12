@@ -5,6 +5,7 @@ import { useState } from "react";
 import { z } from "zod";
 import { brandThemeStyle } from "@/lib/card-theme";
 
+import { CardCelebration, useCardCelebration } from "@/components/CardCelebration";
 import { AppHeader } from "@/components/BrandMark";
 import { BottomNav } from "@/components/BottomNav";
 import { SplashScreen } from "@/components/SplashScreen";
@@ -58,6 +59,8 @@ function Wallet() {
     enabled: state === "ready",
     retry: 1,
   });
+
+  const celebration = useCardCelebration(cards);
 
   if (cardsError) return <QueryError error={cardsError} onRetry={() => refetch()} />;
 
@@ -126,6 +129,7 @@ function Wallet() {
 
               </section>
       <BottomNav current="wallet" />
+      {celebration.card && <CardCelebration card={celebration.card} onClose={celebration.dismiss} />}
     </main>
   );
 }

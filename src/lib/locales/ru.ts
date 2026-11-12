@@ -602,4 +602,9 @@ export const ru: Record<TranslationKey, string> = {
   "poster.format.a6.hint": "Маленькая карточка или стикер. Размер открытки.",
   "poster.format.square.hint": "Для поста в Instagram или WhatsApp. Сохраните как изображение.",
   "poster.format.story.hint": "Для сторис или статуса (9:16). Сохраните как изображение.",
+  "celebrate.title": "Карта заполнена!",
+  "celebrate.body": "Ваша награда готова: {reward}",
+  "celebrate.bodyNoReward": "Ваша награда готова. Покажите карту на кассе.",
+  "celebrate.close": "Отлично!",
+  "cashier.cardComplete": "Карта заполнена! Награда готова",
 };

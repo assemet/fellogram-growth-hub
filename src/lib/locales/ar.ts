@@ -601,4 +601,9 @@ export const ar: Record<TranslationKey, string> = {
   "poster.format.a6.hint": "بطاقة صغيرة أو ملصق. يُطبع بحجم بطاقة بريدية.",
   "poster.format.square.hint": "لمنشور إنستغرام أو واتساب. يُحفظ كصورة.",
   "poster.format.story.hint": "لستوري أو حالة (9:16). يُحفظ كصورة.",
+  "celebrate.title": "اكتملت البطاقة!",
+  "celebrate.body": "مكافأتك جاهزة: {reward}",
+  "celebrate.bodyNoReward": "مكافأتك جاهزة. أرِ بطاقتك عند الكاشير.",
+  "celebrate.close": "رائع!",
+  "cashier.cardComplete": "اكتملت البطاقة! المكافأة جاهزة",
 };

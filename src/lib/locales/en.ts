@@ -609,6 +609,11 @@ export const en = {
   "poster.format.a6.hint": "Small card or sticker. Prints as a postcard.",
   "poster.format.square.hint": "For an Instagram or WhatsApp post. Save as an image.",
   "poster.format.story.hint": "For a story or status (9:16). Save as an image.",
+  "celebrate.title": "Card complete!",
+  "celebrate.body": "Your reward is ready: {reward}",
+  "celebrate.bodyNoReward": "Your reward is ready. Show your card at the counter.",
+  "celebrate.close": "Great!",
+  "cashier.cardComplete": "Card complete! Reward ready",
 } satisfies Record<string, string>;
 
 export type TranslationKey = keyof typeof en;
