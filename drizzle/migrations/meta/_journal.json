@@ -141,6 +141,13 @@
       "when": 1791330762386,
       "tag": "0019_lock_client_writes",
       "breakpoints": true
+    },
+    {
+      "idx": 20,
+      "version": "7",
+      "when": 1791417162386,
+      "tag": "0020_profiles_read_scope",
+      "breakpoints": true
     }
   ]
 }
