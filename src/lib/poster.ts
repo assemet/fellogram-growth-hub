@@ -240,6 +240,25 @@ export function printPosterImage(url: string, title: string): Promise<void> {
   });
 }
 
+/** Saves a blob straight to the device's downloads (no share sheet). Works in Chrome, Safari and desktop browsers. */
+export function downloadBlob(blob: Blob, filename: string): void {
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = filename;
+  link.rel = "noopener";
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 60_000);
+}
+
+/** The app address printed under "Powered by Fellogram": the Mini App link (t.me/<bot>/<app>), without the store's start parameter. */
+export function posterAddress(link: string): string {
+  const url = new URL(link);
+  return `${url.host}${url.pathname}`.replace(/\/+$/, "");
+}
+
 const POSTER_LINK = /^https:\/\/t\.me\/[A-Za-z0-9_]{3,64}\/[A-Za-z0-9_]{1,64}\?startapp=join_[0-9a-f-]{36}$/i;
 
 /** The address of the standalone poster page (opened in the phone's own browser, which can print and save). */

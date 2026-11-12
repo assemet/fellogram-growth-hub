@@ -6,9 +6,10 @@ import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
 import { dirOf, getLocale, t } from "@/lib/i18n";
-import { posterPageUrl, printPosterImage, renderPoster } from "@/lib/poster";
+import { ShareLinkSheet } from "@/components/ShareLinkSheet";
+import { downloadBlob, posterAddress, posterPageUrl, printPosterImage, renderPoster } from "@/lib/poster";
 import { getStoreJoinLink } from "@/lib/store.functions";
-import { isTelegramPhone, openInPhoneBrowser, shareViaTelegram } from "@/lib/telegram";
+import { isTelegramPhone, openInPhoneBrowser } from "@/lib/telegram";
 
 /** Merchant dashboard card: the store's join QR + link (the way customers get their card). */
 export function StoreJoinShare({ storeName }: { storeName: string }) {
@@ -17,6 +18,7 @@ export function StoreJoinShare({ storeName }: { storeName: string }) {
   const phone = isTelegramPhone();
   const [qr, setQr] = useState<string | null>(null);
   const [saved, setSaved] = useState<{ url: string; blob: Blob } | null>(null);
+  const [sharing, setSharing] = useState(false);
 
   useEffect(() => {
     if (!data?.link) return;
@@ -44,14 +46,13 @@ export function StoreJoinShare({ storeName }: { storeName: string }) {
   /** The poster as an image, drawn fresh so it always matches the current store name and language. */
   const makePoster = async () => {
     if (!data?.link) throw new Error("POSTER_UNAVAILABLE");
-    const link = new URL(data.link);
     return renderPoster(
       data.link,
       {
         name: storeName,
         caption: t("join.poster.scan"),
         powered: t("join.poster.powered"),
-        address: `${link.host}${link.pathname.split("/").slice(0, 2).join("/")}`, // t.me/<bot>
+        address: posterAddress(data.link), // t.me/<bot>/<app>
       },
       dirOf(getLocale()),
     );
@@ -95,18 +96,8 @@ export function StoreJoinShare({ storeName }: { storeName: string }) {
 
   const save = useMutation({
     mutationFn: async () => {
-      const blob = await makePoster();
-      const file = new File([blob], "fellogram-poster.png", { type: "image/png" });
-      // The system share sheet (Save to Photos / Files / Print) where the browser has one.
-      try {
-        if (navigator.canShare?.({ files: [file] })) {
-          await navigator.share({ files: [file], title: storeName });
-          return;
-        }
-      } catch (error) {
-        if ((error as { name?: string } | null)?.name === "AbortError") return; // the person closed the sheet
-      }
-      showImage(blob);
+      // Straight to the device's downloads, not a share sheet.
+      downloadBlob(await makePoster(), "fellogram-poster.png");
     },
     onError: (error) => {
       console.error(error);
@@ -132,7 +123,7 @@ export function StoreJoinShare({ storeName }: { storeName: string }) {
           type="button"
           variant="outline"
           className="touch-action h-auto min-h-12 flex-col gap-0.5 whitespace-normal px-1 py-2 text-center text-xs font-semibold leading-tight"
-          onClick={() => data?.link && shareViaTelegram(data.link, t("join.share.text", { store: storeName }))}
+          onClick={() => setSharing(true)}
           disabled={!data?.link}
         >
           <Share2 className="h-4 w-4" />
@@ -174,6 +165,10 @@ export function StoreJoinShare({ storeName }: { storeName: string }) {
           </>
         )}
       </div>
+
+      {sharing && data?.link && (
+        <ShareLinkSheet link={data.link} text={t("join.share.text", { store: storeName })} subject={storeName} onClose={() => setSharing(false)} />
+      )}
 
       {saved && (
         <div className="fixed inset-0 z-50 flex flex-col items-center gap-3 overflow-y-auto bg-foreground/60 p-4 pb-[calc(1rem+env(safe-area-inset-bottom))]" role="dialog" aria-modal="true">

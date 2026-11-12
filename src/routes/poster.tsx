@@ -6,7 +6,7 @@ import { toast } from "sonner";
 import { AppHeader } from "@/components/BrandMark";
 import { Button } from "@/components/ui/button";
 import { dirOf, getLocale, isLocale, setLocale, t } from "@/lib/i18n";
-import { printPosterImage, readPosterParams, renderPoster } from "@/lib/poster";
+import { downloadBlob, posterAddress, printPosterImage, readPosterParams, renderPoster } from "@/lib/poster";
 
 /**
  * Standalone, sign-in-free page that draws a store's poster. Telegram's phone apps cannot print or save files,
@@ -30,14 +30,13 @@ function PosterPage() {
     if (isLocale(params.lang)) setLocale(params.lang);
     let url: string | null = null;
     let cancelled = false;
-    const link = new URL(params.link);
     renderPoster(
       params.link,
       {
         name: params.name,
         caption: t("join.poster.scan"),
         powered: t("join.poster.powered"),
-        address: `${link.host}${link.pathname.split("/").slice(0, 2).join("/")}`,
+        address: posterAddress(params.link),
       },
       dirOf(getLocale()),
     )
@@ -65,23 +64,10 @@ function PosterPage() {
     );
   }
 
-  const download = async () => {
+  // Straight to the device: a share sheet would offer mail and chat apps but not "save".
+  const download = () => {
     if (!image) return;
-    const file = new File([image.blob], "fellogram-poster.png", { type: "image/png" });
-    try {
-      if (navigator.canShare?.({ files: [file] })) {
-        await navigator.share({ files: [file], title: params.name });
-        return;
-      }
-    } catch (error) {
-      if ((error as { name?: string } | null)?.name === "AbortError") return;
-    }
-    const link = document.createElement("a");
-    link.href = image.url;
-    link.download = "fellogram-poster.png";
-    document.body.appendChild(link);
-    link.click();
-    link.remove();
+    downloadBlob(image.blob, "fellogram-poster.png");
   };
 
   const print = async () => {
