@@ -56,6 +56,7 @@ function friendlyError(message: string): string {
   if (message.includes("TOKEN_INVALID")) return t("cashier.tokenInvalid");
   if (message.includes("NOT_ENOUGH_STAMPS")) return t("rewards.notEnough");
   if (message.includes("NOTHING_TO_UNDO")) return t("cashier.nothingToUndo");
+  if (message.includes("CARD_FULL")) return t("cashier.cardFull");
   if (message.includes("DAILY_LIMIT_REACHED")) return t("cashier.dailyLimit");
   if (message.includes("UNDO_NOT_ALLOWED")) return t("cashier.undoNotAllowed");
   return t("common.error");
@@ -343,6 +344,8 @@ function Cashier() {
     );
   }
 
+  const cardFull = customer ? customer.stampBalance >= customer.stampsRequired * 2 : false;
+  const extraStamps = customer ? Math.max(0, customer.stampBalance - customer.stampsRequired) : 0;
   const ready = customer ? customer.stampBalance >= customer.stampsRequired : false;
 
   return (
@@ -537,12 +540,14 @@ function Cashier() {
               <div className="h-full rounded-full bg-growth transition-[width] duration-500" style={{ width: `${Math.min(100, customer.stampBalance / Math.max(1, customer.stampsRequired) * 100)}%` }} />
             </div>
             {ready && <p className="mt-2 text-sm font-semibold text-primary">{t("cashier.rewardReady")}</p>}
+            {extraStamps > 0 && !cardFull && <p className="mt-1 text-xs text-muted-foreground">{t("cashier.extra", { count: extraStamps })}</p>}
+            {cardFull && <p className="mt-2 rounded-md bg-destructive/10 px-3 py-2 text-sm font-semibold text-destructive" role="alert">{t("cashier.cardFull")}</p>}
 
             {!justStamped && (
               <Button
                 type="button"
                 onClick={() => award.mutate(customer.customerId)}
-                disabled={award.isPending || customer.cooldownMinutesLeft > 0}
+                disabled={award.isPending || customer.cooldownMinutesLeft > 0 || cardFull}
                 className="touch-action mt-6 h-16 w-full gap-2 text-lg font-bold shadow-[var(--shadow-float)]"
               >
                 <Check className="h-5 w-5" />

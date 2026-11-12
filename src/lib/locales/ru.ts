@@ -608,4 +608,7 @@ export const ru: Record<TranslationKey, string> = {
   "celebrate.close": "Отлично!",
   "cashier.cardComplete": "Карта заполнена! Награда готова",
   "rewards.done.thanks": "Приятного! Ваша карта начинается заново. До новой встречи.",
+  "cashier.cardFull": "На этой карте две награды. Выдайте одну, прежде чем добавлять штампы.",
+  "cashier.extra": "Лишние штампы ({count}) перейдут на следующую карту.",
+  "wallet.card.extra": "+{count} сверх",
 };

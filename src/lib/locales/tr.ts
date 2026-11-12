@@ -608,4 +608,7 @@ export const tr: Record<TranslationKey, string> = {
   "celebrate.close": "Harika!",
   "cashier.cardComplete": "Kart doldu! Ödül hazır",
   "rewards.done.thanks": "Afiyet olsun! Kartın yeniden başlıyor. Bir dahaki sefere görüşürüz.",
+  "cashier.cardFull": "Bu kartta iki ödül bekliyor. Daha fazla damga eklemeden önce birini ver.",
+  "cashier.extra": "{count} fazla damga sonraki karta geçer.",
+  "wallet.card.extra": "+{count} fazla",
 };

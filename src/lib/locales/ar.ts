@@ -607,4 +607,7 @@ export const ar: Record<TranslationKey, string> = {
   "celebrate.close": "رائع!",
   "cashier.cardComplete": "اكتملت البطاقة! المكافأة جاهزة",
   "rewards.done.thanks": "بالهناء والشفاء! تبدأ بطاقتك من جديد. ننتظرك في زيارتك القادمة.",
+  "cashier.cardFull": "لدى هذه البطاقة مكافأتان جاهزتان. اصرف إحداهما قبل إضافة طوابع أخرى.",
+  "cashier.extra": "{count} طابع إضافي ينتقل إلى البطاقة التالية.",
+  "wallet.card.extra": "+{count} إضافي",
 };

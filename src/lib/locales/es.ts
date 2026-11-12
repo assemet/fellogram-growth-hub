@@ -608,4 +608,7 @@ export const es: Record<TranslationKey, string> = {
   "celebrate.close": "¡Genial!",
   "cashier.cardComplete": "¡Tarjeta completa! Recompensa lista",
   "rewards.done.thanks": "¡Disfrútalo! Tu tarjeta empieza de nuevo. ¡Hasta la próxima!",
+  "cashier.cardFull": "Esta tarjeta tiene dos recompensas pendientes. Canjea una antes de añadir más sellos.",
+  "cashier.extra": "{count} sello(s) extra pasan a la siguiente tarjeta.",
+  "wallet.card.extra": "+{count} extra",
 };

@@ -66,6 +66,7 @@ export function StampCard({ card, preview = false, focused = false }: { card: St
   const showRibbon = !preview && hasOpenOffer(card);
   const required = Math.max(1, card.stampsRequired);
   const balance = Math.min(required, Math.max(0, card.stampBalance));
+  const extra = Math.max(0, card.stampBalance - required);
   const complete = balance >= required;
   const remaining = Math.max(0, required - balance);
 
@@ -127,6 +128,7 @@ export function StampCard({ card, preview = false, focused = false }: { card: St
         </div>
         <p className={`loyalty-status mt-3 text-sm font-semibold ${complete ? "text-primary" : "text-foreground"}`}>
           {complete ? t("wallet.card.ready") : t("wallet.card.toGo", { count: remaining })}
+          {extra > 0 && <span className="ms-2 rounded-full bg-gold px-2 py-0.5 text-xs font-extrabold text-gold-foreground">{t("wallet.card.extra", { count: extra })}</span>}
         </p>
         {!preview && card.lastVisitAt && (
           <p className="mt-1 text-xs text-muted-foreground">

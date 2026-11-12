@@ -615,6 +615,9 @@ export const en = {
   "celebrate.close": "Great!",
   "cashier.cardComplete": "Card complete! Reward ready",
   "rewards.done.thanks": "Enjoy it! Your card starts again. See you next time.",
+  "cashier.cardFull": "Two rewards are waiting on this card. Redeem one before adding more stamps.",
+  "cashier.extra": "{count} extra stamp(s) carry over to the next card.",
+  "wallet.card.extra": "+{count} extra",
 } satisfies Record<string, string>;
 
 export type TranslationKey = keyof typeof en;
