@@ -84,7 +84,7 @@ function Wallet() {
           {cards.length > 0 && data.profile?.id && <MyQrDialog customerId={data.profile.id} />}
         </div>
 
-        {!focusedCard && cards.length >= 2 && (
+        {!focusedCard && cards.length >= 1 && (
           <div className="mb-4 flex justify-end">
             <WalletViewToggle view={view} onChange={chooseView} />
           </div>
