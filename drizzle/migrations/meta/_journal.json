@@ -134,6 +134,13 @@
       "when": 1791244362386,
       "tag": "0018_store_review_link",
       "breakpoints": true
+    },
+    {
+      "idx": 19,
+      "version": "7",
+      "when": 1791330762386,
+      "tag": "0019_lock_client_writes",
+      "breakpoints": true
     }
   ]
 }
