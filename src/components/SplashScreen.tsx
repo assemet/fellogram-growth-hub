@@ -1,7 +1,8 @@
-import { useEffect, useState } from "react";
+import { useEffect, useLayoutEffect, useRef, useState, useSyncExternalStore } from "react";
 
 import { PageSkeleton } from "@/components/PageSkeleton";
-import { hasBooted } from "@/lib/boot";
+import { useLocale } from "@/hooks/useLocale";
+import { hasBooted, registerSplash, splashPending, subscribeSplash } from "@/lib/boot";
 import { t } from "@/lib/i18n";
 
 const CYCLE_MS = 2400;
@@ -12,14 +13,66 @@ const CYCLE_MS = 2400;
  */
 let playStartedAt: number | null = null;
 
+const useIsoLayoutEffect = typeof window === "undefined" ? useEffect : useLayoutEffect;
+
 /**
- * One continuous splash: every route shows this while it loads. The entrance only
- * plays on the first mount and the stamp dots keep their phase across mounts, so
- * moving from route to route looks like a single splash instead of several.
+ * What each route renders while it loads. Before the first real screen it only announces that the splash is needed
+ * (the overlay itself is BootSplash, mounted once above all routes); afterwards it is a light skeleton.
+ * No hooks here on purpose: the choice may flip between renders once the first screen has appeared.
  */
-export function SplashScreen({ message }: { message?: string }) {
-  // No hooks here on purpose: the choice may flip between renders once the first screen has appeared.
-  return hasBooted() ? <PageSkeleton /> : <BrandedSplash message={message} />;
+export function SplashScreen() {
+  return hasBooted() ? <PageSkeleton /> : <SplashPresence />;
+}
+
+function SplashPresence() {
+  useIsoLayoutEffect(() => registerSplash(), []);
+  return <div className="min-h-[100dvh]" aria-busy="true" />;
+}
+
+type Phase = "init" | "on" | "fading" | "off";
+
+/**
+ * The one splash, mounted once above every route. It stays up while any loading screen is mounted and fades out
+ * shortly after the last one goes away. Because it is never unmounted between screens, the logo cannot blink.
+ */
+export function BootSplash() {
+  useLocale();
+  const wanted = useSyncExternalStore(subscribeSplash, splashPending, () => false);
+  const [phase, setPhase] = useState<Phase>("init");
+  const first = useRef(true);
+
+  useIsoLayoutEffect(() => {
+    // First client render: show the splash only if a screen is already waiting, and never flash it otherwise.
+    if (first.current) {
+      first.current = false;
+      setPhase(wanted ? "on" : "off");
+      return;
+    }
+    if (wanted) {
+      setPhase("on");
+      return;
+    }
+    // Hold briefly: one loading screen is replaced by the next within the same moment.
+    const hold = window.setTimeout(() => setPhase((p) => (p === "on" ? "fading" : p)), 150);
+    return () => window.clearTimeout(hold);
+  }, [wanted]);
+
+  useEffect(() => {
+    if (phase !== "fading") return;
+    const done = window.setTimeout(() => setPhase("off"), 450);
+    return () => window.clearTimeout(done);
+  }, [phase]);
+
+  if (phase === "init" || phase === "off") return null;
+  return (
+    <div
+      className="fixed inset-0 z-[100] transition-opacity duration-[400ms] ease-out"
+      style={{ opacity: phase === "fading" ? 0 : 1, pointerEvents: phase === "fading" ? "none" : "auto" }}
+      aria-hidden={phase === "fading" ? true : undefined}
+    >
+      <BrandedSplash />
+    </div>
+  );
 }
 
 // Fixed positions: the splash must look the same on every mount, so nothing here is random.
@@ -39,7 +92,7 @@ const SPARKS = [
 ];
 const BURST = Array.from({ length: 8 }, (_, index) => ({ angle: index * 45 + 22, radius: index % 2 ? 128 : 158 }));
 
-function BrandedSplash({ message }: { message?: string | undefined }) {
+function BrandedSplash() {
   // Frozen at mount: how far into the shared timeline this splash begins (0 for the very first one).
   const [elapsed] = useState(() => (playStartedAt === null || typeof performance === "undefined" ? 0 : Math.round(performance.now() - playStartedAt)));
   // The entrance starts only once the logo is decoded: a half-loaded image looked blurry and jumpy.
@@ -111,7 +164,7 @@ function BrandedSplash({ message }: { message?: string | undefined }) {
         </div>
 
         <p role="status" aria-live="polite" className="mt-5 text-xs font-medium text-white/80">
-          {message ?? t("app.loading")}
+          {t("app.loading")}
         </p>
       </div>
     </div>
