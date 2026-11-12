@@ -232,6 +232,12 @@ export function isTelegramPhone(): boolean {
   return platform === "android" || platform === "android_x" || platform === "ios";
 }
 
+/** True when the page runs inside any Telegram client. Its embedded browser cannot open mailto: or sms: links ("unknown URL scheme"). */
+export function isInsideTelegram(): boolean {
+  const platform = String(webApp()?.platform ?? "").toLowerCase();
+  return platform !== "" && platform !== "unknown";
+}
+
 /** Opens a page in the phone's own browser (Chrome / Safari) when Telegram allows it: that is where printing and saving work. */
 export function openInPhoneBrowser(url: string): void {
   const app = webApp();
