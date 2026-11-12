@@ -84,7 +84,7 @@ export function StampCard({ card, preview = false, focused = false }: { card: St
             <span className="rounded-md border border-current/20 bg-card/15 px-3 py-1 text-sm font-extrabold backdrop-blur-md">
               {balance}/{required}
             </span>
-            {!preview && <PromoBadge card={card} />}
+            {!preview && <div className="flex flex-wrap justify-end gap-1"><PromoBadge card={card} /></div>}
           </div>
         </div>
         {card.reward && (

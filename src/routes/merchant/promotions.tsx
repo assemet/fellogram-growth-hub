@@ -113,7 +113,12 @@ function PromotionsPage() {
 
   const done = async (message: string) => {
     toast.success(message);
-    await queryClient.invalidateQueries({ queryKey: ["promotions"] });
+    // The owner's own wallet and cashier screens must not keep showing what was just stopped or created.
+    await Promise.all([
+      queryClient.invalidateQueries({ queryKey: ["promotions"] }),
+      queryClient.invalidateQueries({ queryKey: ["my-cards"] }),
+      queryClient.invalidateQueries({ queryKey: ["cashier-store"] }),
+    ]);
   };
 
   const eventMutation = useMutation({

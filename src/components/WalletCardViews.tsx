@@ -44,15 +44,17 @@ export function WalletCardRow({ card }: { card: WalletCard }) {
         <div className="min-w-0 flex-1">
           <div className="flex items-center justify-between gap-2">
             <p className="min-w-0 truncate font-display text-base font-bold">{card.storeName}</p>
-            <PromoBadge card={card} />
             {ready ? <ReadyBadge /> : <span className="shrink-0 text-sm font-bold tabular-nums text-muted-foreground">{balance}/{required}</span>}
           </div>
           <div className="mt-2">
             <ProgressBar balance={balance} required={required} />
           </div>
-          <p className="mt-1.5 truncate text-xs text-muted-foreground">
-            {ready ? (card.reward ? t("wallet.card.reward", { reward: card.reward }) : "") : t("wallet.card.toGo", { count: remaining })}
-          </p>
+          <div className="mt-1.5 flex items-center justify-between gap-2">
+            <p className="min-w-0 truncate text-xs text-muted-foreground">
+              {ready ? (card.reward ? t("wallet.card.reward", { reward: card.reward }) : "") : t("wallet.card.toGo", { count: remaining })}
+            </p>
+            <span className="flex shrink-0 items-center gap-1"><PromoBadge card={card} /></span>
+          </div>
         </div>
         <ChevronRight className="h-5 w-5 shrink-0 text-muted-foreground rtl:rotate-180" aria-hidden="true" />
       </Link>
@@ -76,7 +78,7 @@ export function WalletCardTile({ card }: { card: WalletCard }) {
           <ProgressBar balance={balance} required={required} />
           <div className="flex items-center justify-between gap-2">
             <span className="text-sm font-bold tabular-nums">{balance}/{required}</span>
-            <span className="flex items-center gap-1">
+            <span className="flex flex-wrap items-center justify-end gap-1">
               <PromoBadge card={card} />
               {ready && <ReadyBadge />}
             </span>
