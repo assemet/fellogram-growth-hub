@@ -19,6 +19,7 @@ import { Route as MerchantIndexRouteImport } from './routes/merchant/index'
 import { Route as MerchantCustomersRouteImport } from './routes/merchant/customers'
 import { Route as MerchantNewRouteImport } from './routes/merchant/new'
 import { Route as MerchantProgramRouteImport } from './routes/merchant/program'
+import { Route as MerchantPromotionsRouteImport } from './routes/merchant/promotions'
 import { Route as MerchantStoreRouteImport } from './routes/merchant/store'
 import { Route as MerchantTeamRouteImport } from './routes/merchant/team'
 
@@ -72,6 +73,11 @@ const MerchantProgramRoute = MerchantProgramRouteImport.update({
   path: '/merchant/program',
   getParentRoute: () => rootRouteImport,
 } as any)
+const MerchantPromotionsRoute = MerchantPromotionsRouteImport.update({
+  id: '/merchant/promotions',
+  path: '/merchant/promotions',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const MerchantStoreRoute = MerchantStoreRouteImport.update({
   id: '/merchant/store',
   path: '/merchant/store',
@@ -93,6 +99,7 @@ export interface FileRoutesByFullPath {
   '/merchant/customers': typeof MerchantCustomersRoute
   '/merchant/new': typeof MerchantNewRoute
   '/merchant/program': typeof MerchantProgramRoute
+  '/merchant/promotions': typeof MerchantPromotionsRoute
   '/merchant/store': typeof MerchantStoreRoute
   '/merchant/team': typeof MerchantTeamRoute
   '/merchant/': typeof MerchantIndexRoute
@@ -107,6 +114,7 @@ export interface FileRoutesByTo {
   '/merchant/customers': typeof MerchantCustomersRoute
   '/merchant/new': typeof MerchantNewRoute
   '/merchant/program': typeof MerchantProgramRoute
+  '/merchant/promotions': typeof MerchantPromotionsRoute
   '/merchant/store': typeof MerchantStoreRoute
   '/merchant/team': typeof MerchantTeamRoute
   '/merchant': typeof MerchantIndexRoute
@@ -122,6 +130,7 @@ export interface FileRoutesById {
   '/merchant/customers': typeof MerchantCustomersRoute
   '/merchant/new': typeof MerchantNewRoute
   '/merchant/program': typeof MerchantProgramRoute
+  '/merchant/promotions': typeof MerchantPromotionsRoute
   '/merchant/store': typeof MerchantStoreRoute
   '/merchant/team': typeof MerchantTeamRoute
   '/merchant/': typeof MerchantIndexRoute
@@ -138,6 +147,7 @@ export interface FileRouteTypes {
     | '/merchant/customers'
     | '/merchant/new'
     | '/merchant/program'
+    | '/merchant/promotions'
     | '/merchant/store'
     | '/merchant/team'
     | '/merchant/'
@@ -152,6 +162,7 @@ export interface FileRouteTypes {
     | '/merchant/customers'
     | '/merchant/new'
     | '/merchant/program'
+    | '/merchant/promotions'
     | '/merchant/store'
     | '/merchant/team'
     | '/merchant'
@@ -166,6 +177,7 @@ export interface FileRouteTypes {
     | '/merchant/customers'
     | '/merchant/new'
     | '/merchant/program'
+    | '/merchant/promotions'
     | '/merchant/store'
     | '/merchant/team'
     | '/merchant/'
@@ -181,6 +193,7 @@ export interface RootRouteChildren {
   MerchantCustomersRoute: typeof MerchantCustomersRoute
   MerchantNewRoute: typeof MerchantNewRoute
   MerchantProgramRoute: typeof MerchantProgramRoute
+  MerchantPromotionsRoute: typeof MerchantPromotionsRoute
   MerchantStoreRoute: typeof MerchantStoreRoute
   MerchantTeamRoute: typeof MerchantTeamRoute
   MerchantIndexRoute: typeof MerchantIndexRoute
@@ -258,6 +271,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof MerchantProgramRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/merchant/promotions': {
+      id: '/merchant/promotions'
+      path: '/merchant/promotions'
+      fullPath: '/merchant/promotions'
+      preLoaderRoute: typeof MerchantPromotionsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/merchant/store': {
       id: '/merchant/store'
       path: '/merchant/store'
@@ -285,6 +305,7 @@ const rootRouteChildren: RootRouteChildren = {
   MerchantCustomersRoute: MerchantCustomersRoute,
   MerchantNewRoute: MerchantNewRoute,
   MerchantProgramRoute: MerchantProgramRoute,
+  MerchantPromotionsRoute: MerchantPromotionsRoute,
   MerchantStoreRoute: MerchantStoreRoute,
   MerchantTeamRoute: MerchantTeamRoute,
   MerchantIndexRoute: MerchantIndexRoute,

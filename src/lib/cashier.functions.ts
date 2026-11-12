@@ -4,6 +4,7 @@ import { notifyRedemption, notifyStamp, withinBudget } from "@/lib/notify";
 import { check, throwIfError } from "@/lib/db";
 import { MIN_SEARCH_LENGTH, searchStoreCustomers, type SearchHit } from "@/lib/customer-search";
 import { loadNames } from "@/lib/people";
+import { parseOfferCode } from "@/lib/promotions";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -19,7 +20,7 @@ const UUID_ANYWHERE = /[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{
  */
 export function parseCustomerCode(raw: string): string | null {
   const cleaned = String(raw ?? "").replace(INVISIBLE, "");
-  if (/^fellogram:r:/i.test(cleaned)) return null; // that is a reward code, not a customer
+  if (/^fellogram:[ro]:/i.test(cleaned)) return null; // reward and offer codes are not customers
   const bare = cleaned.replace(/^fellogram:c:/i, "");
   const compact = bare.match(/^[0-9a-f]{32}$/i)
     ? `${bare.slice(0, 8)}-${bare.slice(8, 12)}-${bare.slice(12, 16)}-${bare.slice(16, 20)}-${bare.slice(20)}`
@@ -56,7 +57,15 @@ export const getCashierStore = createServerFn({ method: "POST" })
     const { data: storeRow } = check(await context.supabase.from("stores").select("*").eq("id", store.storeId).maybeSingle(), "STORE_LOOKUP_FAILED");
     const canUndo = store.role === "owner" || (storeRow?.staff_can_undo ?? true);
 
-    return { ...store, canUndo, program: program ?? null };
+    // A running stamp event, shown to the cashier so they know visits count extra right now.
+    const nowIso = new Date().toISOString();
+    const { data: eventRows } = await (context.supabase as any)
+      .from("stamp_events").select("name, multiplier, ends_at")
+      .eq("store_id", store.storeId).eq("active", true).lte("starts_at", nowIso).gt("ends_at", nowIso)
+      .order("multiplier", { ascending: false }).limit(1);
+    const event = (eventRows as { name: string; multiplier: number; ends_at: string }[] | null)?.[0];
+
+    return { ...store, canUndo, program: program ?? null, event: event ? { name: event.name, multiplier: event.multiplier, endsAt: event.ends_at } : null };
   });
 
 type CustomerState = {
@@ -67,6 +76,8 @@ type CustomerState = {
   stampsRequired: number;
   cooldownMinutesLeft: number;
   canUndo: boolean;
+  /** Stamps the latest (not undone) stamp gave, e.g. 2 during a ×2 event. */
+  lastStampAmount: number;
 };
 
 async function loadCustomerState(
@@ -84,7 +95,7 @@ async function loadCustomerState(
     supabase.from("profiles").select("first_name, last_name, username").eq("id", customerId).maybeSingle(),
     supabase
       .from("transactions")
-      .select("id, type, created_at, metadata")
+      .select("id, type, amount, created_at, metadata")
       .eq("store_id", storeId)
       .eq("customer_id", customerId)
       .order("created_at", { ascending: false })
@@ -94,7 +105,7 @@ async function loadCustomerState(
   throwIfError(membershipError ?? profileError ?? transactionsError, "CUSTOMER_LOOKUP_FAILED");
   if (!membership) return null;
 
-  const rows = (transactions ?? []) as { id: string; type: string; created_at: string; metadata: any }[];
+  const rows = (transactions ?? []) as { id: string; type: string; amount: number | null; created_at: string; metadata: any }[];
   const reversedIds = new Set(
     rows.filter((r) => r.type === "stamp_reversed").map((r) => String(r.metadata?.reversed_transaction_id ?? "")),
   );
@@ -118,6 +129,7 @@ async function loadCustomerState(
     stampsRequired: membership.loyalty_programs?.stamps_required ?? 10,
     cooldownMinutesLeft: elapsedMs < cooldownMs ? Math.max(1, Math.ceil((cooldownMs - elapsedMs) / 60000)) : 0,
     canUndo: Boolean(lastStamp) && elapsedMs < 30 * 60 * 1000,
+    lastStampAmount: Math.max(1, Number(lastStamp?.amount ?? 1)),
   };
 }
 
@@ -221,6 +233,24 @@ export const redeemRewardToken = createServerFn({ method: "POST" })
     const state = await loadCustomerState(context.supabase, store.storeId, row.customer_id);
     await notified;
     return { ok: true as const, rewardName: row.reward_name, stampsDeducted: row.stamps_deducted, customer: state };
+  });
+
+/** Validate + consume a single-use offer token (fellogram:o:<token>). Checks run atomically in the database. */
+export const redeemOfferToken = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((data: { code: string }) => {
+    const token = parseOfferCode(data?.code ?? "");
+    if (!token) throw new Error("TOKEN_INVALID");
+    return { token };
+  })
+  .handler(async ({ data, context }) => {
+    const store = await resolveStaffStore(context.supabase, context.userId);
+    if (!store) throw new Error("NOT_STORE_STAFF");
+    const { data: rows, error } = await context.supabase.rpc("redeem_offer" as never, { _store_id: store.storeId, _token: data.token } as never);
+    if (error) return { ok: false as const, error: (error as { message: string }).message };
+    const row = (rows as unknown as { out_customer_id: string; out_offer_title: string }[])[0]!;
+    const customer = await loadCustomerState(context.supabase, store.storeId, row.out_customer_id);
+    return { ok: true as const, offerTitle: row.out_offer_title, customer };
   });
 
 /** Creates the customer's card at this store and adds the first stamp in one step. */

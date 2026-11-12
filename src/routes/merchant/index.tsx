@@ -11,7 +11,7 @@ import { t } from "@/lib/i18n";
 import { getMyStore } from "@/lib/store.functions";
 import { GrowthAnalytics } from "@/components/GrowthAnalytics";
 import { StoreJoinShare } from "@/components/StoreJoinShare";
-import { ChevronRight, Settings2, Store, UserPlus, Users } from "lucide-react";
+import { ChevronRight, Megaphone, Settings2, Store, UserPlus, Users } from "lucide-react";
 
 export const Route = createFileRoute("/merchant/")({
   ssr: false,
@@ -88,6 +88,7 @@ function MerchantDashboard() {
             [
               { to: "/merchant/customers", icon: Users, title: t("dash.customers"), hint: t("dash.customers.hint") },
               { to: "/merchant/team", icon: UserPlus, title: t("dash.team"), hint: t("dash.team.hint") },
+              { to: "/merchant/promotions", icon: Megaphone, title: t("dash.promos"), hint: t("dash.promos.hint") },
               { to: "/merchant/store", icon: Store, title: t("dash.store"), hint: t("dash.store.hint") },
             ] as const
           ).map((tile) => (

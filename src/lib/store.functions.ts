@@ -180,6 +180,22 @@ export const getMyCards = createServerFn({ method: "POST" })
       : { data: [] as { id: string; store_id: string; name: string; description: string | null; stamps_required: number; kind: string; active: boolean; created_at: string }[], error: null };
     throwIfError(rewardsError, "REWARDS_LOOKUP_FAILED");
 
+    // Running events and open offers per store (tables newer than the generated types).
+    const nowIso = new Date().toISOString();
+    const promoDb = supabase as any;
+    const [eventsRes, offersRes, usedRes] = storeIds.length
+      ? await Promise.all([
+          promoDb.from("stamp_events").select("id, store_id, name, multiplier, starts_at, ends_at").in("store_id", storeIds).eq("active", true).lte("starts_at", nowIso).gt("ends_at", nowIso),
+          promoDb.from("offers").select("id, store_id, title, details, ends_at, max_uses_per_customer").in("store_id", storeIds).eq("active", true).lte("starts_at", nowIso).gt("ends_at", nowIso).order("ends_at"),
+          promoDb.from("offer_redemptions").select("offer_id").eq("customer_id", userId).eq("status", "used").in("store_id", storeIds),
+        ])
+      : [{ data: [] }, { data: [] }, { data: [] }];
+    // Promotions are a bonus: a failure here must never hide the customer's cards.
+    const events = (eventsRes.error ? [] : eventsRes.data ?? []) as { id: string; store_id: string; name: string; multiplier: number; ends_at: string }[];
+    const offers = (offersRes.error ? [] : offersRes.data ?? []) as { id: string; store_id: string; title: string; details: string | null; ends_at: string; max_uses_per_customer: number }[];
+    const usedByOffer = new Map<string, number>();
+    for (const row of (usedRes.error ? [] : usedRes.data ?? []) as { offer_id: string }[]) usedByOffer.set(row.offer_id, (usedByOffer.get(row.offer_id) ?? 0) + 1);
+
     const logoPaths = (memberships ?? []).flatMap((m) => m.stores?.logo_url ? [m.stores.logo_url] : []);
     const signedLogos = logoPaths.length
       ? (await supabase.storage.from("store-logos").createSignedUrls(logoPaths, 3600)).data ?? []
@@ -205,6 +221,13 @@ export const getMyCards = createServerFn({ method: "POST" })
       referrerBonus: m.loyalty_programs?.referrer_bonus_stamps ?? 0,
       welcomeBonus: m.loyalty_programs?.welcome_bonus_stamps ?? 0,
       lastVisitAt: m.last_visit_at,
+      event: (() => {
+        const best = events.filter((e) => e.store_id === m.store_id).sort((a, b) => b.multiplier - a.multiplier)[0];
+        return best ? { name: best.name, multiplier: best.multiplier, endsAt: best.ends_at } : null;
+      })(),
+      offers: offers
+        .filter((o) => o.store_id === m.store_id)
+        .map((o) => ({ id: o.id, title: o.title, details: o.details, endsAt: o.ends_at, usesLeft: Math.max(0, o.max_uses_per_customer - (usedByOffer.get(o.id) ?? 0)) })),
       reward:
         (rewards ?? []).find((r) => r.store_id === m.store_id && r.kind === "standard")?.name ??
         (rewards ?? []).find((r) => r.store_id === m.store_id)?.name ??

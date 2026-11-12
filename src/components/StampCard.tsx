@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 
 import { InviteFriend } from "@/components/InviteFriend";
+import { OfferQr } from "@/components/OfferQr";
 import { RedeemRewardQr } from "@/components/RedeemRewardQr";
 import { ReviewInvite, reviewInviteSeen } from "@/components/ReviewInvite";
 import { stampColumns } from "@/lib/stamp-layout";
@@ -34,6 +35,10 @@ export type StampCardData = {
   brandAccent?: string | null;
   backgroundTint?: string | null;
   rewards?: { id: string; name: string; description: string | null; stampsRequired: number }[];
+  /** A running multiplied-stamps event at this store, if any. */
+  event?: { name: string; multiplier: number; endsAt: string } | null;
+  /** Open single-use offers; usesLeft is 0 once this customer has used it up. */
+  offers?: { id: string; title: string; details: string | null; endsAt: string; usesLeft: number }[];
   visits: { id: string; type: string; amount: number; createdAt: string }[];
 };
 
@@ -47,6 +52,7 @@ function formatDate(value: string) {
 /** Interactive loyalty card: stamp grid, progress and visit history. */
 export function StampCard({ card, preview = false, focused = false }: { card: StampCardData; preview?: boolean; focused?: boolean }) {
   const [open, setOpen] = useState(false);
+  const [usingOffer, setUsingOffer] = useState<{ id: string; title: string; usesLeft: number } | null>(null);
   const [redeeming, setRedeeming] = useState<{ id: string; name: string } | null>(null);
   const queryClient = useQueryClient();
   const [inviting, setInviting] = useState(false);
@@ -54,6 +60,7 @@ export function StampCard({ card, preview = false, focused = false }: { card: St
   const [inviteDone, setInviteDone] = useState(false);
   const reviewHref = contactLinks(card.contact ?? {}).find((link) => link.kind === "review")?.href;
   const rewards = card.rewards ?? [];
+  const offers = card.offers ?? [];
   const required = Math.max(1, card.stampsRequired);
   const balance = Math.min(required, Math.max(0, card.stampBalance));
   const complete = balance >= required;
@@ -118,6 +125,45 @@ export function StampCard({ card, preview = false, focused = false }: { card: St
           <p className="mt-1 text-xs text-muted-foreground">
             {t("wallet.card.lastVisit", { date: formatDate(card.lastVisitAt) })}
           </p>
+        )}
+
+        {card.event && (
+          <p className="mt-3 rounded-md bg-growth/15 px-3 py-2 text-xs font-bold text-foreground" role="status">
+            {t("promo.banner", { n: card.event.multiplier, name: card.event.name, date: formatDate(card.event.endsAt) })}
+          </p>
+        )}
+
+        {offers.length > 0 && (
+          <div className="mt-4 space-y-2 border-t border-border pt-3">
+            <p className="text-xs font-semibold text-muted-foreground">{t("promo.offers.title")}</p>
+            {offers.map((offer) => (
+              <div key={offer.id} className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-3 rounded-md bg-secondary px-3 py-3">
+                <div className="min-w-0">
+                  <p className="truncate text-sm font-semibold text-secondary-foreground">{offer.title}</p>
+                  <p className="text-xs text-muted-foreground">{offer.usesLeft > 0 ? t("promo.until", { date: formatDate(offer.endsAt) }) : t("promo.offer.used")}</p>
+                  {offer.details && offer.usesLeft > 0 && <p className="mt-0.5 text-xs text-muted-foreground">{offer.details}</p>}
+                </div>
+                {offer.usesLeft > 0 && !preview && (
+                  <Button type="button" size="sm" onClick={() => setUsingOffer({ id: offer.id, title: offer.title, usesLeft: offer.usesLeft })} className="loyalty-card-action touch-action shrink-0 text-xs font-bold">
+                    {t("promo.offer.use")}
+                  </Button>
+                )}
+              </div>
+            ))}
+          </div>
+        )}
+
+        {usingOffer && (
+          <OfferQr
+            offerId={usingOffer.id}
+            title={usingOffer.title}
+            cardId={card.id}
+            usesLeft={usingOffer.usesLeft}
+            onClose={() => {
+              setUsingOffer(null);
+              queryClient.invalidateQueries({ queryKey: ["my-cards"] });
+            }}
+          />
         )}
 
         {rewards.length > 0 && (

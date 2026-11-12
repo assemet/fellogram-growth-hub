@@ -148,6 +148,13 @@
       "when": 1791417162386,
       "tag": "0020_profiles_read_scope",
       "breakpoints": true
+    },
+    {
+      "idx": 21,
+      "version": "7",
+      "when": 1791503562386,
+      "tag": "0021_events_and_offers",
+      "breakpoints": true
     }
   ]
 }

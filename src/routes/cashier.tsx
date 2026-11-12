@@ -13,7 +13,7 @@ import { QueryError } from "@/components/QueryError";
 import { SplashScreen } from "@/components/SplashScreen";
 import { useFellogramAuth } from "@/hooks/useFellogramAuth";
 import { t } from "@/lib/i18n";
-import { awardStamp, enrollCustomer, getCashierStore, lookupCustomer, redeemRewardToken, searchCustomers, undoLastStamp } from "@/lib/cashier.functions";
+import { awardStamp, enrollCustomer, getCashierStore, lookupCustomer, redeemOfferToken, redeemRewardToken, searchCustomers, undoLastStamp } from "@/lib/cashier.functions";
 import { notify, primeAudio } from "@/lib/feedback";
 
 export const Route = createFileRoute("/cashier")({
@@ -39,6 +39,7 @@ type CustomerState = {
   stampsRequired: number;
   cooldownMinutesLeft: number;
   canUndo: boolean;
+  lastStampAmount: number;
 };
 
 function friendlyError(message: string): string {
@@ -48,6 +49,8 @@ function friendlyError(message: string): string {
   }
   if (message.includes("MEMBERSHIP_NOT_FOUND")) return t("cashier.notMember");
   if (message.includes("INVALID_CODE") || message.includes("CUSTOMER_NOT_FOUND")) return t("cashier.invalidCode");
+  if (message.includes("OFFER_ALREADY_USED")) return t("promo.err.used");
+  if (message.includes("OFFER_NOT_ACTIVE")) return t("promo.err.inactive");
   if (message.includes("TOKEN_USED")) return t("cashier.tokenUsed");
   if (message.includes("TOKEN_EXPIRED")) return t("cashier.tokenExpired");
   if (message.includes("TOKEN_INVALID")) return t("cashier.tokenInvalid");
@@ -65,6 +68,7 @@ function Cashier() {
   const stamp = useServerFn(awardStamp);
   const undo = useServerFn(undoLastStamp);
   const redeemFn = useServerFn(redeemRewardToken);
+  const redeemOfferFn = useServerFn(redeemOfferToken);
   const enrollFn = useServerFn(enrollCustomer);
   const searchFn = useServerFn(searchCustomers);
   const [mode, setMode] = useState<"customer" | "reward">("customer");
@@ -242,10 +246,34 @@ function Cashier() {
     },
   });
 
-  // QR prefix decides the action, so either scan button works for either code.
+  const redeemOffer = useMutation({
+    mutationFn: async (raw: string) => {
+      const res = await redeemOfferFn({ data: { code: raw } });
+      if (!res.ok) throw new Error(res.error);
+      return res;
+    },
+    onSuccess: (data) => {
+      if (data.customer) setCustomer(data.customer);
+      setError(null);
+      setJustStamped(false);
+      notify("success");
+      setCode("");
+      setMessage(t("cashier.offerRedeemed", { offer: data.offerTitle }));
+      toast.success(t("cashier.offerRedeemed", { offer: data.offerTitle }));
+    },
+    onError: (e: Error) => {
+      notify("error");
+      setMessage(null);
+      setError(friendlyError(e.message));
+    },
+  });
+
+  // QR prefix decides the action, so either scan button works for any code.
   const handleCode = (raw: string, forcedMode: "customer" | "reward" = mode) => {
     const value = raw.trim();
-    if (value.startsWith("fellogram:r:") || (forcedMode === "reward" && !value.startsWith("fellogram:c:"))) {
+    if (value.startsWith("fellogram:o:")) {
+      redeemOffer.mutate(value);
+    } else if (value.startsWith("fellogram:r:") || (forcedMode === "reward" && !value.startsWith("fellogram:c:"))) {
       redeem.mutate(value);
     } else {
       lookup.mutate(value);
@@ -323,6 +351,11 @@ function Cashier() {
 
       <section className="app-shell space-y-4">
         <h1 className="text-2xl font-bold">{t("cashier.title")}</h1>
+        {store.event && (
+          <p className="rounded-md bg-growth/15 px-4 py-3 text-sm font-bold" role="status">
+            {t("cashier.eventBanner", { n: store.event.multiplier, name: store.event.name })}
+          </p>
+        )}
         {!customer && !newCustomerId && (
           <div className="animate-arrive rounded-lg border border-border bg-card p-5 shadow-[var(--shadow-card)]">
             <div className={scanning ? "overflow-hidden rounded-md bg-foreground" : "hidden"}>
@@ -436,13 +469,13 @@ function Cashier() {
               />
               <Button
                 type="submit"
-                disabled={lookup.isPending || redeem.isPending || code.trim().length === 0}
+                disabled={lookup.isPending || redeem.isPending || redeemOffer.isPending || code.trim().length === 0}
                 variant="secondary"
                 className="touch-action mt-3 h-12 w-full font-bold"
               >
-                {lookup.isPending || redeem.isPending
+                {lookup.isPending || redeem.isPending || redeemOffer.isPending
                   ? t("cashier.searching")
-                  : mode === "reward" || code.trim().startsWith("fellogram:r:")
+                  : mode === "reward" || code.trim().startsWith("fellogram:r:") || code.trim().startsWith("fellogram:o:")
                     ? t("cashier.redeem")
                     : t("cashier.find")}
               </Button>
@@ -489,6 +522,9 @@ function Cashier() {
                 <p className="mt-3 font-display text-2xl font-bold">
                   {t("cashier.stampedBig", { balance: customer.stampBalance, required: customer.stampsRequired })}
                 </p>
+                {customer.lastStampAmount > 1 && (
+                  <p className="mt-1 text-sm font-bold text-primary">{t("cashier.plus", { count: customer.lastStampAmount })}</p>
+                )}
               </div>
             )}
             <p className="mt-1 text-sm text-muted-foreground">
