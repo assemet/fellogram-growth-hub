@@ -591,4 +591,6 @@ export const ar: Record<TranslationKey, string> = {
   "promo.date": "اليوم",
   "promo.time": "الساعة",
   "promo.summary": "من {from} إلى {to}",
+  "promo.badge.offer": "عرض",
+  "promo.badge.event": "×{n} طوابع لكل زيارة",
 };

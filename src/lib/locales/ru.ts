@@ -592,4 +592,6 @@ export const ru: Record<TranslationKey, string> = {
   "promo.date": "Дата",
   "promo.time": "Время",
   "promo.summary": "С {from} по {to}",
+  "promo.badge.offer": "Акция",
+  "promo.badge.event": "×{n} штампов за визит",
 };

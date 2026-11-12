@@ -599,6 +599,8 @@ export const en = {
   "promo.date": "Date",
   "promo.time": "Time",
   "promo.summary": "From {from} to {to}",
+  "promo.badge.offer": "Offer",
+  "promo.badge.event": "×{n} stamps per visit",
 } satisfies Record<string, string>;
 
 export type TranslationKey = keyof typeof en;

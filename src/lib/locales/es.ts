@@ -592,4 +592,6 @@ export const es: Record<TranslationKey, string> = {
   "promo.date": "Fecha",
   "promo.time": "Hora",
   "promo.summary": "Del {from} al {to}",
+  "promo.badge.offer": "Oferta",
+  "promo.badge.event": "×{n} sellos por visita",
 };

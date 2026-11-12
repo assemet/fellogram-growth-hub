@@ -1,6 +1,7 @@
 import { Link } from "@tanstack/react-router";
 import { Building2, ChevronRight, CreditCard, Gift, LayoutGrid, LayoutList } from "lucide-react";
 
+import { PromoBadge } from "@/components/PromoBadge";
 import type { StampCardData } from "@/components/StampCard";
 import { brandThemeStyle, resolveCardTheme } from "@/lib/card-theme";
 import { t } from "@/lib/i18n";
@@ -42,7 +43,8 @@ export function WalletCardRow({ card }: { card: WalletCard }) {
         <Avatar card={card} className="h-12 w-12 rounded-lg" />
         <div className="min-w-0 flex-1">
           <div className="flex items-center justify-between gap-2">
-            <p className="truncate font-display text-base font-bold">{card.storeName}</p>
+            <p className="min-w-0 truncate font-display text-base font-bold">{card.storeName}</p>
+            <PromoBadge card={card} />
             {ready ? <ReadyBadge /> : <span className="shrink-0 text-sm font-bold tabular-nums text-muted-foreground">{balance}/{required}</span>}
           </div>
           <div className="mt-2">
@@ -68,13 +70,16 @@ export function WalletCardTile({ card }: { card: WalletCard }) {
           <div className="flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden rounded-md border border-current/25 bg-white/15" aria-hidden="true">
             {card.logoUrl ? <img src={card.logoUrl} alt="" className="h-full w-full object-cover" /> : <Building2 className="h-4 w-4" />}
           </div>
-          <p className="line-clamp-2 min-w-0 break-words font-display text-sm font-bold leading-snug">{card.storeName}</p>
+          <p className="line-clamp-2 min-w-0 flex-1 break-words font-display text-sm font-bold leading-snug">{card.storeName}</p>
         </div>
         <div className="mt-auto space-y-2 p-3">
           <ProgressBar balance={balance} required={required} />
           <div className="flex items-center justify-between gap-2">
             <span className="text-sm font-bold tabular-nums">{balance}/{required}</span>
-            {ready && <ReadyBadge />}
+            <span className="flex items-center gap-1">
+              <PromoBadge card={card} />
+              {ready && <ReadyBadge />}
+            </span>
           </div>
         </div>
       </Link>

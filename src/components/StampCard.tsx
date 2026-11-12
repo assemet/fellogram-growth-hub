@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 
 import { InviteFriend } from "@/components/InviteFriend";
+import { PromoBadge } from "@/components/PromoBadge";
 import { OfferQr } from "@/components/OfferQr";
 import { RedeemRewardQr } from "@/components/RedeemRewardQr";
 import { ReviewInvite, reviewInviteSeen } from "@/components/ReviewInvite";
@@ -79,9 +80,12 @@ export function StampCard({ card, preview = false, focused = false }: { card: St
               <p className="mt-1 text-xs font-medium opacity-90">{card.programName}</p>
             </div>
           </div>
-          <span className="shrink-0 rounded-md border border-current/20 bg-card/15 px-3 py-1 text-sm font-extrabold backdrop-blur-md">
-            {balance}/{required}
-          </span>
+          <div className="flex shrink-0 flex-col items-end gap-1.5">
+            <span className="rounded-md border border-current/20 bg-card/15 px-3 py-1 text-sm font-extrabold backdrop-blur-md">
+              {balance}/{required}
+            </span>
+            {!preview && <PromoBadge card={card} />}
+          </div>
         </div>
         {card.reward && (
           <p className="mt-3 flex items-center gap-2 text-sm opacity-95">

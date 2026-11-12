@@ -592,4 +592,6 @@ export const tr: Record<TranslationKey, string> = {
   "promo.date": "Tarih",
   "promo.time": "Saat",
   "promo.summary": "{from} – {to} arası",
+  "promo.badge.offer": "Teklif",
+  "promo.badge.event": "Ziyaret başına ×{n} damga",
 };
