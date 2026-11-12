@@ -7,14 +7,16 @@ import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { dirOf, getLocale, t } from "@/lib/i18n";
 import { ShareLinkSheet } from "@/components/ShareLinkSheet";
-import { downloadBlob, posterAddress, posterPageUrl, printPosterImage, renderPoster } from "@/lib/poster";
+import { PosterFormatPicker } from "@/components/PosterFormatPicker";
+import { DEFAULT_POSTER_FORMAT, downloadBlob, posterAddress, posterPageUrl, printPosterImage, renderPoster, type PosterFormat } from "@/lib/poster";
 import { getStoreJoinLink } from "@/lib/store.functions";
 import { isTelegramPhone, openInPhoneBrowser } from "@/lib/telegram";
 
 /** Merchant dashboard card: the store's join QR + link (the way customers get their card). */
 export function StoreJoinShare({ storeName }: { storeName: string }) {
   const load = useServerFn(getStoreJoinLink);
-  const { data } = useQuery({ queryKey: ["store-join-link"], queryFn: () => load(), staleTime: Infinity });
+  const { data } = useQuery({ queryKey: ["store-join-link"], queryFn: () => load(), staleTime: 20 * 60_000 });
+  const [format, setFormat] = useState<PosterFormat>(DEFAULT_POSTER_FORMAT);
   const phone = isTelegramPhone();
   const [qr, setQr] = useState<string | null>(null);
   const [saved, setSaved] = useState<{ url: string; blob: Blob } | null>(null);
@@ -55,6 +57,7 @@ export function StoreJoinShare({ storeName }: { storeName: string }) {
         address: posterAddress(data.link), // t.me/<bot>/<app>
       },
       dirOf(getLocale()),
+      { format, storeLogoUrl: data.logoUrl ?? null },
     );
   };
 
@@ -71,7 +74,7 @@ export function StoreJoinShare({ storeName }: { storeName: string }) {
   /** Telegram's phone apps cannot print or save files: open the poster page in the phone's own browser instead. */
   const openPosterPage = () => {
     if (!data?.link) return;
-    openInPhoneBrowser(posterPageUrl(window.location.origin, storeName, data.link, getLocale()));
+    openInPhoneBrowser(posterPageUrl(window.location.origin, storeName, data.link, getLocale(), data.logoUrl));
   };
 
   const print = useMutation({
@@ -79,7 +82,7 @@ export function StoreJoinShare({ storeName }: { storeName: string }) {
       const blob = await makePoster();
       const url = URL.createObjectURL(blob);
       try {
-        await printPosterImage(url, storeName);
+        await printPosterImage(url, storeName, format.paper ?? undefined);
       } catch {
         // Printing is blocked in this browser: hand over the image instead.
         toast.error(t("join.share.printError"));
@@ -97,7 +100,7 @@ export function StoreJoinShare({ storeName }: { storeName: string }) {
   const save = useMutation({
     mutationFn: async () => {
       // Straight to the device's downloads, not a share sheet.
-      downloadBlob(await makePoster(), "fellogram-poster.png");
+      downloadBlob(await makePoster(), `fellogram-poster-${format.id}.png`);
     },
     onError: (error) => {
       console.error(error);
@@ -113,6 +116,8 @@ export function StoreJoinShare({ storeName }: { storeName: string }) {
       <div className="mx-auto mt-4 flex h-48 w-48 items-center justify-center rounded-md bg-white p-2 ring-1 ring-border">
         {qr ? <img src={qr} alt={t("join.share.title")} className="h-full w-full object-contain" /> : <span className="text-xs text-muted-foreground">…</span>}
       </div>
+
+      {!phone && <div className="mt-4"><PosterFormatPicker value={format} onChange={setFormat} /></div>}
 
       <div className="mt-4 grid grid-cols-2 gap-2">
         <Button type="button" variant="outline" className="touch-action h-auto min-h-12 flex-col gap-0.5 whitespace-normal px-1 py-2 text-center text-xs font-semibold leading-tight" onClick={copy} disabled={!data?.link}>
@@ -147,7 +152,7 @@ export function StoreJoinShare({ storeName }: { storeName: string }) {
               variant="outline"
               className="touch-action h-auto min-h-12 flex-col gap-0.5 whitespace-normal px-1 py-2 text-center text-xs font-semibold leading-tight"
               onClick={() => print.mutate()}
-              disabled={!data?.link || print.isPending}
+              disabled={!data?.link || print.isPending || !format.paper}
             >
               <Printer className="h-4 w-4" />
               {t("join.share.print")}
@@ -181,7 +186,7 @@ export function StoreJoinShare({ storeName }: { storeName: string }) {
           <p className="max-w-sm text-center text-sm font-medium text-background">{t("join.share.saveHint")}</p>
           <a
             href={saved.url}
-            download="fellogram-poster.png"
+            download={`fellogram-poster-${format.id}.png`}
             className="touch-action inline-flex h-12 w-full max-w-sm items-center justify-center gap-2 rounded-md bg-primary px-4 text-sm font-bold text-primary-foreground"
           >
             <Download className="h-4 w-4" />

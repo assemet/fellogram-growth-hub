@@ -594,4 +594,12 @@ export const tr: Record<TranslationKey, string> = {
   "promo.summary": "{from} – {to} arası",
   "promo.badge.offer": "Teklif",
   "promo.badge.event": "Ziyaret başına ×{n} damga",
+  "poster.format.title": "Poster boyutu",
+  "poster.format.square": "Kare",
+  "poster.format.story": "Hikâye",
+  "poster.format.a4.hint": "Kapı veya duvar için. Tam sayfa basılır.",
+  "poster.format.a5.hint": "Kasa veya masa için. Yarım sayfa basılır.",
+  "poster.format.a6.hint": "Küçük kart veya etiket. Kartpostal boyutunda.",
+  "poster.format.square.hint": "Instagram veya WhatsApp paylaşımı için. Görsel olarak kaydedin.",
+  "poster.format.story.hint": "Hikâye veya durum için (9:16). Görsel olarak kaydedin.",
 };

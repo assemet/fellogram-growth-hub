@@ -563,12 +563,16 @@ export const getStoreJoinLink = createServerFn({ method: "POST" })
   .handler(async ({ context }) => {
     const { data: store } = check(await context.supabase
       .from("stores")
-      .select("id")
+      .select("id, logo_url")
       .eq("id", await ownedIdOrNil(context.supabase, context.userId))
       .maybeSingle(), "STORE_LOOKUP_FAILED");
     if (!store) throw new Error("STORE_NOT_FOUND");
     const param = `join_${store.id}`;
-    return { storeId: store.id as string, param, link: miniAppLink(param) };
+    // Short-lived link to the store's logo, drawn on the poster (null when the store has none).
+    const logoUrl = store.logo_url
+      ? (await context.supabase.storage.from("store-logos").createSignedUrl(store.logo_url, 3600)).data?.signedUrl ?? null
+      : null;
+    return { storeId: store.id as string, param, link: miniAppLink(param), logoUrl };
   });
 
 export const getReferralLink = createServerFn({ method: "POST" })

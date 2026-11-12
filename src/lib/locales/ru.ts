@@ -594,4 +594,12 @@ export const ru: Record<TranslationKey, string> = {
   "promo.summary": "С {from} по {to}",
   "promo.badge.offer": "Акция",
   "promo.badge.event": "×{n} штампов за визит",
+  "poster.format.title": "Размер постера",
+  "poster.format.square": "Квадрат",
+  "poster.format.story": "Сторис",
+  "poster.format.a4.hint": "Для двери или стены. Печать на целой странице.",
+  "poster.format.a5.hint": "Для кассы или стола. Половина страницы.",
+  "poster.format.a6.hint": "Маленькая карточка или стикер. Размер открытки.",
+  "poster.format.square.hint": "Для поста в Instagram или WhatsApp. Сохраните как изображение.",
+  "poster.format.story.hint": "Для сторис или статуса (9:16). Сохраните как изображение.",
 };

@@ -601,6 +601,14 @@ export const en = {
   "promo.summary": "From {from} to {to}",
   "promo.badge.offer": "Offer",
   "promo.badge.event": "×{n} stamps per visit",
+  "poster.format.title": "Poster size",
+  "poster.format.square": "Square",
+  "poster.format.story": "Story",
+  "poster.format.a4.hint": "Door or wall. Prints full page.",
+  "poster.format.a5.hint": "Counter or table. Prints half a page.",
+  "poster.format.a6.hint": "Small card or sticker. Prints as a postcard.",
+  "poster.format.square.hint": "For an Instagram or WhatsApp post. Save as an image.",
+  "poster.format.story.hint": "For a story or status (9:16). Save as an image.",
 } satisfies Record<string, string>;
 
 export type TranslationKey = keyof typeof en;

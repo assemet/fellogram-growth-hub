@@ -594,4 +594,12 @@ export const es: Record<TranslationKey, string> = {
   "promo.summary": "Del {from} al {to}",
   "promo.badge.offer": "Oferta",
   "promo.badge.event": "×{n} sellos por visita",
+  "poster.format.title": "Tamaño del póster",
+  "poster.format.square": "Cuadrado",
+  "poster.format.story": "Historia",
+  "poster.format.a4.hint": "Puerta o pared. Se imprime a página completa.",
+  "poster.format.a5.hint": "Mostrador o mesa. Media página.",
+  "poster.format.a6.hint": "Tarjeta pequeña o pegatina. Tamaño postal.",
+  "poster.format.square.hint": "Para una publicación de Instagram o WhatsApp. Guárdalo como imagen.",
+  "poster.format.story.hint": "Para una historia o estado (9:16). Guárdalo como imagen.",
 };

@@ -593,4 +593,12 @@ export const ar: Record<TranslationKey, string> = {
   "promo.summary": "من {from} إلى {to}",
   "promo.badge.offer": "عرض",
   "promo.badge.event": "×{n} طوابع لكل زيارة",
+  "poster.format.title": "حجم البوستر",
+  "poster.format.square": "مربع",
+  "poster.format.story": "ستوري",
+  "poster.format.a4.hint": "للباب أو الجدار. يُطبع بصفحة كاملة.",
+  "poster.format.a5.hint": "للكاشير أو الطاولة. يُطبع بنصف صفحة.",
+  "poster.format.a6.hint": "بطاقة صغيرة أو ملصق. يُطبع بحجم بطاقة بريدية.",
+  "poster.format.square.hint": "لمنشور إنستغرام أو واتساب. يُحفظ كصورة.",
+  "poster.format.story.hint": "لستوري أو حالة (9:16). يُحفظ كصورة.",
 };
