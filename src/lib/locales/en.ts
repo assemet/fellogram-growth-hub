@@ -596,6 +596,9 @@ export const en = {
   "cashier.eventBanner": "×{n} stamps per visit right now: {name}",
   "cashier.plus": "+{count} stamps",
   "cashier.offerRedeemed": "Offer used: {offer}",
+  "promo.date": "Date",
+  "promo.time": "Time",
+  "promo.summary": "From {from} to {to}",
 } satisfies Record<string, string>;
 
 export type TranslationKey = keyof typeof en;

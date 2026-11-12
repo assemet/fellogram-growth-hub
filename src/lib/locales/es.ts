@@ -589,4 +589,7 @@ export const es: Record<TranslationKey, string> = {
   "cashier.eventBanner": "×{n} sellos por visita ahora: {name}",
   "cashier.plus": "+{count} sellos",
   "cashier.offerRedeemed": "Oferta usada: {offer}",
+  "promo.date": "Fecha",
+  "promo.time": "Hora",
+  "promo.summary": "Del {from} al {to}",
 };

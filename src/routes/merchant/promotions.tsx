@@ -11,7 +11,7 @@ import { QueryError } from "@/components/QueryError";
 import { SplashScreen } from "@/components/SplashScreen";
 import { Button } from "@/components/ui/button";
 import { useFellogramAuth } from "@/hooks/useFellogramAuth";
-import { formatDate } from "@/lib/format";
+import { formatDateTime } from "@/lib/format";
 import { t } from "@/lib/i18n";
 import { promoStatus, toLocalInput, type PromoStatus } from "@/lib/promotions";
 import { getPromotions, saveOffer, saveStampEvent, stopPromotion } from "@/lib/promotions.functions";
@@ -48,17 +48,37 @@ function StatusPill({ status }: { status: PromoStatus }) {
   return <span className={`shrink-0 rounded-full px-2 py-0.5 text-[11px] font-bold ${style}`}>{t(`promo.status.${status}`)}</span>;
 }
 
-function WindowFields({ start, end, onStart, onEnd }: { start: string; end: string; onStart: (v: string) => void; onEnd: (v: string) => void }) {
+function DateTimeField({ label, value, onChange }: { label: string; value: string; onChange: (v: string) => void }) {
+  const [date = "", time = ""] = value.split("T");
+  const set = (d: string, tm: string) => onChange(`${d}T${tm || "00:00"}`);
   return (
-    <div className="grid grid-cols-2 gap-3">
-      <label className="text-xs font-semibold text-muted-foreground">
-        {t("promo.starts")}
-        <input type="datetime-local" value={start} onChange={(e) => onStart(e.target.value)} className={inputClass} />
-      </label>
-      <label className="text-xs font-semibold text-muted-foreground">
-        {t("promo.ends")}
-        <input type="datetime-local" value={end} onChange={(e) => onEnd(e.target.value)} className={inputClass} />
-      </label>
+    <fieldset className="rounded-md border border-border p-3">
+      <legend className="px-1 text-xs font-bold">{label}</legend>
+      <div className="grid grid-cols-[minmax(0,3fr)_minmax(0,2fr)] gap-2">
+        <label className="text-[11px] font-semibold text-muted-foreground">
+          {t("promo.date")}
+          <input type="date" value={date} onChange={(e) => set(e.target.value, time)} className={inputClass} />
+        </label>
+        <label className="text-[11px] font-semibold text-muted-foreground">
+          {t("promo.time")}
+          <input type="time" value={time} onChange={(e) => set(date, e.target.value)} className={inputClass} />
+        </label>
+      </div>
+    </fieldset>
+  );
+}
+
+function WindowFields({ start, end, onStart, onEnd }: { start: string; end: string; onStart: (v: string) => void; onEnd: (v: string) => void }) {
+  const startDate = new Date(start);
+  const endDate = new Date(end);
+  const valid = !Number.isNaN(startDate.getTime()) && !Number.isNaN(endDate.getTime()) && endDate > startDate;
+  return (
+    <div className="space-y-3">
+      <DateTimeField label={t("promo.starts")} value={start} onChange={onStart} />
+      <DateTimeField label={t("promo.ends")} value={end} onChange={onEnd} />
+      <p className={`text-xs font-semibold ${valid ? "text-primary" : "text-destructive"}`} role="status">
+        {valid ? t("promo.summary", { from: formatDateTime(startDate.toISOString()), to: formatDateTime(endDate.toISOString()) }) : t("promo.invalidDates")}
+      </p>
     </div>
   );
 }
@@ -179,7 +199,7 @@ function PromotionsPage() {
               </div>
             </div>
             <WindowFields start={eventStart} end={eventEnd} onStart={setEventStart} onEnd={setEventEnd} />
-            <Button type="submit" disabled={eventMutation.isPending || eventName.trim().length < 2} className="touch-action h-12 w-full font-bold">
+            <Button type="submit" disabled={eventMutation.isPending || eventName.trim().length < 2 || !(new Date(eventEnd) > new Date(eventStart))} className="touch-action h-12 w-full font-bold">
               {t("promo.event.create")}
             </Button>
           </form>
@@ -192,7 +212,7 @@ function PromotionsPage() {
                   <li key={event.id} className="flex items-center gap-2 rounded-md bg-secondary p-3">
                     <div className="min-w-0 flex-1">
                       <p className="flex items-center gap-2 text-sm font-semibold"><span className="truncate">{event.name} · ×{event.multiplier}</span><StatusPill status={status} /></p>
-                      <p className="mt-0.5 text-xs text-muted-foreground">{formatDate(event.startsAt)} – {formatDate(event.endsAt)}</p>
+                      <p className="mt-0.5 text-xs text-muted-foreground">{formatDateTime(event.startsAt)} → {formatDateTime(event.endsAt)}</p>
                     </div>
                     {status !== "ended" && stopButton("event", event.id)}
                   </li>
@@ -221,7 +241,7 @@ function PromotionsPage() {
               <input value={offerDetails} onChange={(e) => setOfferDetails(e.target.value)} maxLength={300} className={inputClass} />
             </label>
             <WindowFields start={offerStart} end={offerEnd} onStart={setOfferStart} onEnd={setOfferEnd} />
-            <Button type="submit" disabled={offerMutation.isPending || offerTitle.trim().length < 2} className="touch-action h-12 w-full font-bold">
+            <Button type="submit" disabled={offerMutation.isPending || offerTitle.trim().length < 2 || !(new Date(offerEnd) > new Date(offerStart))} className="touch-action h-12 w-full font-bold">
               {t("promo.offer.create")}
             </Button>
           </form>
@@ -234,7 +254,7 @@ function PromotionsPage() {
                   <li key={offer.id} className="flex items-center gap-2 rounded-md bg-secondary p-3">
                     <div className="min-w-0 flex-1">
                       <p className="flex items-center gap-2 text-sm font-semibold"><span className="truncate">{offer.title}</span><StatusPill status={status} /></p>
-                      <p className="mt-0.5 text-xs text-muted-foreground">{formatDate(offer.startsAt)} – {formatDate(offer.endsAt)} · {t("promo.used", { count: offer.used })}</p>
+                      <p className="mt-0.5 text-xs text-muted-foreground">{formatDateTime(offer.startsAt)} → {formatDateTime(offer.endsAt)} · {t("promo.used", { count: offer.used })}</p>
                     </div>
                     {status !== "ended" && stopButton("offer", offer.id)}
                   </li>

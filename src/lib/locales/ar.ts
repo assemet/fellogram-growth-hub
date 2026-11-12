@@ -588,4 +588,7 @@ export const ar: Record<TranslationKey, string> = {
   "cashier.eventBanner": "×{n} طوابع لكل زيارة الآن: {name}",
   "cashier.plus": "+{count} طوابع",
   "cashier.offerRedeemed": "تم استخدام العرض: {offer}",
+  "promo.date": "اليوم",
+  "promo.time": "الساعة",
+  "promo.summary": "من {from} إلى {to}",
 };

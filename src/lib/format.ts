@@ -27,3 +27,11 @@ export function formatDate(iso: string | null | undefined): string {
   if (Number.isNaN(date.getTime())) return "";
   return new Intl.DateTimeFormat(getLocale(), { day: "numeric", month: "short", year: "numeric" }).format(date);
 }
+
+/** "12 Nov, 11:35" in the app language: date and time together, for promotion windows. */
+export function formatDateTime(iso: string | null | undefined): string {
+  if (!iso) return "";
+  const date = new Date(iso);
+  if (Number.isNaN(date.getTime())) return "";
+  return new Intl.DateTimeFormat(getLocale(), { day: "numeric", month: "short", hour: "numeric", minute: "2-digit" }).format(date);
+}

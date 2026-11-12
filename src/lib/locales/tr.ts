@@ -589,4 +589,7 @@ export const tr: Record<TranslationKey, string> = {
   "cashier.eventBanner": "Şu an ziyaret başına ×{n} damga: {name}",
   "cashier.plus": "+{count} damga",
   "cashier.offerRedeemed": "Teklif kullanıldı: {offer}",
+  "promo.date": "Tarih",
+  "promo.time": "Saat",
+  "promo.summary": "{from} – {to} arası",
 };

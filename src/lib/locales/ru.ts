@@ -589,4 +589,7 @@ export const ru: Record<TranslationKey, string> = {
   "cashier.eventBanner": "Сейчас ×{n} штампов за визит: {name}",
   "cashier.plus": "+{count} штампов",
   "cashier.offerRedeemed": "Предложение использовано: {offer}",
+  "promo.date": "Дата",
+  "promo.time": "Время",
+  "promo.summary": "С {from} по {to}",
 };
