@@ -607,4 +607,5 @@ export const es: Record<TranslationKey, string> = {
   "celebrate.bodyNoReward": "Tu recompensa está lista. Muestra tu tarjeta en caja.",
   "celebrate.close": "¡Genial!",
   "cashier.cardComplete": "¡Tarjeta completa! Recompensa lista",
+  "rewards.done.thanks": "¡Disfrútalo! Tu tarjeta empieza de nuevo. ¡Hasta la próxima!",
 };

@@ -1,9 +1,11 @@
 import { useEffect, useRef, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { CheckCircle2, X } from "lucide-react";
+import { Gift, X } from "lucide-react";
+import { Confetti } from "@/components/Confetti";
 import { Button } from "@/components/ui/button";
 
+import { notify } from "@/lib/feedback";
 import { t } from "@/lib/i18n";
 import { getMyCards, requestRedemption } from "@/lib/store.functions";
 
@@ -35,6 +37,7 @@ export function RedeemRewardQr({
     if (done || startBalance.current === undefined || currentBalance === undefined) return;
     if (currentBalance < startBalance.current) {
       setDone(true);
+      notify("success");
       onRedeemed?.();
     }
   }, [currentBalance, done, onRedeemed]);
@@ -80,9 +83,13 @@ export function RedeemRewardQr({
     return (
       <div className="fixed inset-0 z-50 flex items-end justify-center bg-foreground/50 p-4 sm:items-center" role="dialog" aria-modal="true">
         <div className="animate-arrive w-full max-w-sm rounded-lg border border-border bg-card p-6 pb-[calc(1.5rem+env(safe-area-inset-bottom))] text-center shadow-[var(--shadow-float)]">
-          <CheckCircle2 className="mx-auto h-12 w-12 text-primary" aria-hidden="true" />
-          <p className="mt-3 font-display text-lg font-bold">{t("rewards.done")}</p>
-          <p className="mt-1 text-sm text-muted-foreground">{rewardName}</p>
+          <Confetti fixed count={30} />
+          <span className="animate-stamp-pop mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-gold text-gold-foreground">
+            <Gift className="h-8 w-8" aria-hidden="true" />
+          </span>
+          <p className="mt-3 font-display text-xl font-bold">{t("rewards.done")}</p>
+          <p className="mt-1 text-sm font-semibold">{rewardName}</p>
+          <p className="mt-2 text-sm text-muted-foreground">{t("rewards.done.thanks")}</p>
           <Button type="button" onClick={onClose} className="touch-action mt-5 h-12 w-full font-semibold">
             {t("rewards.done.close")}
           </Button>

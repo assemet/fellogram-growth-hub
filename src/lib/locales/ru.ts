@@ -607,4 +607,5 @@ export const ru: Record<TranslationKey, string> = {
   "celebrate.bodyNoReward": "Ваша награда готова. Покажите карту на кассе.",
   "celebrate.close": "Отлично!",
   "cashier.cardComplete": "Карта заполнена! Награда готова",
+  "rewards.done.thanks": "Приятного! Ваша карта начинается заново. До новой встречи.",
 };

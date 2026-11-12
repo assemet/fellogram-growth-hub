@@ -607,4 +607,5 @@ export const tr: Record<TranslationKey, string> = {
   "celebrate.bodyNoReward": "Ödülün hazır. Kartını kasada göster.",
   "celebrate.close": "Harika!",
   "cashier.cardComplete": "Kart doldu! Ödül hazır",
+  "rewards.done.thanks": "Afiyet olsun! Kartın yeniden başlıyor. Bir dahaki sefere görüşürüz.",
 };

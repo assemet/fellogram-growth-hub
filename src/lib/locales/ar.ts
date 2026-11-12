@@ -606,4 +606,5 @@ export const ar: Record<TranslationKey, string> = {
   "celebrate.bodyNoReward": "مكافأتك جاهزة. أرِ بطاقتك عند الكاشير.",
   "celebrate.close": "رائع!",
   "cashier.cardComplete": "اكتملت البطاقة! المكافأة جاهزة",
+  "rewards.done.thanks": "بالهناء والشفاء! تبدأ بطاقتك من جديد. ننتظرك في زيارتك القادمة.",
 };
