@@ -116,7 +116,8 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
     ],
     links: [
       { rel: "stylesheet", href: appCss },
-      // The Latin text font is needed on every screen, so fetch it before the CSS asks for it.
+      // The Latin text font is needed on every screen, so fetch it before the CSS asks for it. The Arabic font is
+      // preloaded by the inline language script below, only for Arabic, so English never downloads it.
       { rel: "preload", href: "/fonts/dm-sans-latin.woff2", as: "font", type: "font/woff2", crossOrigin: "anonymous" },
       { rel: "icon", type: "image/png", href: "/favicon.png" },
       { rel: "preload", as: "image", href: "/logo-mascot.png" },
@@ -138,7 +139,7 @@ function RootShell({ children }: { children: ReactNode }) {
         {/* Set language/direction before first paint so Arabic never flashes as LTR English. */}
         <script
           dangerouslySetInnerHTML={{
-            __html: `try{var S=${JSON.stringify(LOCALES.map((item) => item.code))},R=${JSON.stringify(LOCALES.filter((item) => item.dir === "rtl").map((item) => item.code))};function m(t){t=String(t||'').toLowerCase().replace('_','-').split('-')[0];return S.indexOf(t)>-1?t:null}var l=m(localStorage.getItem('fellogram.locale'));if(!l){var w=window.Telegram&&Telegram.WebApp&&Telegram.WebApp.initDataUnsafe&&Telegram.WebApp.initDataUnsafe.user;var c=[w&&w.language_code].concat(navigator.languages&&navigator.languages.length?Array.prototype.slice.call(navigator.languages):[navigator.language]);for(var i=0;i<c.length&&!l;i++)l=m(c[i])}l=l||'en';document.documentElement.lang=l;document.documentElement.dir=R.indexOf(l)>-1?'rtl':'ltr'}catch(e){}try{if(localStorage.getItem('fellogram.appearance')==='dark')document.documentElement.classList.add('dark');if(localStorage.getItem('fellogram.textSize')==='large')document.documentElement.style.fontSize='112.5%'}catch(e){}`,
+            __html: `try{var S=${JSON.stringify(LOCALES.map((item) => item.code))},R=${JSON.stringify(LOCALES.filter((item) => item.dir === "rtl").map((item) => item.code))};function m(t){t=String(t||'').toLowerCase().replace('_','-').split('-')[0];return S.indexOf(t)>-1?t:null}var l=m(localStorage.getItem('fellogram.locale'));if(!l){var w=window.Telegram&&Telegram.WebApp&&Telegram.WebApp.initDataUnsafe&&Telegram.WebApp.initDataUnsafe.user;var c=[w&&w.language_code].concat(navigator.languages&&navigator.languages.length?Array.prototype.slice.call(navigator.languages):[navigator.language]);for(var i=0;i<c.length&&!l;i++)l=m(c[i])}l=l||'en';document.documentElement.lang=l;document.documentElement.dir=R.indexOf(l)>-1?'rtl':'ltr';if(l==='ar'){var k=document.createElement('link');k.rel='preload';k.as='font';k.type='font/woff2';k.href='/fonts/cairo-arabic.woff2';k.crossOrigin='anonymous';document.head.appendChild(k)}}catch(e){}try{if(localStorage.getItem('fellogram.appearance')==='dark')document.documentElement.classList.add('dark');if(localStorage.getItem('fellogram.textSize')==='large')document.documentElement.style.fontSize='112.5%'}catch(e){}`,
           }}
         />
         <HeadContent />

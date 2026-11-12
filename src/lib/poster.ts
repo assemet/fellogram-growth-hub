@@ -9,7 +9,27 @@ export const POSTER_HEIGHT = 1754;
 const NAVY = "#0b1f5c";
 const MUTED = "#4a5a86";
 const TINT = "#eaf1fe";
-const FONT = `"Segoe UI", system-ui, -apple-system, "Noto Sans Arabic", "Noto Sans", Roboto, Arial, sans-serif`;
+// The app's own fonts, so the printed poster matches the screen; system fonts only as a last resort.
+const FALLBACK = `system-ui, -apple-system, "Segoe UI", "Noto Sans Arabic", "Noto Sans", Roboto, Arial, sans-serif`;
+const FONT = `"DM Sans", "Cairo", "Inter", ${FALLBACK}`;
+const DISPLAY_FONT = `"Space Grotesk", "DM Sans", "Cairo", "Inter", ${FALLBACK}`;
+
+/**
+ * The app's fonts only download when text in their range appears, so draw nothing until they are ready: a canvas
+ * painted too early silently falls back to a system font. Never blocks for long and never fails the poster.
+ */
+async function loadFonts(text: PosterText): Promise<void> {
+  if (typeof document === "undefined" || !document.fonts) return;
+  const sample = `${text.name} ${text.caption} ${text.powered} ${text.address}`;
+  const wanted = [`700 46px "DM Sans"`, `500 36px "DM Sans"`, `700 112px "Space Grotesk"`, `700 46px "Cairo"`, `500 36px "Cairo"`];
+  const loading = Promise.all(wanted.map((font) => document.fonts.load(font, sample))).then(() => undefined);
+  const timeout = new Promise<void>((resolve) => setTimeout(resolve, 3000));
+  try {
+    await Promise.race([loading, timeout]);
+  } catch {
+    // A missing font only changes the look.
+  }
+}
 
 export type PosterText = { name: string; caption: string; powered: string; address: string };
 
@@ -74,7 +94,7 @@ function roundRect(ctx: CanvasRenderingContext2D, x: number, y: number, w: numbe
 
 /** Draws the poster and returns it as a PNG blob. `link` is encoded as a crisp QR (square modules, no smoothing). */
 export async function renderPoster(link: string, text: PosterText, dir: "rtl" | "ltr", logoUrl = "/logo-mascot.png"): Promise<Blob> {
-  const [{ default: QRCode }, logo] = await Promise.all([import("qrcode"), loadLogo(logoUrl)]);
+  const [{ default: QRCode }, logo] = await Promise.all([import("qrcode"), loadLogo(logoUrl), loadFonts(text)]);
   const qr = QRCode.create(link, { errorCorrectionLevel: "M" });
   const count = qr.modules.size;
 
@@ -97,9 +117,9 @@ export async function renderPoster(link: string, text: PosterText, dir: "rtl" | 
   roundRect(ctx, 44, 44, POSTER_WIDTH - 88, POSTER_HEIGHT - 88, 36);
   ctx.stroke();
 
-  const draw = (value: string, x: number, y: number, size: number, weight: number, color: string) => {
+  const draw = (value: string, x: number, y: number, size: number, weight: number, color: string, family = FONT) => {
     ctx.fillStyle = color;
-    ctx.font = `${weight} ${size}px ${FONT}`;
+    ctx.font = `${weight} ${size}px ${family}`;
     ctx.fillText(value, x, y);
   };
 
@@ -132,7 +152,7 @@ export async function renderPoster(link: string, text: PosterText, dir: "rtl" | 
   // Store name: the headline. Wraps instead of shrinking, up to three lines.
   const nameSize = 112;
   const lineStep = nameSize * 1.18;
-  ctx.font = `800 ${nameSize}px ${FONT}`;
+  ctx.font = `700 ${nameSize}px ${DISPLAY_FONT}`;
   const nameLines = wrapLines((v) => ctx.measureText(v).width, text.name, POSTER_WIDTH - 220, 3);
   const aboveBaseline = nameSize * 0.9; // room the first line needs above its baseline
   const nameBlock = aboveBaseline + (nameLines.length - 1) * lineStep;
@@ -150,7 +170,7 @@ export async function renderPoster(link: string, text: PosterText, dir: "rtl" | 
   let y = Math.round(top + (bottom - top - blockHeight) / 2 + aboveBaseline);
 
   for (const line of nameLines) {
-    draw(line, cx, y, nameSize, 800, NAVY);
+    draw(line, cx, y, nameSize, 700, NAVY, DISPLAY_FONT);
     y += lineStep;
   }
   y = Math.round(y - lineStep + captionGap);
