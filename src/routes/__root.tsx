@@ -1,4 +1,5 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { LOAD_GUARD_SCRIPT } from "@/lib/load-guard";
 import {
   Outlet,
   Link,
@@ -134,6 +135,8 @@ function RootShell({ children }: { children: ReactNode }) {
   return (
     <html lang="en" suppressHydrationWarning>
       <head>
+        {/* Reloads once when a cached page asks for app files that no longer exist, and replaces a blank screen with a message. */}
+        <script dangerouslySetInnerHTML={{ __html: LOAD_GUARD_SCRIPT }} />
         {/* Must load before the app so Telegram's session data is available on mount. */}
         <script src="https://telegram.org/js/telegram-web-app.js" />
         {/* Set language/direction before first paint so Arabic never flashes as LTR English. */}
