@@ -1,7 +1,8 @@
 import { Link } from "@tanstack/react-router";
 import { Building2, ChevronRight, CreditCard, Gift, LayoutGrid, LayoutList } from "lucide-react";
 
-import { PromoBadge } from "@/components/PromoBadge";
+import { GiftRibbon } from "@/components/GiftRibbon";
+import { hasOpenOffer, PromoBadge } from "@/components/PromoBadge";
 import type { StampCardData } from "@/components/StampCard";
 import { brandThemeStyle, resolveCardTheme } from "@/lib/card-theme";
 import { t } from "@/lib/i18n";
@@ -67,19 +68,21 @@ export function WalletCardTile({ card }: { card: WalletCard }) {
   const { balance, required, ready } = cardProgress(card);
   return (
     <li data-card-theme={resolveCardTheme(card.cardTheme)} style={brandThemeStyle(card.cardTheme, card)} className="animate-arrive">
-      <Link to="/wallet" search={{ store: card.storeId }} className="touch-action flex h-full flex-col overflow-hidden rounded-lg border border-border bg-card shadow-[var(--shadow-card)] transition-transform active:scale-[0.98]">
+      <Link to="/wallet" search={{ store: card.storeId }} className="touch-action relative flex h-full flex-col overflow-hidden rounded-lg border border-border bg-card shadow-[var(--shadow-card)] transition-transform active:scale-[0.98]">
+        {hasOpenOffer(card) && <GiftRibbon className="w-14" />}
         <div className="flex min-h-[4.5rem] items-center gap-2.5 bg-[var(--store-primary)] p-3 text-[var(--store-on-primary)]">
           <div className="flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden rounded-md border border-current/25 bg-white/15" aria-hidden="true">
             {card.logoUrl ? <img src={card.logoUrl} alt="" className="h-full w-full object-cover" /> : <Building2 className="h-4 w-4" />}
           </div>
           <p className="line-clamp-2 min-w-0 flex-1 break-words font-display text-sm font-bold leading-snug">{card.storeName}</p>
+          {hasOpenOffer(card) && <span className="w-6 shrink-0" aria-hidden="true" />}
         </div>
         <div className="mt-auto space-y-2 p-3">
           <ProgressBar balance={balance} required={required} />
           <div className="flex items-center justify-between gap-2">
             <span className="text-sm font-bold tabular-nums">{balance}/{required}</span>
             <span className="flex flex-wrap items-center justify-end gap-1">
-              <PromoBadge card={card} />
+              <PromoBadge card={card} hideOffer />
               {ready && <ReadyBadge />}
             </span>
           </div>

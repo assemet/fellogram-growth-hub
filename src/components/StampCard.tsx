@@ -2,7 +2,8 @@ import { useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 
 import { InviteFriend } from "@/components/InviteFriend";
-import { PromoBadge } from "@/components/PromoBadge";
+import { GiftRibbon } from "@/components/GiftRibbon";
+import { hasOpenOffer, PromoBadge } from "@/components/PromoBadge";
 import { OfferQr } from "@/components/OfferQr";
 import { RedeemRewardQr } from "@/components/RedeemRewardQr";
 import { ReviewInvite, reviewInviteSeen } from "@/components/ReviewInvite";
@@ -62,13 +63,15 @@ export function StampCard({ card, preview = false, focused = false }: { card: St
   const reviewHref = contactLinks(card.contact ?? {}).find((link) => link.kind === "review")?.href;
   const rewards = card.rewards ?? [];
   const offers = card.offers ?? [];
+  const showRibbon = !preview && hasOpenOffer(card);
   const required = Math.max(1, card.stampsRequired);
   const balance = Math.min(required, Math.max(0, card.stampBalance));
   const complete = balance >= required;
   const remaining = Math.max(0, required - balance);
 
   return (
-    <li data-card-theme={resolveCardTheme(card.cardTheme)} data-custom-brand={focused || preview || card.brandPrimary || card.brandAccent || card.backgroundTint ? "true" : undefined} style={brandThemeStyle(card.cardTheme, card)} className="loyalty-card animate-arrive overflow-hidden rounded-lg border border-border bg-card shadow-[var(--shadow-card)]">
+    <li data-card-theme={resolveCardTheme(card.cardTheme)} data-custom-brand={focused || preview || card.brandPrimary || card.brandAccent || card.backgroundTint ? "true" : undefined} style={brandThemeStyle(card.cardTheme, card)} className="loyalty-card animate-arrive relative overflow-hidden rounded-lg border border-border bg-card shadow-[var(--shadow-card)]">
+      {showRibbon && <GiftRibbon className="w-24" />}
       <div className="loyalty-card-header brand-surface p-5">
         <div className="flex items-start justify-between gap-3">
           <div className="flex min-w-0 items-center gap-3">
@@ -80,11 +83,11 @@ export function StampCard({ card, preview = false, focused = false }: { card: St
               <p className="mt-1 text-xs font-medium opacity-90">{card.programName}</p>
             </div>
           </div>
-          <div className="flex shrink-0 flex-col items-end gap-1.5">
+          <div className={`flex shrink-0 flex-col items-end gap-1.5 ${showRibbon ? "mt-9" : ""}`}>
             <span className="rounded-md border border-current/20 bg-card/15 px-3 py-1 text-sm font-extrabold backdrop-blur-md">
               {balance}/{required}
             </span>
-            {!preview && <div className="flex flex-wrap justify-end gap-1"><PromoBadge card={card} /></div>}
+            {!preview && <div className="flex flex-wrap justify-end gap-1"><PromoBadge card={card} hideOffer /></div>}
           </div>
         </div>
         {card.reward && (
