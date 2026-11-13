@@ -291,7 +291,7 @@ export const en = {
   "wallet.paste.placeholder": "Store link or code",
   "wallet.paste.action": "Join",
   "wallet.addCard": "Add another card",
-  "wallet.showQr": "Show my QR",
+  "wallet.showQr": "Show my QR to the cashier",
   "wallet.merchantCta.link": "Own a store? Start a loyalty program",
   "cashier.newCustomer.title": "New customer",
   "cashier.newCustomer.body": "This customer doesn't have a card at your store yet.",

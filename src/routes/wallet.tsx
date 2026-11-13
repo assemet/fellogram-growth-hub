@@ -84,8 +84,12 @@ function Wallet() {
         {focusedCard && <Link to="/wallet" search={{ store: undefined }} className="mb-4 inline-flex text-sm font-semibold text-primary">← {t("wallet.allCards")}</Link>}
         <div className="mb-4 flex items-center justify-between gap-3">
           <h1 className="min-w-0 truncate text-2xl font-bold">{focusedCard ? focusedCard.storeName : t("wallet.title")}</h1>
-          {cards.length > 0 && data.profile?.id && <MyQrDialog customerId={data.profile.id} />}
         </div>
+        {cards.length > 0 && data.profile?.id && (
+          <div className="mb-4">
+            <MyQrDialog customerId={data.profile.id} />
+          </div>
+        )}
 
         {!focusedCard && cards.length >= 1 && (
           <div className="mb-4 flex justify-end">

@@ -582,7 +582,22 @@ body.has-bottom-nav [data-sonner-toaster] {
 .loyalty-card[data-card-theme="classic"] .loyalty-card-shell { background: var(--card); color: var(--card-foreground); }
 .loyalty-card:not([data-card-theme="classic"]) .loyalty-stamp-filled { background: var(--loyalty-accent); color: var(--loyalty-on-accent); border-color: transparent; }
 .loyalty-card:not([data-card-theme="classic"]) .loyalty-stamp-empty { background: var(--loyalty-soft); color: var(--loyalty-muted); border-color: transparent; }
-.coupon-card { background: var(--loyalty-bg, var(--card)); color: var(--loyalty-fg, var(--card-foreground)); box-shadow: 0 8px 20px -12px color-mix(in srgb, var(--loyalty-top, var(--primary)) 50%, transparent), 0 1px 3px rgb(0 0 0 / 0.06); }
-.coupon-card .coupon-kicker { color: var(--loyalty-accent, var(--primary)); }
-.coupon-cut::before { content: ""; position: absolute; inset: 0.625rem auto 0.625rem 0; border-inline-start: 2px dashed var(--loyalty-soft, var(--border)); }
-.coupon-notch { position: absolute; width: 1.25rem; height: 1.25rem; margin-inline-start: -0.625rem; border-radius: 9999px; background: var(--background); }
+.loyalty-surface { background: var(--loyalty-bg, var(--card)); color: var(--loyalty-fg, var(--card-foreground)); box-shadow: 0 8px 20px -12px color-mix(in srgb, var(--loyalty-top, var(--primary)) 50%, transparent), 0 1px 3px rgb(0 0 0 / 0.06); }
+.loyalty-chip { background: var(--loyalty-soft, var(--secondary)); color: var(--loyalty-accent, var(--primary)); }
+/* Coupon: real cut-outs (a mask), so the page behind shows through whatever its colour is. */
+.coupon-card { filter: drop-shadow(0 6px 8px color-mix(in srgb, var(--loyalty-top, var(--primary)) 28%, transparent)) drop-shadow(0 1px 1px rgb(0 0 0 / 0.06)); }
+.coupon-body { --cut: 6rem; background: var(--loyalty-bg, var(--card)); color: var(--loyalty-fg, var(--card-foreground)); }
+.coupon-body .coupon-kicker { color: var(--loyalty-accent, var(--primary)); }
+.coupon-ticket {
+  -webkit-mask: radial-gradient(circle 0.625rem at calc(100% - var(--cut)) 0, #0000 97%, #000), radial-gradient(circle 0.625rem at calc(100% - var(--cut)) 100%, #0000 97%, #000);
+  -webkit-mask-composite: source-in;
+  mask: radial-gradient(circle 0.625rem at calc(100% - var(--cut)) 0, #0000 97%, #000), radial-gradient(circle 0.625rem at calc(100% - var(--cut)) 100%, #0000 97%, #000);
+  mask-composite: intersect;
+}
+[dir="rtl"] .coupon-ticket {
+  -webkit-mask: radial-gradient(circle 0.625rem at var(--cut) 0, #0000 97%, #000), radial-gradient(circle 0.625rem at var(--cut) 100%, #0000 97%, #000);
+  mask: radial-gradient(circle 0.625rem at var(--cut) 0, #0000 97%, #000), radial-gradient(circle 0.625rem at var(--cut) 100%, #0000 97%, #000);
+  -webkit-mask-composite: source-in;
+  mask-composite: intersect;
+}
+.coupon-cut::before { content: ""; position: absolute; inset: 0.875rem auto 0.875rem 0; border-inline-start: 2px dashed var(--loyalty-soft, var(--border)); }

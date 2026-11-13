@@ -10,8 +10,8 @@ export function MyQrDialog({ customerId }: { customerId: string }) {
   return (
     <Dialog>
       <DialogTrigger asChild>
-        <Button type="button" variant="outline" size="sm" className="touch-action h-10 shrink-0 gap-2 font-semibold">
-          <QrCode className="h-4 w-4" />
+        <Button type="button" className="touch-action h-12 w-full gap-2 text-base font-extrabold">
+          <QrCode className="h-5 w-5" />
           {t("wallet.showQr")}
         </Button>
       </DialogTrigger>

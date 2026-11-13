@@ -171,28 +171,6 @@ export function StampCard({ card, preview = false, focused = false }: { card: St
           </div>
         )}
 
-        {!preview && card.referralsEnabled && card.storeId && (
-          <Button
-            type="button"
-            onClick={() => setInviting(true)}
-            variant="outline"
-            className="loyalty-card-outline touch-action mt-4 h-11 w-full font-bold"
-          >
-            <UserPlus className="h-4 w-4" />
-            {t("referral.invite")}
-          </Button>
-        )}
-
-        {inviting && card.storeId && (
-          <InviteFriend
-            storeId={card.storeId}
-            storeName={card.storeName}
-            referrerBonus={card.referrerBonus ?? 0}
-            welcomeBonus={card.welcomeBonus ?? 0}
-            onClose={() => setInviting(false)}
-          />
-        )}
-
         {redeeming && (
           <RedeemRewardQr
             rewardId={redeeming.id}
@@ -211,41 +189,12 @@ export function StampCard({ card, preview = false, focused = false }: { card: St
           <ReviewInvite storeId={card.storeId} storeName={card.storeName} href={reviewHref} onDone={() => setInviteDone(true)} />
         )}
 
-        {!preview && <Button
-          type="button"
-          onClick={() => setOpen((value) => !value)}
-          variant="ghost"
-          size="sm"
-          className="loyalty-card-link mt-3 -ms-2 text-xs font-semibold text-primary"
-          aria-expanded={open}
-        >
-          {open ? t("wallet.card.hide") : t("wallet.card.history")}
-          <ChevronDown className={`h-3.5 w-3.5 transition-transform ${open ? "rotate-180" : ""}`} />
-        </Button>}
-
         {!preview && !focused && card.storeId && (
           <Button asChild variant="ghost" size="sm" className="loyalty-card-link mt-2 w-full text-primary">
             <Link to="/wallet" search={{ store: card.storeId }}>{t("wallet.viewStore")}</Link>
           </Button>
         )}
 
-        {open && (
-          <ul className="mt-3 space-y-1.5">
-            {card.visits.length === 0 ? (
-              <li className="text-xs text-muted-foreground">{t("wallet.card.noHistory")}</li>
-            ) : (
-              card.visits.map((visit) => (
-                <li key={visit.id} className="flex justify-between text-xs text-muted-foreground">
-                  <span>{formatDate(visit.createdAt)}</span>
-                  <span className="font-semibold text-foreground">
-                    {visit.type === "stamp_awarded" || visit.type === "referral_reward" ? "+" : "−"}
-                    {visit.amount}
-                  </span>
-                </li>
-              ))
-            )}
-          </ul>
-        )}
       </div>
       </div>
 
@@ -254,7 +203,8 @@ export function StampCard({ card, preview = false, focused = false }: { card: St
           {offers.map((offer) => {
             const usable = offer.usesLeft > 0;
             return (
-              <div key={offer.id} className="coupon-card relative flex min-h-24 items-stretch rounded-2xl">
+              <div key={offer.id} className="coupon-card">
+              <div className={`coupon-body flex min-h-24 items-stretch rounded-2xl ${usable && !preview ? "coupon-ticket" : ""}`}>
                 <div className={`min-w-0 flex-1 px-4 py-3.5 ${usable ? "" : "opacity-60"}`}>
                   <p className="coupon-kicker flex items-center gap-1.5 text-[11px] font-extrabold uppercase tracking-wider">
                     <Ticket className="h-3.5 w-3.5" aria-hidden="true" />
@@ -266,10 +216,7 @@ export function StampCard({ card, preview = false, focused = false }: { card: St
                 </div>
                 {usable && !preview && (
                   <>
-                    <div className="coupon-cut relative w-0" aria-hidden="true">
-                      <span className="coupon-notch left-0 -top-2.5" />
-                      <span className="coupon-notch left-0 -bottom-2.5" />
-                    </div>
+                    <div className="coupon-cut relative w-0" aria-hidden="true" />
                     <button
                       type="button"
                       onClick={() => setUsingOffer({ id: offer.id, title: offer.title, usesLeft: offer.usesLeft })}
@@ -279,6 +226,7 @@ export function StampCard({ card, preview = false, focused = false }: { card: St
                     </button>
                   </>
                 )}
+              </div>
               </div>
             );
           })}
@@ -295,6 +243,60 @@ export function StampCard({ card, preview = false, focused = false }: { card: St
             setUsingOffer(null);
             queryClient.invalidateQueries({ queryKey: ["my-cards"] });
           }}
+        />
+      )}
+      {!preview && card.referralsEnabled && card.storeId && (
+        <div className="loyalty-surface rounded-2xl p-4">
+          <div className="flex items-start gap-3">
+            <span className="loyalty-chip flex h-11 w-11 shrink-0 items-center justify-center rounded-full" aria-hidden="true">
+              <UserPlus className="h-5 w-5" />
+            </span>
+            <div className="min-w-0 flex-1">
+              <p className="text-sm font-extrabold">{t("referral.title")}</p>
+              {(card.referrerBonus ?? 0) > 0 || (card.welcomeBonus ?? 0) > 0 ? (
+                <p className="mt-0.5 text-xs text-muted-foreground">{t("referral.body", { referrer: card.referrerBonus ?? 0, welcome: card.welcomeBonus ?? 0 })}</p>
+              ) : null}
+            </div>
+          </div>
+          <button type="button" onClick={() => setInviting(true)} className="loyalty-card-action touch-action mt-3 min-h-11 w-full rounded-xl bg-primary px-4 text-sm font-extrabold text-primary-foreground">
+            {t("referral.invite")}
+          </button>
+        </div>
+      )}
+
+      {!preview && (
+        <div>
+          <button type="button" onClick={() => setOpen((value) => !value)} className="loyalty-card-link touch-action mx-auto flex min-h-10 items-center gap-1 px-3 text-xs font-semibold" aria-expanded={open}>
+            {open ? t("wallet.card.hide") : t("wallet.card.history")}
+            <ChevronDown className={`h-3.5 w-3.5 transition-transform ${open ? "rotate-180" : ""}`} />
+          </button>
+          {open && (
+            <ul className="loyalty-surface mt-2 space-y-2 rounded-2xl p-4">
+              {card.visits.length === 0 ? (
+                <li className="text-xs text-muted-foreground">{t("wallet.card.noHistory")}</li>
+              ) : (
+                card.visits.map((visit) => (
+                  <li key={visit.id} className="flex justify-between text-xs text-muted-foreground">
+                    <span>{formatDate(visit.createdAt)}</span>
+                    <span className="font-semibold text-foreground">
+                      {visit.type === "stamp_awarded" || visit.type === "referral_reward" ? "+" : "−"}
+                      {visit.amount}
+                    </span>
+                  </li>
+                ))
+              )}
+            </ul>
+          )}
+        </div>
+      )}
+
+      {inviting && card.storeId && (
+        <InviteFriend
+          storeId={card.storeId}
+          storeName={card.storeName}
+          referrerBonus={card.referrerBonus ?? 0}
+          welcomeBonus={card.welcomeBonus ?? 0}
+          onClose={() => setInviting(false)}
         />
       )}
     </li>

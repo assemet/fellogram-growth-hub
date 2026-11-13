@@ -284,7 +284,7 @@ export const tr: Record<TranslationKey, string> = {
   "wallet.paste.placeholder": "Mağaza bağlantısı veya kodu",
   "wallet.paste.action": "Katıl",
   "wallet.addCard": "Başka kart ekle",
-  "wallet.showQr": "QR kodumu göster",
+  "wallet.showQr": "QR kodumu kasiyere göster",
   "wallet.merchantCta.link": "Mağazan mı var? Sadakat programı başlat",
   "cashier.newCustomer.title": "Yeni müşteri",
   "cashier.newCustomer.body": "Bu müşterinin mağazanda henüz kartı yok.",

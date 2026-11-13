@@ -284,7 +284,7 @@ export const es: Record<TranslationKey, string> = {
   "wallet.paste.placeholder": "Enlace o código de la tienda",
   "wallet.paste.action": "Unirme",
   "wallet.addCard": "Añadir otra tarjeta",
-  "wallet.showQr": "Mostrar mi QR",
+  "wallet.showQr": "Mostrar mi QR en caja",
   "wallet.merchantCta.link": "¿Tienes una tienda? Empieza un programa de fidelidad",
   "cashier.newCustomer.title": "Cliente nuevo",
   "cashier.newCustomer.body": "Este cliente aún no tiene tarjeta en tu tienda.",

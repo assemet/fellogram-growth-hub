@@ -283,7 +283,7 @@ export const ar: Record<TranslationKey, string> = {
   "wallet.paste.placeholder": "رابط المتجر أو الكود",
   "wallet.paste.action": "انضمام",
   "wallet.addCard": "أضف بطاقة أخرى",
-  "wallet.showQr": "أظهر رمزي",
+  "wallet.showQr": "اعرض رمزك للكاشير",
   "wallet.merchantCta.link": "تملك متجراً؟ ابدأ برنامج ولاء",
   "cashier.newCustomer.title": "عميل جديد",
   "cashier.newCustomer.body": "هذا العميل لا يملك بطاقة في متجرك بعد.",
