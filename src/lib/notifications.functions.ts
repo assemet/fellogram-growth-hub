@@ -15,11 +15,15 @@ import {
   sendTelegramMessage,
   type Reachable,
 } from "@/lib/notify";
-import { localeFor } from "@/lib/notify-messages";
+import { localeFor, rewardWaitingMessage } from "@/lib/notify-messages";
+import { rateLimit } from "@/lib/rate-limit";
 
 const INACTIVE_DAYS = 30;
 const REMINDER_COOLDOWN_DAYS = 14;
 const MAX_REMINDERS_PER_SEND = 100;
+/** A complete card left uncollected for this long is worth a nudge, then at most one nudge a week. */
+const REWARD_WAITING_DAYS = 3;
+const REWARD_REMINDER_COOLDOWN_DAYS = 7;
 
 /** Customer: is the bot allowed to message me? "supported" is false until the database update is applied. */
 export const getNotificationStatus = createServerFn({ method: "POST" })
@@ -41,6 +45,7 @@ export const enableNotifications = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((data: { locale?: string }) => ({ locale: localeFor(data?.locale) }))
   .handler(async ({ data, context }): Promise<EnableResult> => {
+    await rateLimit("enable-notif", context.userId, 5, 3600);
     const db = await adminClient();
     const { data: profile } = check(await db.from("profiles").select("*").eq("id", context.userId).maybeSingle(), "PROFILE_LOOKUP_FAILED");
     if (!profile?.telegram_user_id) return { ok: false, reason: "no_chat" };
@@ -101,6 +106,40 @@ async function reminderPlan(supabase: Db, storeId: string) {
   return { db, inactiveCount: inactive.length, targets };
 }
 
+/** Who has a finished card they never collected: reward ready for 3+ days, notifications on, not nudged this week. */
+async function rewardPlan(supabase: Db, storeId: string) {
+  const db = await adminClient();
+  const cutoff = Date.now() - REWARD_WAITING_DAYS * 864e5;
+  const { data: rows } = check(
+    await supabase
+      .from("customer_memberships")
+      .select("customer_id, stamp_balance, joined_at, last_visit_at, loyalty_programs(stamps_required)")
+      .eq("store_id", storeId)
+      .limit(1000),
+    "CUSTOMERS_LOOKUP_FAILED",
+  );
+  const waiting = (rows ?? []).filter(
+    (row) => (row.stamp_balance ?? 0) >= (row.loyalty_programs?.stamps_required ?? 10) && new Date(row.last_visit_at ?? row.joined_at).getTime() < cutoff,
+  );
+  const reachable = await loadReachable(db, waiting.map((row) => row.customer_id));
+
+  const recently = new Set<string>();
+  const since = new Date(Date.now() - REWARD_REMINDER_COOLDOWN_DAYS * 864e5).toISOString();
+  const ids = [...reachable.keys()];
+  for (let i = 0; i < ids.length; i += 80) {
+    const { data } = check(
+      await db.from("notification_log").select("customer_id").eq("store_id", storeId).eq("kind", "reward_reminder").gte("created_at", since).in("customer_id", ids.slice(i, i + 80)),
+      "NOTIFICATION_LOG_FAILED",
+    );
+    for (const entry of data ?? []) recently.add(entry.customer_id);
+  }
+
+  const targets: Target[] = waiting
+    .filter((row) => reachable.has(row.customer_id) && !recently.has(row.customer_id))
+    .map((row) => ({ ...reachable.get(row.customer_id)!, balance: row.stamp_balance ?? 0, required: row.loyalty_programs?.stamps_required ?? 10 }));
+  return { db, waitingCount: waiting.length, targets };
+}
+
 async function ownerStore(supabase: Db, userId: string) {
   const storeId = await currentOwnedStoreId(supabase, userId);
   if (!storeId) throw new Error("STORE_NOT_FOUND");
@@ -122,6 +161,7 @@ export const getReminderSummary = createServerFn({ method: "POST" })
 export const sendReminders = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
+    await rateLimit("send-reminders", context.userId, 6, 3600);
     const store = await ownerStore(context.supabase, context.userId);
     const { db, targets } = await reminderPlan(context.supabase, store.id);
     const batch = targets.slice(0, MAX_REMINDERS_PER_SEND);
@@ -144,6 +184,44 @@ export const sendReminders = createServerFn({ method: "POST" })
     }
 
     await logSent(db, delivered.map((target) => ({ store_id: store.id, customer_id: target.customerId, kind: "reminder" })));
+    return { sent: delivered.length, failed: batch.length - delivered.length, remaining: targets.length - batch.length };
+  });
+
+/** Owner: how many customers finished a card and have not collected the reward. */
+export const getRewardReminderSummary = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    const store = await ownerStore(context.supabase, context.userId);
+    const plan = await rewardPlan(context.supabase, store.id);
+    return { days: REWARD_WAITING_DAYS, waiting: plan.waitingCount, reachable: plan.targets.length, perSend: MAX_REMINDERS_PER_SEND };
+  });
+
+/** Owner: remind customers whose reward is waiting (at most 100 per tap, one per customer per week). */
+export const sendRewardReminders = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    await rateLimit("send-reward-reminders", context.userId, 6, 3600);
+    const store = await ownerStore(context.supabase, context.userId);
+    const { db, targets } = await rewardPlan(context.supabase, store.id);
+    const batch = targets.slice(0, MAX_REMINDERS_PER_SEND);
+
+    const delivered: Target[] = [];
+    for (let i = 0; i < batch.length; i += 4) {
+      const results = await Promise.all(
+        batch.slice(i, i + 4).map(async (target) => {
+          const result = await sendTelegramMessage(
+            target.chatId,
+            rewardWaitingMessage(target.locale, { store: store.name, balance: target.balance, required: target.required }),
+            { text: openCardLabel(target.locale), url: miniAppLink(`join_${store.id}`) },
+          );
+          if (!result.ok && result.blocked) await disableFor(db, target.customerId);
+          return { target, ok: result.ok };
+        }),
+      );
+      for (const entry of results) if (entry.ok) delivered.push(entry.target);
+    }
+
+    await logSent(db, delivered.map((target) => ({ store_id: store.id, customer_id: target.customerId, kind: "reward_reminder" })));
     return { sent: delivered.length, failed: batch.length - delivered.length, remaining: targets.length - batch.length };
   });
 

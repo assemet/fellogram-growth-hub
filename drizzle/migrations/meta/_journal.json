@@ -162,6 +162,13 @@
       "when": 1791589962386,
       "tag": "0022_card_full_cap",
       "breakpoints": true
+    },
+    {
+      "idx": 23,
+      "version": "7",
+      "when": 1791676362386,
+      "tag": "0023_rate_limits_reward_reminder",
+      "breakpoints": true
     }
   ]
 }

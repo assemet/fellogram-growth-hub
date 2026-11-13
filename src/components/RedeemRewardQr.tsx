@@ -63,7 +63,7 @@ export function RedeemRewardQr({
       setSrc(url);
       setExpiresAt(new Date(res.expiresAt).getTime());
     })().catch((e: Error) => {
-      if (!cancelled) setError(e.message.includes("NOT_ENOUGH_STAMPS") ? t("rewards.notEnough") : t("common.error"));
+      if (!cancelled) setError(e.message.includes("NOT_ENOUGH_STAMPS") ? t("rewards.notEnough") : e.message.includes("RATE_LIMITED") ? t("error.rateLimited") : t("common.error"));
     });
     return () => {
       cancelled = true;

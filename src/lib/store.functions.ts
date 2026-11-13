@@ -7,6 +7,7 @@ import { miniAppLink } from "@/lib/bot-link";
 import { check, throwIfError, type Db } from "@/lib/db";
 import { isStampIconId, STAMP_LOGO_ID } from "@/lib/stamp-icons";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { rateLimit } from "@/lib/rate-limit";
 
 /** Role + profile context used for splash routing. */
 export const getMyContext = createServerFn({ method: "POST" })
@@ -96,6 +97,7 @@ export const createStore = createServerFn({ method: "POST" })
     };
   })
   .handler(async ({ data, context }) => {
+    await rateLimit("create-store", context.userId, 5, 3600);
     const { supabase, userId } = context;
 
     // One store per owner: a second one would split customers, cashier and dashboard across stores.
@@ -325,6 +327,7 @@ export const joinStore = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((data: { storeId: string }) => ({ storeId: String(data?.storeId ?? "") }))
   .handler(async ({ data, context }) => {
+    await rateLimit("join", context.userId, 20, 60);
     const { data: membershipId, error } = await context.supabase.rpc("join_store_program", {
       _store_id: data.storeId,
     });
@@ -469,6 +472,7 @@ export const updateStoreLogo = createServerFn({ method: "POST" })
     return { objectPath };
   })
   .handler(async ({ data, context }) => {
+    await rateLimit("logo", context.userId, 20, 3600);
     const { supabase, userId } = context;
     if (data.objectPath && !data.objectPath.startsWith(`${userId}/`)) throw new Error("UNAUTHORIZED");
     const { data: store } = check(await supabase.from("stores").select("id, logo_url").eq("id", await ownedIdOrNil(supabase, userId)).maybeSingle(), "STORE_LOOKUP_FAILED");
@@ -489,6 +493,7 @@ export const requestRedemption = createServerFn({ method: "POST" })
     return { rewardId };
   })
   .handler(async ({ data, context }) => {
+    await rateLimit("request-redeem", context.userId, 10, 60);
     const { data: rows, error } = await context.supabase.rpc("create_redemption", { _reward_id: data.rewardId });
     if (error) throw new Error(error.message);
     const row = (rows as { redemption_id: string; token: string; expires_at: string }[])[0]!;
@@ -516,6 +521,7 @@ export const saveReward = createServerFn({ method: "POST" })
     };
   })
   .handler(async ({ data, context }) => {
+    await rateLimit("save-reward", context.userId, 30, 60);
     const storeId = await ownedStore(context.supabase, context.userId);
     const payload = { name: data.name, description: data.description, stamps_required: data.stampsRequired };
 
@@ -598,6 +604,7 @@ export const acceptReferral = createServerFn({ method: "POST" })
     return { code };
   })
   .handler(async ({ data, context }) => {
+    await rateLimit("referral", context.userId, 10, 3600);
     const { data: rows, error } = await context.supabase.rpc("accept_referral", { _code: data.code });
     if (error) {
       // Only a code the database does not know is final; a timeout or a cold start must be retried, not reported as a bad link.

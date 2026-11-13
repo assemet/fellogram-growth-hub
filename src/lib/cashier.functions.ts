@@ -6,6 +6,7 @@ import { MIN_SEARCH_LENGTH, searchStoreCustomers, type SearchHit } from "@/lib/c
 import { loadNames } from "@/lib/people";
 import { parseOfferCode } from "@/lib/promotions";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { rateLimit } from "@/lib/rate-limit";
 
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
@@ -142,6 +143,7 @@ export const lookupCustomer = createServerFn({ method: "POST" })
     return { customerId };
   })
   .handler(async ({ data, context }) => {
+    await rateLimit("lookup", context.userId, 90, 60);
     const store = await resolveStaffStore(context.supabase, context.userId);
     if (!store) throw new Error("NOT_STORE_STAFF");
     const state = await loadCustomerState(context.supabase, store.storeId, data.customerId);
@@ -159,6 +161,7 @@ export const awardStamp = createServerFn({ method: "POST" })
     return { customerId, amount: Math.min(5, Math.max(1, Math.round(Number(data?.amount ?? 1)))) };
   })
   .handler(async ({ data, context }) => {
+    await rateLimit("award", context.userId, 60, 60);
     const store = await resolveStaffStore(context.supabase, context.userId);
     if (!store) throw new Error("NOT_STORE_STAFF");
 
@@ -190,6 +193,7 @@ export const undoLastStamp = createServerFn({ method: "POST" })
     return { customerId };
   })
   .handler(async ({ data, context }) => {
+    await rateLimit("undo", context.userId, 20, 60);
     const store = await resolveStaffStore(context.supabase, context.userId);
     if (!store) throw new Error("NOT_STORE_STAFF");
 
@@ -220,6 +224,7 @@ export const redeemRewardToken = createServerFn({ method: "POST" })
     return { token };
   })
   .handler(async ({ data, context }) => {
+    await rateLimit("redeem", context.userId, 30, 60);
     const store = await resolveStaffStore(context.supabase, context.userId);
     if (!store) throw new Error("NOT_STORE_STAFF");
     const { data: rows, error } = await context.supabase.rpc("redeem_reward", {
@@ -244,6 +249,7 @@ export const redeemOfferToken = createServerFn({ method: "POST" })
     return { token };
   })
   .handler(async ({ data, context }) => {
+    await rateLimit("redeem-offer", context.userId, 30, 60);
     const store = await resolveStaffStore(context.supabase, context.userId);
     if (!store) throw new Error("NOT_STORE_STAFF");
     const { data: rows, error } = await context.supabase.rpc("redeem_offer" as never, { _store_id: store.storeId, _token: data.token } as never);
@@ -262,6 +268,7 @@ export const enrollCustomer = createServerFn({ method: "POST" })
     return { customerId };
   })
   .handler(async ({ data, context }) => {
+    await rateLimit("enroll", context.userId, 30, 60);
     const store = await resolveStaffStore(context.supabase, context.userId);
     if (!store) throw new Error("NOT_STORE_STAFF");
 
@@ -294,6 +301,7 @@ export const searchCustomers = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((data: { q: string }) => ({ q: String(data?.q ?? "").trim().slice(0, 60) }))
   .handler(async ({ data, context }) => {
+    await rateLimit("search", context.userId, 90, 60);
     if (data.q.length < MIN_SEARCH_LENGTH) return { results: [] as SearchHit[] };
     const store = await resolveStaffStore(context.supabase, context.userId);
     if (!store) throw new Error("NOT_STORE_STAFF");

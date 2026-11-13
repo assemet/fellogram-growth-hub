@@ -53,7 +53,7 @@ export function OfferQr({
       setExpiresAt(new Date(res.expiresAt).getTime());
     })().catch((e: Error) => {
       if (cancelled) return;
-      setError(e.message.includes("OFFER_ALREADY_USED") ? t("promo.err.used") : e.message.includes("OFFER_NOT_ACTIVE") ? t("promo.err.inactive") : t("common.error"));
+      setError(e.message.includes("OFFER_ALREADY_USED") ? t("promo.err.used") : e.message.includes("OFFER_NOT_ACTIVE") ? t("promo.err.inactive") : e.message.includes("RATE_LIMITED") ? t("error.rateLimited") : t("common.error"));
     });
     return () => {
       cancelled = true;

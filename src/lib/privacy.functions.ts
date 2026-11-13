@@ -5,6 +5,7 @@ import { currentOwnedStoreId, resolveCurrentStore } from "@/lib/current-store";
 import { isDeleteWord } from "@/lib/confirm-words";
 import { check, throwIfError } from "@/lib/db";
 import { adminClient } from "@/lib/notify";
+import { rateLimit } from "@/lib/rate-limit";
 
 const ID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 /** The shared preview identity belongs to everybody who opens the app in a plain browser. */
@@ -45,6 +46,7 @@ export const deleteMyAccount = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((data: { confirm: string }) => ({ confirm: String(data?.confirm ?? "") }))
   .handler(async ({ data, context }) => {
+    await rateLimit("delete-account", context.userId, 5, 3600);
     if (!isDeleteWord(data.confirm)) throw new Error("CONFIRM_MISMATCH");
 
     const admin = await adminClient();

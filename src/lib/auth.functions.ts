@@ -1,6 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { check, throwIfError } from "@/lib/db";
 import { createHmac, createHash } from "crypto";
+import { clientIp, rateLimit } from "@/lib/rate-limit";
 
 /**
  * Telegram Mini App sign-in.
@@ -61,6 +62,7 @@ function accountFor(telegramUserId: number, serviceKey: string) {
 export const telegramSignIn = createServerFn({ method: "POST" })
   .inputValidator((data: { initData?: string }) => ({ initData: String(data?.initData ?? "") }))
   .handler(async ({ data }) => {
+    await rateLimit("sign-in", clientIp(), 120, 60);
     const botToken = process.env["TELEGRAM_BOT_TOKEN"];
     const serviceKey = process.env["SUPABASE_SERVICE_ROLE_KEY"]!;
 

@@ -6,16 +6,20 @@ import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
 import { t } from "@/lib/i18n";
-import { getReminderSummary, sendReminders } from "@/lib/notifications.functions";
+import { getReminderSummary, getRewardReminderSummary, sendReminders, sendRewardReminders } from "@/lib/notifications.functions";
 
 /** Owner tool on the customers page: one friendly reminder to customers who went quiet. */
-export function ReminderCard({ ready }: { ready: boolean }) {
+export function ReminderCard({ ready, kind = "inactive" }: { ready: boolean; kind?: "inactive" | "reward" }) {
+  const reward = kind === "reward";
   const queryClient = useQueryClient();
-  const load = useServerFn(getReminderSummary);
-  const send = useServerFn(sendReminders);
+  const load = useServerFn(reward ? getRewardReminderSummary : getReminderSummary);
+  const send = useServerFn(reward ? sendRewardReminders : sendReminders);
   const [confirming, setConfirming] = useState(false);
 
-  const { data } = useQuery({ queryKey: ["reminder-summary"], queryFn: () => load(), enabled: ready, staleTime: 30_000 });
+  const { data } = useQuery({ queryKey: ["reminder-summary", kind], queryFn: async () => {
+      const result = await load();
+      return { count: "waiting" in result ? result.waiting : result.inactive, days: result.days, reachable: result.reachable, perSend: result.perSend };
+    }, enabled: ready, staleTime: 30_000 });
 
   // The "tap again" step lapses on its own so a stray tap never sends later.
   useEffect(() => {
@@ -30,7 +34,7 @@ export function ReminderCard({ ready }: { ready: boolean }) {
       setConfirming(false);
       toast.success(t("reminder.sent", { count: result.sent }));
       if (result.remaining > 0) toast.message(t("reminder.more", { count: result.remaining }));
-      await queryClient.invalidateQueries({ queryKey: ["reminder-summary"] });
+      await queryClient.invalidateQueries({ queryKey: ["reminder-summary", kind] });
     },
     onError: () => {
       setConfirming(false);
@@ -38,7 +42,8 @@ export function ReminderCard({ ready }: { ready: boolean }) {
     },
   });
 
-  if (!data || data.inactive === 0) return null;
+  if (!data || data.count === 0) return null;
+  const count = data.count;
 
   return (
     <div className="mb-4 rounded-lg border border-border bg-card p-4 shadow-[var(--shadow-card)]">
@@ -47,8 +52,8 @@ export function ReminderCard({ ready }: { ready: boolean }) {
           <BellRing className="h-5 w-5" />
         </span>
         <div className="min-w-0">
-          <p className="text-sm font-bold">{t("reminder.title")}</p>
-          <p className="mt-1 text-xs text-muted-foreground">{t("reminder.body", { inactive: data.inactive, days: data.days, reachable: data.reachable })}</p>
+          <p className="text-sm font-bold">{reward ? t("reminder.reward.title") : t("reminder.title")}</p>
+          <p className="mt-1 text-xs text-muted-foreground">{reward ? t("reminder.reward.body", { count, days: data.days, reachable: data.reachable }) : t("reminder.body", { inactive: count, days: data.days, reachable: data.reachable })}</p>
         </div>
       </div>
       {data.reachable > 0 ? (
@@ -62,7 +67,7 @@ export function ReminderCard({ ready }: { ready: boolean }) {
           >
             {mutation.isPending ? t("reminder.sending") : confirming ? t("reminder.confirm") : t("reminder.send", { count: Math.min(data.reachable, data.perSend) })}
           </Button>
-          <p className="mt-2 text-[0.6875rem] text-muted-foreground">{t("reminder.limit")}</p>
+          <p className="mt-2 text-[0.6875rem] text-muted-foreground">{reward ? t("reminder.reward.limit") : t("reminder.limit")}</p>
         </>
       ) : (
         <p className="mt-3 rounded-md bg-muted px-3 py-2 text-xs text-muted-foreground">{t("reminder.none")}</p>

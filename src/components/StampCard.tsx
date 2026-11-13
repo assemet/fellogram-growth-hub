@@ -15,6 +15,7 @@ import { StampIcon } from "@/components/StampIcon";
 import { brandThemeStyle, resolveCardTheme } from "@/lib/card-theme";
 import { Link } from "@tanstack/react-router";
 
+import { formatShortDate as formatDate } from "@/lib/format";
 import { t } from "@/lib/i18n";
 
 export type StampCardData = {
@@ -44,12 +45,6 @@ export type StampCardData = {
   visits: { id: string; type: string; amount: number; createdAt: string }[];
 };
 
-function formatDate(value: string) {
-  return new Date(value).toLocaleDateString(undefined, {
-    day: "numeric",
-    month: "short",
-  });
-}
 
 /** Interactive loyalty card: stamp grid, progress and visit history. */
 export function StampCard({ card, preview = false, focused = false }: { card: StampCardData; preview?: boolean; focused?: boolean }) {
@@ -104,20 +99,29 @@ export function StampCard({ card, preview = false, focused = false }: { card: St
         <div className="grid justify-center gap-3" style={{ gridTemplateColumns: `repeat(${stampColumns(required)}, minmax(0, 3.75rem))` }}>
           {Array.from({ length: required }).map((_, index) => {
             const filled = index < balance;
+            const isReward = index === required - 1;
             return (
               <div
                 key={index}
-                aria-label={filled ? t("wallet.card.stampCollected") : t("wallet.card.stampEmpty")}
+                aria-label={isReward ? t("wallet.card.rewardSlot") : filled ? t("wallet.card.stampCollected") : t("wallet.card.stampEmpty")}
                 className={
-                  filled
-                    ? "loyalty-stamp-filled stamp-slot flex aspect-square items-center justify-center overflow-hidden rounded-full bg-primary text-primary-foreground"
-                    : "loyalty-stamp-empty flex aspect-square items-center justify-center overflow-hidden rounded-full bg-secondary/60 text-muted-foreground"
+                  filled && isReward
+                    ? "stamp-slot flex aspect-square items-center justify-center overflow-hidden rounded-full bg-gold text-gold-foreground"
+                    : filled
+                      ? "loyalty-stamp-filled stamp-slot flex aspect-square items-center justify-center overflow-hidden rounded-full bg-primary text-primary-foreground"
+                      : "loyalty-stamp-empty flex aspect-square items-center justify-center overflow-hidden rounded-full bg-secondary/60 text-muted-foreground"
                 }
               >
-                {card.stampIcon === "logo" && card.logoUrl ? (
-                  <StampIcon name="logo" logoUrl={card.logoUrl} dim={!filled} className="h-full w-full" />
+                {isReward ? (
+                  <Gift className={filled ? "h-7 w-7" : "h-6 w-6 opacity-60"} aria-hidden="true" />
+                ) : filled ? (
+                  card.stampIcon === "logo" && card.logoUrl ? (
+                    <StampIcon name="logo" logoUrl={card.logoUrl} className="h-full w-full" />
+                  ) : (
+                    <StampIcon name={card.stampIcon} className="h-7 w-7" />
+                  )
                 ) : (
-                  <StampIcon name={card.stampIcon} className={filled ? "h-5 w-5" : "h-4 w-4 opacity-35"} />
+                  <span className="text-base font-bold opacity-60" aria-hidden="true">{index + 1}</span>
                 )}
               </div>
             );

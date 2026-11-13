@@ -111,6 +111,7 @@ function CustomersTab({ ready }: { ready: boolean }) {
 
   return (
     <div className="min-w-0">
+      <ReminderCard ready={ready} kind="reward" />
       <ReminderCard ready={ready} />
       <div className="relative">
         <Search className="pointer-events-none absolute start-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" aria-hidden="true" />

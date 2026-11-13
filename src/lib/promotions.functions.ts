@@ -3,6 +3,7 @@ import { ownedIdOrNil } from "@/lib/current-store";
 import { check } from "@/lib/db";
 import { parseWindow } from "@/lib/promotions";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { rateLimit } from "@/lib/rate-limit";
 
 // stamp_events / offers / offer_redemptions are newer than the generated Supabase types.
 const table = (supabase: any, name: string) => supabase.from(name);
@@ -53,6 +54,7 @@ export const saveStampEvent = createServerFn({ method: "POST" })
     return { name, multiplier, ...parseWindow(data?.startsAt, data?.endsAt) };
   })
   .handler(async ({ data, context }) => {
+    await rateLimit("save-event", context.userId, 30, 60);
     const storeId = await ownedStore(context.supabase, context.userId);
     const { error } = await table(context.supabase, "stamp_events").insert({
       store_id: storeId, name: data.name, multiplier: data.multiplier, starts_at: data.startsAt, ends_at: data.endsAt,
@@ -69,6 +71,7 @@ export const saveOffer = createServerFn({ method: "POST" })
     return { title, details: String(data?.details ?? "").trim().slice(0, 300) || null, ...parseWindow(data?.startsAt, data?.endsAt) };
   })
   .handler(async ({ data, context }) => {
+    await rateLimit("save-offer", context.userId, 30, 60);
     const storeId = await ownedStore(context.supabase, context.userId);
     const { error } = await table(context.supabase, "offers").insert({
       store_id: storeId, title: data.title, details: data.details, starts_at: data.startsAt, ends_at: data.endsAt,
@@ -102,6 +105,7 @@ export const requestOffer = createServerFn({ method: "POST" })
     return { offerId };
   })
   .handler(async ({ data, context }) => {
+    await rateLimit("request-offer", context.userId, 10, 60);
     const { data: rows, error } = await context.supabase.rpc("create_offer_redemption" as never, { _offer_id: data.offerId } as never);
     if (error) throw new Error((error as { message: string }).message);
     const row = (rows as unknown as { out_token: string; out_expires_at: string }[])[0]!;
