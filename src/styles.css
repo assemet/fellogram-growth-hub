@@ -575,3 +575,14 @@ body.has-bottom-nav [data-sonner-toaster] {
   src: url("/fonts/inter-cyrillic.woff2") format("woff2");
   unicode-range: U+0301,U+0400-045F,U+0490-0491,U+04B0-04B1,U+2116;
 }
+
+/* Card redesign: the card is one calm unit; offers sit below it as separate coupons. */
+.loyalty-card.loyalty-card-group:not([data-card-theme="classic"]) { background: transparent; border-color: transparent; color: inherit; }
+.loyalty-card-shell { background: var(--loyalty-bg, var(--card)); color: var(--loyalty-fg, var(--card-foreground)); box-shadow: 0 18px 36px -18px color-mix(in srgb, var(--loyalty-top, var(--primary)) 55%, transparent), 0 2px 6px rgb(0 0 0 / 0.07); }
+.loyalty-card[data-card-theme="classic"] .loyalty-card-shell { background: var(--card); color: var(--card-foreground); }
+.loyalty-card:not([data-card-theme="classic"]) .loyalty-stamp-filled { background: var(--loyalty-accent); color: var(--loyalty-on-accent); border-color: transparent; }
+.loyalty-card:not([data-card-theme="classic"]) .loyalty-stamp-empty { background: var(--loyalty-soft); color: var(--loyalty-muted); border-color: transparent; }
+.coupon-card { background: var(--loyalty-bg, var(--card)); color: var(--loyalty-fg, var(--card-foreground)); box-shadow: 0 8px 20px -12px color-mix(in srgb, var(--loyalty-top, var(--primary)) 50%, transparent), 0 1px 3px rgb(0 0 0 / 0.06); }
+.coupon-card .coupon-kicker { color: var(--loyalty-accent, var(--primary)); }
+.coupon-cut::before { content: ""; position: absolute; inset: 0.625rem auto 0.625rem 0; border-inline-start: 2px dashed var(--loyalty-soft, var(--border)); }
+.coupon-notch { position: absolute; width: 1.25rem; height: 1.25rem; margin-inline-start: -0.625rem; border-radius: 9999px; background: var(--background); }

@@ -9,7 +9,7 @@ import { RedeemRewardQr } from "@/components/RedeemRewardQr";
 import { ReviewInvite, reviewInviteSeen } from "@/components/ReviewInvite";
 import { stampColumns } from "@/lib/stamp-layout";
 import { contactLinks, type ContactField } from "@/lib/store-contact";
-import { Building2, ChevronDown, Gift, UserPlus } from "lucide-react";
+import { Building2, ChevronDown, Gift, Ticket, UserPlus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { StampIcon } from "@/components/StampIcon";
 import { brandThemeStyle, resolveCardTheme } from "@/lib/card-theme";
@@ -71,12 +71,13 @@ export function StampCard({ card, preview = false, focused = false }: { card: St
   const remaining = Math.max(0, required - balance);
 
   return (
-    <li data-card-theme={resolveCardTheme(card.cardTheme)} data-custom-brand={focused || preview || card.brandPrimary || card.brandAccent || card.backgroundTint ? "true" : undefined} style={brandThemeStyle(card.cardTheme, card)} className="loyalty-card animate-arrive relative overflow-hidden rounded-lg border border-border bg-card shadow-[var(--shadow-card)]">
+    <li data-card-theme={resolveCardTheme(card.cardTheme)} data-custom-brand={focused || preview || card.brandPrimary || card.brandAccent || card.backgroundTint ? "true" : undefined} style={brandThemeStyle(card.cardTheme, card)} className="loyalty-card loyalty-card-group animate-arrive space-y-4">
+      <div className="loyalty-card-shell relative overflow-hidden rounded-3xl">
       {showRibbon && <GiftRibbon className="w-24" />}
       <div className="loyalty-card-header brand-surface p-5">
         <div className="flex items-start justify-between gap-3">
           <div className="flex min-w-0 items-center gap-3">
-            <div className="store-avatar flex h-12 w-12 shrink-0 items-center justify-center overflow-hidden rounded-lg border border-current/20 bg-card/15" aria-hidden="true">
+            <div className="store-avatar flex h-12 w-12 shrink-0 items-center justify-center overflow-hidden rounded-full bg-card/15" aria-hidden="true">
               {card.logoUrl ? <img src={card.logoUrl} alt="" className="h-full w-full object-cover" /> : <Building2 className="h-5 w-5" />}
             </div>
             <div className="min-w-0">
@@ -85,7 +86,7 @@ export function StampCard({ card, preview = false, focused = false }: { card: St
             </div>
           </div>
           <div className={`flex shrink-0 flex-col items-end gap-1.5 ${showRibbon ? "mt-9" : ""}`}>
-            <span className="rounded-md border border-current/20 bg-card/15 px-3 py-1 text-sm font-extrabold backdrop-blur-md">
+            <span className="rounded-xl bg-card/15 px-3 py-1 text-sm font-extrabold backdrop-blur-md">
               {balance}/{required}
             </span>
             {!preview && <div className="flex flex-wrap justify-end gap-1"><PromoBadge card={card} hideOffer /></div>}
@@ -99,8 +100,8 @@ export function StampCard({ card, preview = false, focused = false }: { card: St
         )}
       </div>
 
-      <div className="loyalty-card-body p-5">
-        <div className="grid justify-center gap-2" style={{ gridTemplateColumns: `repeat(${stampColumns(required)}, minmax(0, 3.75rem))` }}>
+      <div className="loyalty-card-body px-5 pb-5 pt-6">
+        <div className="grid justify-center gap-3" style={{ gridTemplateColumns: `repeat(${stampColumns(required)}, minmax(0, 3.75rem))` }}>
           {Array.from({ length: required }).map((_, index) => {
             const filled = index < balance;
             return (
@@ -109,8 +110,8 @@ export function StampCard({ card, preview = false, focused = false }: { card: St
                 aria-label={filled ? t("wallet.card.stampCollected") : t("wallet.card.stampEmpty")}
                 className={
                   filled
-                    ? "loyalty-stamp-filled stamp-slot flex aspect-square items-center justify-center overflow-hidden rounded-full border-2 border-primary/25 bg-primary text-primary-foreground shadow-[var(--shadow-card)]"
-                    : "loyalty-stamp-empty flex aspect-square items-center justify-center overflow-hidden rounded-full border-2 border-dashed border-border bg-secondary/40 text-muted-foreground"
+                    ? "loyalty-stamp-filled stamp-slot flex aspect-square items-center justify-center overflow-hidden rounded-full bg-primary text-primary-foreground"
+                    : "loyalty-stamp-empty flex aspect-square items-center justify-center overflow-hidden rounded-full bg-secondary/60 text-muted-foreground"
                 }
               >
                 {card.stampIcon === "logo" && card.logoUrl ? (
@@ -123,10 +124,7 @@ export function StampCard({ card, preview = false, focused = false }: { card: St
           })}
         </div>
 
-        <div className="loyalty-progress-track mt-4 h-1.5 overflow-hidden rounded-full bg-secondary" role="progressbar" aria-valuenow={balance} aria-valuemin={0} aria-valuemax={required} aria-label={t("wallet.card.progress")}>
-          <div className="loyalty-progress-fill h-full rounded-full bg-growth transition-[width] duration-500" style={{ width: `${Math.min(100, (balance / Math.max(1, required)) * 100)}%` }} />
-        </div>
-        <p className={`loyalty-status mt-3 text-sm font-semibold ${complete ? "text-primary" : "text-foreground"}`}>
+        <p className={`loyalty-status mt-5 text-sm font-semibold ${complete ? "text-primary" : "text-foreground"}`}>
           {complete ? t("wallet.card.ready") : t("wallet.card.toGo", { count: remaining })}
           {extra > 0 && <span className="ms-2 rounded-full bg-gold px-2 py-0.5 text-xs font-extrabold text-gold-foreground">{t("wallet.card.extra", { count: extra })}</span>}
         </p>
@@ -137,51 +135,18 @@ export function StampCard({ card, preview = false, focused = false }: { card: St
         )}
 
         {card.event && (
-          <p className="mt-3 rounded-md bg-growth/15 px-3 py-2 text-xs font-bold text-foreground" role="status">
+          <p className="mt-4 rounded-2xl bg-growth/15 px-3 py-2 text-xs font-bold text-foreground" role="status">
             {t("promo.banner", { n: card.event.multiplier, name: card.event.name, date: formatDate(card.event.endsAt) })}
           </p>
         )}
 
-        {offers.length > 0 && (
-          <div className="mt-4 space-y-2 border-t border-border pt-3">
-            <p className="text-xs font-semibold text-muted-foreground">{t("promo.offers.title")}</p>
-            {offers.map((offer) => (
-              <div key={offer.id} className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-3 rounded-md bg-secondary px-3 py-3">
-                <div className="min-w-0">
-                  <p className="truncate text-sm font-semibold text-secondary-foreground">{offer.title}</p>
-                  <p className="text-xs text-muted-foreground">{offer.usesLeft > 0 ? t("promo.until", { date: formatDate(offer.endsAt) }) : t("promo.offer.used")}</p>
-                  {offer.details && offer.usesLeft > 0 && <p className="mt-0.5 text-xs text-muted-foreground">{offer.details}</p>}
-                </div>
-                {offer.usesLeft > 0 && !preview && (
-                  <Button type="button" size="sm" onClick={() => setUsingOffer({ id: offer.id, title: offer.title, usesLeft: offer.usesLeft })} className="loyalty-card-action touch-action shrink-0 text-xs font-bold">
-                    {t("promo.offer.use")}
-                  </Button>
-                )}
-              </div>
-            ))}
-          </div>
-        )}
-
-        {usingOffer && (
-          <OfferQr
-            offerId={usingOffer.id}
-            title={usingOffer.title}
-            cardId={card.id}
-            usesLeft={usingOffer.usesLeft}
-            onClose={() => {
-              setUsingOffer(null);
-              queryClient.invalidateQueries({ queryKey: ["my-cards"] });
-            }}
-          />
-        )}
-
         {rewards.length > 0 && (
-          <div className="mt-4 space-y-2 border-t border-border pt-3">
+          <div className="mt-6 space-y-2">
             <p className="text-xs font-semibold text-muted-foreground">{t("rewards.title")}</p>
             {rewards.map((reward) => {
               const available = card.stampBalance >= reward.stampsRequired;
               return (
-                <div key={reward.id} className="loyalty-reward-row grid grid-cols-[minmax(0,1fr)_auto] items-center gap-3 rounded-md bg-secondary px-3 py-3">
+                <div key={reward.id} className="loyalty-reward-row grid grid-cols-[minmax(0,1fr)_auto] items-center gap-3 rounded-2xl bg-secondary/70 px-4 py-3">
                   <div className="min-w-0">
                     <p className="loyalty-reward-name truncate text-sm font-semibold text-secondary-foreground">{reward.name}</p>
                     <p className="text-xs text-muted-foreground">
@@ -265,7 +230,7 @@ export function StampCard({ card, preview = false, focused = false }: { card: St
         )}
 
         {open && (
-          <ul className="mt-2 space-y-1 border-t border-border pt-2">
+          <ul className="mt-3 space-y-1.5">
             {card.visits.length === 0 ? (
               <li className="text-xs text-muted-foreground">{t("wallet.card.noHistory")}</li>
             ) : (
@@ -282,6 +247,56 @@ export function StampCard({ card, preview = false, focused = false }: { card: St
           </ul>
         )}
       </div>
+      </div>
+
+      {offers.length > 0 && (
+        <section className="space-y-3" aria-label={t("promo.offers.title")}>
+          {offers.map((offer) => {
+            const usable = offer.usesLeft > 0;
+            return (
+              <div key={offer.id} className="coupon-card relative flex min-h-24 items-stretch rounded-2xl">
+                <div className={`min-w-0 flex-1 px-4 py-3.5 ${usable ? "" : "opacity-60"}`}>
+                  <p className="coupon-kicker flex items-center gap-1.5 text-[11px] font-extrabold uppercase tracking-wider">
+                    <Ticket className="h-3.5 w-3.5" aria-hidden="true" />
+                    {t("promo.offers.title")}
+                  </p>
+                  <p className="mt-1 break-words text-base font-extrabold leading-snug">{offer.title}</p>
+                  <p className="mt-0.5 text-xs text-muted-foreground">{usable ? t("promo.until", { date: formatDate(offer.endsAt) }) : t("promo.offer.used")}</p>
+                  {offer.details && usable && <p className="mt-0.5 text-xs text-muted-foreground">{offer.details}</p>}
+                </div>
+                {usable && !preview && (
+                  <>
+                    <div className="coupon-cut relative w-0" aria-hidden="true">
+                      <span className="coupon-notch left-0 -top-2.5" />
+                      <span className="coupon-notch left-0 -bottom-2.5" />
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => setUsingOffer({ id: offer.id, title: offer.title, usesLeft: offer.usesLeft })}
+                      className="loyalty-card-action touch-action w-24 shrink-0 rounded-e-2xl bg-primary px-2 text-sm font-extrabold text-primary-foreground"
+                    >
+                      {t("promo.offer.use")}
+                    </button>
+                  </>
+                )}
+              </div>
+            );
+          })}
+        </section>
+      )}
+
+      {usingOffer && (
+        <OfferQr
+          offerId={usingOffer.id}
+          title={usingOffer.title}
+          cardId={card.id}
+          usesLeft={usingOffer.usesLeft}
+          onClose={() => {
+            setUsingOffer(null);
+            queryClient.invalidateQueries({ queryKey: ["my-cards"] });
+          }}
+        />
+      )}
     </li>
   );
 }
