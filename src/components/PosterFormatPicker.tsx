@@ -22,7 +22,7 @@ export function PosterFormatPicker({ value, onChange }: { value: PosterFormat; o
             role="radio"
             aria-checked={value.id === format.id}
             onClick={() => onChange(format)}
-            className={`touch-action h-10 rounded-md border px-1 text-xs font-bold ${value.id === format.id ? "border-primary bg-primary text-primary-foreground" : "border-border bg-background"}`}
+            className={`touch-action min-h-10 rounded-md border px-1 py-1 text-xs font-bold leading-tight ${value.id === format.id ? "border-primary bg-primary text-primary-foreground" : "border-border bg-background"}`}
           >
             {LABEL[format.id]()}
           </button>
