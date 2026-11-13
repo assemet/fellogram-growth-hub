@@ -109,11 +109,11 @@ export function StoreJoinShare({ storeName }: { storeName: string }) {
   });
 
   return (
-    <section className="animate-arrive mt-5 rounded-lg border border-border bg-card p-5 shadow-[var(--shadow-card)]">
+    <section className="animate-arrive mt-5 rounded-3xl bg-card p-5 shadow-[var(--shadow-card)]">
       <h2 className="font-display text-lg font-bold">{t("join.share.title")}</h2>
       <p className="mt-1 text-sm text-muted-foreground">{t("join.share.body")}</p>
 
-      <div className="mx-auto mt-4 flex h-48 w-48 items-center justify-center rounded-md bg-white p-2 ring-1 ring-border">
+      <div className="mx-auto mt-4 flex h-48 w-48 items-center justify-center rounded-2xl bg-white p-3 shadow-[var(--shadow-card)]">
         {qr ? <img src={qr} alt={t("join.share.title")} className="h-full w-full object-contain" /> : <span className="text-xs text-muted-foreground">…</span>}
       </div>
 

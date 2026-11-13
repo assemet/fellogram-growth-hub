@@ -66,15 +66,15 @@ function MerchantDashboard() {
       <section className="app-shell">
         <h1 className="mb-4 text-sm font-bold uppercase text-muted-foreground">{t("merchant.title")}</h1>
 
-        <div className="brand-surface animate-arrive rounded-lg p-5 shadow-[var(--shadow-float)]">
+        <div className="animate-arrive rounded-3xl bg-card p-5 shadow-[var(--shadow-card)]">
           <p className="break-words font-display text-3xl font-bold leading-tight">{data.store.name}</p>
-          <p className="mt-1 text-sm font-semibold opacity-90">{data.program?.name ?? "—"}</p>
-          <p className="mt-1 text-sm opacity-90">
+          <p className="mt-1 text-sm font-semibold text-muted-foreground">{data.program?.name ?? "—"}</p>
+          <p className="mt-1 text-sm text-muted-foreground">
             {t("merchant.stamps", { count: data.program?.stamps_required ?? 0, reward })}
           </p>
           <Link
             to="/merchant/program"
-            className="touch-action mt-5 inline-flex items-center gap-2 rounded-md border border-current/25 bg-card/15 px-3 py-2 text-xs font-bold backdrop-blur-sm"
+            className="touch-action mt-5 inline-flex items-center gap-2 rounded-xl bg-secondary px-3 py-2 text-xs font-bold text-secondary-foreground"
           >
             <Settings2 className="h-4 w-4" />
             {t("program.edit")}
@@ -95,7 +95,7 @@ function MerchantDashboard() {
             <Link
               key={tile.to}
               to={tile.to}
-              className="touch-action animate-arrive flex items-center gap-3 rounded-lg border border-border bg-card p-4 shadow-[var(--shadow-card)]"
+              className="touch-action animate-arrive flex items-center gap-3 rounded-2xl bg-card p-4 shadow-[var(--shadow-card)]"
             >
               <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-accent text-accent-foreground" aria-hidden="true">
                 <tile.icon className="h-5 w-5" />
