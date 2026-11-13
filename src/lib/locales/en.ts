@@ -7,6 +7,9 @@ export const en = {
   "auth.verifying": "Verifying your Telegram account…",
   "auth.failed": "We couldn't verify your Telegram session.",
   "auth.retry": "Try again",
+  "auth.telegramOnly.title": "Open Fellogram from Telegram",
+  "auth.telegramOnly.body": "Fellogram works inside Telegram. Open it from the bot to see your cards and rewards.",
+  "auth.telegramOnly.open": "Open in Telegram",
 
   "wallet.title": "My Loyalty",
   "wallet.greeting": "Hi, {name}",

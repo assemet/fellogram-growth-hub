@@ -1,6 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { check, throwIfError } from "@/lib/db";
 import { createHmac, createHash } from "crypto";
+import { previewAccountAllowed } from "@/lib/preview-account";
 import { clientIp, rateLimit } from "@/lib/rate-limit";
 
 /**
@@ -13,8 +14,10 @@ import { clientIp, rateLimit } from "@/lib/rate-limit";
  *   and session are all created server-side with privileged access.
  * - No secret ever reaches the browser: only a normal user session is returned.
  *
- * Preview fallback: while TELEGRAM_BOT_TOKEN is not configured, a fixed preview
- * identity is used so the flow can be reviewed outside Telegram.
+ * Preview account: a fixed shared identity so the flow can be reviewed outside Telegram.
+ * It exists ONLY where TELEGRAM_BOT_TOKEN is not configured, or where ALLOW_PREVIEW_ACCOUNT=true is set
+ * on purpose (a staging copy). In production, anything that is not a valid Telegram launch is refused:
+ * otherwise anyone opening the web address would sign in as the same shared person.
  */
 
 type TelegramUser = {
@@ -73,6 +76,7 @@ export const telegramSignIn = createServerFn({ method: "POST" })
       botToken && data.initData ? verifyInitData(data.initData, botToken) : null;
     let previewMode = false;
     if (!tgUser) {
+      if (!previewAccountAllowed(botToken)) throw new Error("TELEGRAM_REQUIRED");
       if (data.initData) console.warn("Telegram initData could not be verified; using demo account");
       previewMode = true;
       tgUser = { id: 100000001, first_name: "Preview", username: "preview_user" };

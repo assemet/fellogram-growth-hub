@@ -14,6 +14,7 @@ import { Toaster } from "../components/ui/sonner";
 import { reportLovableError } from "../lib/lovable-error-reporting";
 import { Button } from "../components/ui/button";
 import { BootSplash } from "../components/SplashScreen";
+import { TelegramRequired } from "../components/TelegramRequired";
 import { useLocale } from "../hooks/useLocale";
 import { useTelegramBackButton } from "../hooks/useTelegramBackButton";
 import { LOCALES, t } from "../lib/i18n";
@@ -180,6 +181,7 @@ function RootComponent() {
       {/* Required: nested routes render here. Removing <Outlet /> breaks all child routes. */}
       <Outlet key={locale} />
       <BootSplash />
+      <TelegramRequired />
       <Toaster position="top-center" />
     </QueryClientProvider>
   );

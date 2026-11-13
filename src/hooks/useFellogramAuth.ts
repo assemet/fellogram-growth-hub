@@ -11,6 +11,7 @@ import {
   rememberStartParam,
   watchTelegramTheme,
 } from "@/lib/telegram";
+import { setAuthBlocked } from "@/lib/auth-block";
 import { initializeLocale } from "@/lib/i18n";
 
 export type AuthState = "loading" | "ready";
@@ -53,8 +54,11 @@ export function useFellogramAuth() {
         const sessionTgId = Number(data.session?.user.user_metadata?.['telegram_user_id'] ?? NaN);
         // Reuse the session unless Telegram launched us as a different person
         // (e.g. a leftover demo session inside the Telegram app).
+        // A leftover preview-account session is never reused outside Telegram: the server decides whether that
+        // account is allowed here at all (it is not in production).
+        const leftoverPreview = sessionTgId === DEMO_TELEGRAM_ID && launchUserId === null;
         const sessionMatches =
-          data.session && (launchUserId === null || sessionTgId === launchUserId);
+          data.session && !leftoverPreview && (launchUserId === null || sessionTgId === launchUserId);
         if (sessionMatches) {
           signedIn = { previewMode: sessionTgId === DEMO_TELEGRAM_ID };
           if (!cancelled) {
@@ -70,12 +74,20 @@ export function useFellogramAuth() {
           refresh_token: result.refresh_token,
         });
         if (error) throw error;
+        setAuthBlocked(false);
         signedIn = { previewMode: result.previewMode };
         if (!cancelled) {
           setPreviewMode(result.previewMode);
           setState("ready");
         }
       } catch (error) {
+        if (error instanceof Error && error.message.includes("TELEGRAM_REQUIRED")) {
+          // Not retryable: this visitor did not come through Telegram. Drop any leftover session and say so.
+          await supabase.auth.signOut().catch(() => undefined);
+          signedIn = null;
+          setAuthBlocked(true);
+          return;
+        }
         console.error("Fellogram sign-in failed, retrying", error);
         if (cancelled) return;
         await new Promise((resolve) => setTimeout(resolve, Math.min(4000, 800 * (tries + 1))));
