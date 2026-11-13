@@ -56,14 +56,14 @@ function DateTimeField({ label, value, onChange }: { label: string; value: strin
   return (
     <fieldset className="rounded-md border border-border p-3">
       <legend className="px-1 text-xs font-bold">{label}</legend>
-      <div className="grid grid-cols-1 gap-2 min-[28rem]:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
+      <div className="grid grid-cols-[minmax(0,1fr)_minmax(0,1fr)] gap-2">
         <label className="text-[11px] font-semibold text-muted-foreground">
           {t("promo.date")}
-          <input type="date" value={date} onChange={(e) => set(e.target.value, time)} className={inputClass} />
+          <input type="date" value={date} onChange={(e) => set(e.target.value, time)} className={`${inputClass} !px-2 !text-[13px] [&::-webkit-calendar-picker-indicator]:ms-0 [&::-webkit-calendar-picker-indicator]:p-0`} />
         </label>
         <label className="text-[11px] font-semibold text-muted-foreground">
           {t("promo.time")}
-          <input type="time" value={time} onChange={(e) => set(date, e.target.value)} className={inputClass} />
+          <input type="time" value={time} onChange={(e) => set(date, e.target.value)} className={`${inputClass} !px-2 !text-[13px] [&::-webkit-calendar-picker-indicator]:ms-0 [&::-webkit-calendar-picker-indicator]:p-0`} />
         </label>
       </div>
     </fieldset>
