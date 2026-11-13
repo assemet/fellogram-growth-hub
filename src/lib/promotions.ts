@@ -11,6 +11,11 @@ export function promoStatus(promo: PromoWindow & { active: boolean }, now = Date
   return "live";
 }
 
+/** Switched off by the owner while time was still left (as opposed to simply running out). */
+export function wasStopped(promo: PromoWindow & { active: boolean }, now = Date.now()): boolean {
+  return !promo.active && new Date(promo.endsAt).getTime() > now;
+}
+
 const MAX_WINDOW_MS = 366 * 24 * 60 * 60 * 1000;
 
 /** Same rule the database enforces: end after start, at most a year long. Returns normalized ISO strings. */

@@ -13,8 +13,8 @@ import { Button } from "@/components/ui/button";
 import { useFellogramAuth } from "@/hooks/useFellogramAuth";
 import { formatDateTime } from "@/lib/format";
 import { t } from "@/lib/i18n";
-import { promoStatus, toLocalInput, type PromoStatus } from "@/lib/promotions";
-import { getPromotions, saveOffer, saveStampEvent, stopPromotion } from "@/lib/promotions.functions";
+import { promoStatus, wasStopped, toLocalInput, type PromoStatus } from "@/lib/promotions";
+import { deletePromotion, getPromotions, reactivatePromotion, saveOffer, saveStampEvent, stopPromotion } from "@/lib/promotions.functions";
 
 export const Route = createFileRoute("/merchant/promotions")({
   ssr: false,
@@ -34,6 +34,8 @@ const inputClass = "mt-1 w-full rounded-md border border-border bg-background px
 
 function friendly(message: string) {
   if (message.includes("INVALID_DATES") || message.includes("_window")) return t("promo.invalidDates");
+  if (message.includes("PROMO_EXPIRED")) return t("promo.expiredNow");
+  if (message.includes("OFFER_HAS_USES")) return t("promo.keptHistory");
   return t("common.error");
 }
 
@@ -90,6 +92,8 @@ function PromotionsPage() {
   const createEvent = useServerFn(saveStampEvent);
   const createOffer = useServerFn(saveOffer);
   const stop = useServerFn(stopPromotion);
+  const reactivate = useServerFn(reactivatePromotion);
+  const remove = useServerFn(deletePromotion);
 
   const { data, isLoading, error, refetch } = useQuery({ queryKey: ["promotions"], queryFn: () => load(), enabled: state === "ready" });
 
@@ -147,6 +151,25 @@ function PromotionsPage() {
     onError: (e: Error) => toast.error(friendly(e.message)),
   });
 
+  const reactivateMutation = useMutation({
+    mutationFn: (input: { kind: "event" | "offer"; id: string }) => reactivate({ data: input }),
+    onSuccess: async () => {
+      await done(t("promo.reactivated"));
+    },
+    onError: (e: Error) => toast.error(friendly(e.message)),
+  });
+  const deleteMutation = useMutation({
+    mutationFn: (input: { kind: "event" | "offer"; id: string }) => remove({ data: input }),
+    onSuccess: async () => {
+      setConfirmStop(null);
+      await done(t("promo.deleted"));
+    },
+    onError: (e: Error) => {
+      setConfirmStop(null);
+      toast.error(friendly(e.message));
+    },
+  });
+
   if (error) return <QueryError error={error} onRetry={() => refetch()} />;
   if (state !== "ready" || isLoading || !data) return <SplashScreen />;
 
@@ -161,6 +184,29 @@ function PromotionsPage() {
     >
       {confirmStop === id ? t("promo.stop.confirm") : t("promo.stop")}
     </Button>
+  );
+
+  // What can still be done with something that is no longer running.
+  const endedActions = (kind: "event" | "offer", promo: { id: string; active: boolean; startsAt: string; endsAt: string }, canDelete: boolean) => (
+    <div className="flex shrink-0 flex-col gap-1.5">
+      {wasStopped(promo) && (
+        <Button type="button" variant="outline" size="sm" disabled={reactivateMutation.isPending} className="touch-action h-10 px-3 text-xs font-semibold" onClick={() => reactivateMutation.mutate({ kind, id: promo.id })}>
+          {t("promo.reactivate")}
+        </Button>
+      )}
+      {canDelete && (
+        <Button
+          type="button"
+          variant={confirmStop === `del:${promo.id}` ? "destructive" : "ghost"}
+          size="sm"
+          disabled={deleteMutation.isPending}
+          className="touch-action h-10 px-3 text-xs font-semibold"
+          onClick={() => (confirmStop === `del:${promo.id}` ? deleteMutation.mutate({ kind, id: promo.id }) : setConfirmStop(`del:${promo.id}`))}
+        >
+          {confirmStop === `del:${promo.id}` ? t("promo.delete.confirm") : t("promo.delete")}
+        </Button>
+      )}
+    </div>
   );
 
   return (
@@ -219,7 +265,7 @@ function PromotionsPage() {
                       <p className="flex items-center gap-2 text-sm font-semibold"><span className="truncate">{event.name} · ×{event.multiplier}</span><StatusPill status={status} /></p>
                       <p className="mt-0.5 text-xs text-muted-foreground">{formatDateTime(event.startsAt)} → {formatDateTime(event.endsAt)}</p>
                     </div>
-                    {status !== "ended" && stopButton("event", event.id)}
+                    {status !== "ended" ? stopButton("event", event.id) : endedActions("event", event, true)}
                   </li>
                 );
               })}
@@ -260,8 +306,9 @@ function PromotionsPage() {
                     <div className="min-w-0 flex-1">
                       <p className="flex items-center gap-2 text-sm font-semibold"><span className="truncate">{offer.title}</span><StatusPill status={status} /></p>
                       <p className="mt-0.5 text-xs text-muted-foreground">{formatDateTime(offer.startsAt)} → {formatDateTime(offer.endsAt)} · {t("promo.used", { count: offer.used })}</p>
+                      {status === "ended" && offer.used > 0 && <p className="mt-0.5 text-xs text-muted-foreground">{t("promo.keptHistory")}</p>}
                     </div>
-                    {status !== "ended" && stopButton("offer", offer.id)}
+                    {status !== "ended" ? stopButton("offer", offer.id) : endedActions("offer", offer, offer.used === 0)}
                   </li>
                 );
               })}

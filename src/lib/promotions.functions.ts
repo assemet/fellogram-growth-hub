@@ -96,6 +96,48 @@ export const stopPromotion = createServerFn({ method: "POST" })
     return { ok: true };
   });
 
+const idInput = (data: { kind: "event" | "offer"; id: string }) => {
+  const id = String(data?.id ?? "");
+  if (!/^[0-9a-f-]{36}$/i.test(id)) throw new Error("NOT_FOUND");
+  return { kind: data?.kind === "offer" ? ("offer" as const) : ("event" as const), id };
+};
+
+/** Turns a stopped event or offer back on, as long as its end time has not passed. */
+export const reactivatePromotion = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator(idInput)
+  .handler(async ({ data, context }) => {
+    await rateLimit("promo-manage", context.userId, 30, 60);
+    const storeId = await ownedStore(context.supabase, context.userId);
+    const { data: rows, error } = await table(context.supabase, data.kind === "offer" ? "offers" : "stamp_events")
+      .update({ active: true }).eq("id", data.id).eq("store_id", storeId).gt("ends_at", new Date().toISOString()).select("id");
+    if (error) throw new Error(error.message);
+    if (!rows?.length) throw new Error("PROMO_EXPIRED");
+    return { ok: true };
+  });
+
+/**
+ * Removes an event or an offer from the list. An offer that customers already used stays: its use history
+ * would go with it. Stamps already given keep their own record of the event, so events can always go.
+ */
+export const deletePromotion = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator(idInput)
+  .handler(async ({ data, context }) => {
+    await rateLimit("promo-manage", context.userId, 30, 60);
+    const storeId = await ownedStore(context.supabase, context.userId);
+    if (data.kind === "offer") {
+      const { count, error: usedError } = await table(context.supabase, "offer_redemptions")
+        .select("id", { count: "exact", head: true }).eq("offer_id", data.id).eq("store_id", storeId).eq("status", "used");
+      if (usedError) throw new Error(usedError.message);
+      if ((count ?? 0) > 0) throw new Error("OFFER_HAS_USES");
+    }
+    const { error } = await table(context.supabase, data.kind === "offer" ? "offers" : "stamp_events")
+      .delete().eq("id", data.id).eq("store_id", storeId);
+    if (error) throw new Error(error.message);
+    return { ok: true };
+  });
+
 /** Customer: short-lived single-use code for an offer. */
 export const requestOffer = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
