@@ -21,7 +21,7 @@ const UUID_ANYWHERE = /[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{
  */
 export function parseCustomerCode(raw: string): string | null {
   const cleaned = String(raw ?? "").replace(INVISIBLE, "");
-  if (/^fellogram:[ro]:/i.test(cleaned)) return null; // reward and offer codes are not customers
+  if (/^fellogram:[roq]:/i.test(cleaned)) return null; // reward, offer and rotating customer codes are not customer ids
   const bare = cleaned.replace(/^fellogram:c:/i, "");
   const compact = bare.match(/^[0-9a-f]{32}$/i)
     ? `${bare.slice(0, 8)}-${bare.slice(8, 12)}-${bare.slice(12, 16)}-${bare.slice(16, 20)}-${bare.slice(20)}`
@@ -30,12 +30,25 @@ export function parseCustomerCode(raw: string): string | null {
   return found ? found.toLowerCase() : null;
 }
 
+const QR_TOKEN_RE = /^[0-9a-f]{32}$/i;
+
+/** A rotating customer QR ("fellogram:q:<32 hex>"): proves the customer's phone is at the counter right now. */
+export function parseQrToken(raw: string): string | null {
+  const token = String(raw ?? "").replace(INVISIBLE, "").match(/^fellogram:q:([0-9a-f]{32})$/i)?.[1];
+  return token && QR_TOKEN_RE.test(token) ? token.toLowerCase() : null;
+}
+
 /** Resolves the store the signed-in user can stamp for (staff or owner only). */
 async function resolveStaffStore(supabase: any, userId: string) {
   const current = await resolveCurrentStore(supabase, userId);
   if (!current) return null;
-  const { data: store } = check(await supabase.from("stores").select("id, name").eq("id", current.storeId).maybeSingle(), "STORE_LOOKUP_FAILED");
-  return { storeId: current.storeId, storeName: (store?.name as string | undefined) ?? "Store", role: current.role as string };
+  // select("*") so a database without the manual-stamps column still loads (cashiers then keep the old behaviour).
+  const { data: store } = check(await supabase.from("stores").select("*").eq("id", current.storeId).maybeSingle(), "STORE_LOOKUP_FAILED");
+  const role = current.role as string;
+  const manualSupported = Boolean(store && "staff_manual_stamp" in store);
+  // Owners can always stamp by name or typed code. Cashiers only when the owner allows it (the database enforces this too).
+  const manualAllowed = role === "owner" || !manualSupported || Boolean((store as { staff_manual_stamp?: boolean } | null)?.staff_manual_stamp);
+  return { storeId: current.storeId, storeName: (store?.name as string | undefined) ?? "Store", role, manualAllowed };
 }
 
 /** Store context for cashier mode. Returns null for customers (no access). */
@@ -134,41 +147,64 @@ async function loadCustomerState(
   };
 }
 
-/** Identify a scanned customer inside the cashier's store. */
+/**
+ * Identify a customer inside the cashier's store. A scanned rotating QR is reserved for this cashier (and returned
+ * as qrToken so the stamp can spend it); a typed code or a name picked from the list is "manual" and only works
+ * when the owner allows it.
+ */
 export const lookupCustomer = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((data: { code: string }) => {
+    const token = parseQrToken(data?.code ?? "");
+    if (token) return { token, customerId: null as string | null };
     const customerId = parseCustomerCode(data?.code ?? "");
     if (!customerId) throw new Error("INVALID_CODE");
-    return { customerId };
+    return { token: null as string | null, customerId };
   })
   .handler(async ({ data, context }) => {
     await rateLimit("lookup", context.userId, 90, 60);
     const store = await resolveStaffStore(context.supabase, context.userId);
     if (!store) throw new Error("NOT_STORE_STAFF");
-    const state = await loadCustomerState(context.supabase, store.storeId, data.customerId);
+
+    let customerId = data.customerId;
+    if (data.token) {
+      const { data: resolved, error } = await context.supabase.rpc("resolve_customer_qr", { _store_id: store.storeId, _token: data.token });
+      if (error) throw new Error(error.message);
+      customerId = String(resolved);
+    } else if (!store.manualAllowed) {
+      throw new Error("MANUAL_NOT_ALLOWED");
+    }
+    if (!customerId) throw new Error("INVALID_CODE");
+
+    const state = await loadCustomerState(context.supabase, store.storeId, customerId);
+    const qrToken = data.token;
     // No card yet: let the cashier create it at the counter instead of sending the customer away.
-    if (!state) return { newCustomer: true as const, customerId: data.customerId };
-    return { newCustomer: false as const, ...state };
+    if (!state) return { newCustomer: true as const, customerId, qrToken };
+    return { newCustomer: false as const, ...state, qrToken };
   });
 
 /** Award a stamp. Cooldown + staff logging are enforced in the database. */
 export const awardStamp = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((data: { customerId: string; amount?: number }) => {
+  .inputValidator((data: { customerId: string; amount?: number; qrToken?: string | null }) => {
     const customerId = parseCustomerCode(data?.customerId ?? "");
     if (!customerId) throw new Error("INVALID_CODE");
-    return { customerId, amount: Math.min(5, Math.max(1, Math.round(Number(data?.amount ?? 1)))) };
+    const qrToken = data?.qrToken ? parseQrToken(`fellogram:q:${data.qrToken}`) : null;
+    if (data?.qrToken && !qrToken) throw new Error("QR_INVALID");
+    return { customerId, qrToken, amount: Math.min(5, Math.max(1, Math.round(Number(data?.amount ?? 1)))) };
   })
   .handler(async ({ data, context }) => {
     await rateLimit("award", context.userId, 60, 60);
     const store = await resolveStaffStore(context.supabase, context.userId);
     if (!store) throw new Error("NOT_STORE_STAFF");
 
+    if (!data.qrToken && !store.manualAllowed) throw new Error("MANUAL_NOT_ALLOWED");
+
     const { data: awarded, error } = await context.supabase.rpc("award_stamp", {
       _store_id: store.storeId,
       _customer_id: data.customerId,
       _amount: data.amount,
+      ...(data.qrToken ? { _token: data.qrToken } : {}),
     });
     if (error) throw new Error(error.message);
 
@@ -262,15 +298,19 @@ export const redeemOfferToken = createServerFn({ method: "POST" })
 /** Creates the customer's card at this store and adds the first stamp in one step. */
 export const enrollCustomer = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((data: { customerId: string }) => {
+  .inputValidator((data: { customerId: string; qrToken?: string | null }) => {
     const customerId = parseCustomerCode(data?.customerId ?? "");
     if (!customerId) throw new Error("INVALID_CODE");
-    return { customerId };
+    const qrToken = data?.qrToken ? parseQrToken(`fellogram:q:${data.qrToken}`) : null;
+    if (data?.qrToken && !qrToken) throw new Error("QR_INVALID");
+    return { customerId, qrToken };
   })
   .handler(async ({ data, context }) => {
     await rateLimit("enroll", context.userId, 30, 60);
     const store = await resolveStaffStore(context.supabase, context.userId);
     if (!store) throw new Error("NOT_STORE_STAFF");
+    // Refuse before creating the card, so a blocked manual stamp never leaves a card behind.
+    if (!data.qrToken && !store.manualAllowed) throw new Error("MANUAL_NOT_ALLOWED");
 
     const { error: enrollError } = await context.supabase.rpc("staff_enroll_customer", {
       _store_id: store.storeId,
@@ -282,6 +322,7 @@ export const enrollCustomer = createServerFn({ method: "POST" })
       _store_id: store.storeId,
       _customer_id: data.customerId,
       _amount: 1,
+      ...(data.qrToken ? { _token: data.qrToken } : {}),
     });
     if (awardError) throw new Error(awardError.message);
 
@@ -305,5 +346,6 @@ export const searchCustomers = createServerFn({ method: "POST" })
     if (data.q.length < MIN_SEARCH_LENGTH) return { results: [] as SearchHit[] };
     const store = await resolveStaffStore(context.supabase, context.userId);
     if (!store) throw new Error("NOT_STORE_STAFF");
+    if (!store.manualAllowed) throw new Error("MANUAL_NOT_ALLOWED");
     return { results: await searchStoreCustomers(context.supabase, store.storeId, data.q) };
   });

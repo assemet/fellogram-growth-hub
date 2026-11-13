@@ -48,7 +48,32 @@ export const getTeam = createServerFn({ method: "POST" })
       supported: Boolean(storeRow && "staff_can_undo" in storeRow),
       canUndo: storeRow?.staff_can_undo ?? true,
       dailyLimit: storeRow?.staff_daily_stamp_limit ?? 0,
+      manualSupported: Boolean(storeRow && "staff_manual_stamp" in storeRow),
+      manualStamp: Boolean((storeRow as { staff_manual_stamp?: boolean } | null)?.staff_manual_stamp),
     };
+
+    // Last 7 days per cashier: stamps given (undone ones excluded) and how many were found by name / typed code.
+    const since = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString();
+    // A failed stats query must not stop the team page from loading.
+    const { data: weekRows } = (
+      await supabase
+        .from("transactions")
+        .select("id, type, staff_id, metadata")
+        .eq("store_id", store.id)
+        .in("type", ["stamp_awarded", "stamp_reversed"])
+        .gte("created_at", since)
+        .limit(5000)
+    );
+    const week = (weekRows ?? []) as { id: string; type: string; staff_id: string | null; metadata: { method?: string; reversed_transaction_id?: string } | null }[];
+    const reversed = new Set(week.filter((r) => r.type === "stamp_reversed").map((r) => String(r.metadata?.reversed_transaction_id ?? "")));
+    const stats = new Map<string, { stamps: number; manual: number }>();
+    for (const row of week) {
+      if (row.type !== "stamp_awarded" || !row.staff_id || reversed.has(row.id)) continue;
+      const entry = stats.get(row.staff_id) ?? { stamps: 0, manual: 0 };
+      entry.stamps += 1;
+      if (row.metadata?.method === "manual") entry.manual += 1;
+      stats.set(row.staff_id, entry);
+    }
 
     const names = await loadNames(supabase, (members.data ?? []).map((m) => m.user_id));
     return {
@@ -59,6 +84,8 @@ export const getTeam = createServerFn({ method: "POST" })
         name: names.get(m.user_id)?.name ?? null,
         username: names.get(m.user_id)?.username ?? null,
         joinedAt: m.created_at,
+        weekStamps: stats.get(m.user_id)?.stamps ?? 0,
+        weekManual: stats.get(m.user_id)?.manual ?? 0,
       })),
       invitations: (invitations.data ?? []).map((i) => ({
         id: i.id,
@@ -129,15 +156,16 @@ export const acceptInvite = createServerFn({ method: "POST" })
 /** Owner: what cashiers may do. Owners themselves are never limited. */
 export const updateTeamRules = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((data: { canUndo: boolean; dailyLimit: number }) => ({
+  .inputValidator((data: { canUndo: boolean; dailyLimit: number; manualStamp: boolean }) => ({
     canUndo: Boolean(data?.canUndo),
+    manualStamp: Boolean(data?.manualStamp),
     dailyLimit: Math.min(1000, Math.max(0, Math.round(Number(data?.dailyLimit)) || 0)),
   }))
   .handler(async ({ data, context }) => {
     const store = await ownedStore(context.supabase, context.userId);
     const { error } = await context.supabase
       .from("stores")
-      .update({ staff_can_undo: data.canUndo, staff_daily_stamp_limit: data.dailyLimit })
+      .update({ staff_can_undo: data.canUndo, staff_daily_stamp_limit: data.dailyLimit, staff_manual_stamp: data.manualStamp })
       .eq("id", store.id);
     if (error) {
       // 42703 / PGRST204: the privacy-and-team-rules migration has not been applied to this database yet.

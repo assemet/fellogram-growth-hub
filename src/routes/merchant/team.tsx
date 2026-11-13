@@ -173,6 +173,11 @@ function TeamPage() {
                         {member.username && member.name ? `@${member.username} · ` : ""}
                         {t("team.joined", { date: formatDate(member.joinedAt) })}
                       </p>
+                      <p className={`truncate text-xs ${member.weekStamps >= 10 && member.weekManual / member.weekStamps >= 0.5 ? "font-semibold text-destructive" : "text-muted-foreground"}`}>
+                        {t("team.week.stamps", { count: member.weekStamps })}
+                        {member.weekManual > 0 ? ` · ${t("team.week.manual", { count: member.weekManual, pct: Math.round((member.weekManual / member.weekStamps) * 100) })}` : ""}
+                        {member.weekStamps >= 10 && member.weekManual / member.weekStamps >= 0.5 ? ` · ${t("team.week.flag")}` : ""}
+                      </p>
                     </div>
                     <Button
                       type="button"

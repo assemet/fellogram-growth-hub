@@ -269,6 +269,7 @@ function ActivityTab({ ready }: { ready: boolean }) {
               <p className="truncate text-xs text-muted-foreground">
                 {item.customerName ?? t("customers.anonymous")}
                 {item.staffName ? ` · ${t("activity.by", { name: item.staffName })}` : ""}
+                {item.manual ? ` · ${t("activity.manual")}` : ""}
               </p>
             </div>
             <span className="shrink-0 text-xs text-muted-foreground">{formatRelative(item.createdAt)}</span>

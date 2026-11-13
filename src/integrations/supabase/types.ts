@@ -474,6 +474,7 @@ export type Database = {
           owner_id: string
           staff_can_undo: boolean
           staff_daily_stamp_limit: number
+          staff_manual_stamp: boolean
           updated_at: string
           address: string | null
           facebook_url: string | null
@@ -499,6 +500,7 @@ export type Database = {
           owner_id: string
           staff_can_undo?: boolean
           staff_daily_stamp_limit?: number
+          staff_manual_stamp?: boolean
           updated_at?: string
           address?: string | null
           facebook_url?: string | null
@@ -524,6 +526,7 @@ export type Database = {
           owner_id?: string
           staff_can_undo?: boolean
           staff_daily_stamp_limit?: number
+          staff_manual_stamp?: boolean
           updated_at?: string
           address?: string | null
           facebook_url?: string | null
@@ -601,7 +604,7 @@ export type Database = {
         }[]
       }
       award_stamp: {
-        Args: { _amount?: number; _customer_id: string; _store_id: string }
+        Args: { _amount?: number; _customer_id: string; _store_id: string; _token?: string }
         Returns: {
           membership_id: string
           stamp_balance: number
@@ -609,6 +612,8 @@ export type Database = {
           transaction_id: string
         }[]
       }
+      issue_customer_qr: { Args: Record<PropertyKey, never>; Returns: string }
+      resolve_customer_qr: { Args: { _store_id: string; _token: string }; Returns: string }
       create_redemption: {
         Args: { _reward_id: string }
         Returns: {

@@ -8,20 +8,21 @@ import { Switch } from "@/components/ui/switch";
 import { t } from "@/lib/i18n";
 import { updateTeamRules } from "@/lib/team.functions";
 
-type Rules = { supported: boolean; canUndo: boolean; dailyLimit: number };
+type Rules = { supported: boolean; canUndo: boolean; dailyLimit: number; manualSupported: boolean; manualStamp: boolean };
 
-/** Owner-set limits for cashiers: whether they can undo a stamp, and a rolling 24-hour stamp cap. */
+/** Owner-set limits for cashiers: undo, stamping by name / typed code, and a rolling 24-hour stamp cap. */
 export function TeamRulesCard({ rules }: { rules: Rules }) {
   const queryClient = useQueryClient();
   const save = useServerFn(updateTeamRules);
   const [canUndo, setCanUndo] = useState(rules.canUndo);
+  const [manualStamp, setManualStamp] = useState(rules.manualStamp);
   const [limitText, setLimitText] = useState(String(rules.dailyLimit));
 
   const dailyLimit = Math.min(1000, Math.max(0, Math.round(Number(limitText)) || 0));
-  const dirty = canUndo !== rules.canUndo || dailyLimit !== rules.dailyLimit;
+  const dirty = canUndo !== rules.canUndo || dailyLimit !== rules.dailyLimit || manualStamp !== rules.manualStamp;
 
   const mutation = useMutation({
-    mutationFn: () => save({ data: { canUndo, dailyLimit } }),
+    mutationFn: () => save({ data: { canUndo, dailyLimit, manualStamp } }),
     onSuccess: async () => {
       toast.success(t("team.rules.saved"));
       await queryClient.invalidateQueries({ queryKey: ["team"] });
@@ -41,6 +42,15 @@ export function TeamRulesCard({ rules }: { rules: Rules }) {
               {t("team.rules.canUndo")}
             </label>
             <Switch id="teamCanUndo" checked={canUndo} onCheckedChange={setCanUndo} />
+          </div>
+          <div>
+            <div className="flex min-h-11 items-center justify-between gap-3">
+              <label htmlFor="teamManualStamp" className="min-w-0 text-sm font-medium">
+                {t("team.rules.manual")}
+              </label>
+              <Switch id="teamManualStamp" checked={manualStamp} onCheckedChange={setManualStamp} disabled={!rules.manualSupported} />
+            </div>
+            <p className="text-xs text-muted-foreground">{rules.manualSupported ? t("team.rules.manual.hint") : t("error.migrationNeeded")}</p>
           </div>
           <div>
             <label htmlFor="teamDailyLimit" className="text-sm font-medium">

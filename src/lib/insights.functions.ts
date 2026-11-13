@@ -101,7 +101,7 @@ export const getStoreActivity = createServerFn({ method: "POST" })
     const { data: rows } = check(
       await supabase
         .from("transactions")
-        .select("id, type, amount, created_at, customer_id, staff_id")
+        .select("id, type, amount, created_at, customer_id, staff_id, metadata")
         .eq("store_id", storeId)
         .order("created_at", { ascending: false })
         .limit(60),
@@ -115,6 +115,7 @@ export const getStoreActivity = createServerFn({ method: "POST" })
         type: r.type as "stamp_awarded" | "stamp_reversed" | "reward_redeemed" | "referral_reward" | "join_bonus",
         amount: r.amount,
         createdAt: r.created_at,
+        manual: r.type === "stamp_awarded" && (r.metadata as { method?: string } | null)?.method === "manual",
         customerName: names.get(r.customer_id)?.name ?? names.get(r.customer_id)?.username ?? null,
         staffName: r.staff_id ? names.get(r.staff_id)?.name ?? names.get(r.staff_id)?.username ?? null : null,
       })),

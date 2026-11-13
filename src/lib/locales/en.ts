@@ -121,7 +121,7 @@ export const en = {
   "cardTheme.sunset": "Sunset Orange",
 
   "qr.title": "Your customer QR",
-  "qr.subtitle": "Show this at the counter to collect a stamp.",
+  "qr.subtitle": "Show this at the counter to collect a stamp. The code changes every 30 seconds, so a screenshot won't work.",
 
   "cashier.title": "Cashier mode",
   "cashier.soon": "Scanning arrives in the next slice.",
@@ -633,6 +633,19 @@ export const en = {
   "cashier.cardFull": "Two rewards are waiting on this card. Redeem one before adding more stamps.",
   "cashier.extra": "{count} extra stamp(s) carry over to the next card.",
   "wallet.card.extra": "+{count} extra",
+  "qr.renews": "New code in {count}s",
+  "qr.failed": "Couldn't refresh the code. Check your connection.",
+  "qr.retry": "Try again",
+  "cashier.qrExpired": "This QR code has expired. Ask the customer to show it again.",
+  "cashier.qrUsed": "This QR code was already used. Ask the customer to show a fresh one.",
+  "cashier.manualNotAllowed": "Stamps are given by scanning the customer's QR code. Ask the owner if you need to stamp by name.",
+  "cashier.scanOnly": "Stamps are given by scanning the customer's QR code.",
+  "team.rules.manual": "Cashiers can stamp by name or typed code",
+  "team.rules.manual.hint": "Off: cashiers can only stamp by scanning the customer's QR, so the customer must be there. You can always do it yourself.",
+  "team.week.stamps": "{count} stamps this week",
+  "team.week.manual": "{count} by name ({pct}%)",
+  "team.week.flag": "check this",
+  "activity.manual": "by name",
 } satisfies Record<string, string>;
 
 export type TranslationKey = keyof typeof en;

@@ -43,6 +43,9 @@ type CustomerState = {
 };
 
 function friendlyError(message: string): string {
+  if (message.includes("QR_CLAIMED")) return t("cashier.qrUsed");
+  if (message.includes("QR_INVALID")) return t("cashier.qrExpired");
+  if (message.includes("MANUAL_NOT_ALLOWED")) return t("cashier.manualNotAllowed");
   if (message.includes("COOLDOWN_ACTIVE")) {
     const minutes = message.split("COOLDOWN_ACTIVE:")[1]?.match(/\d+/)?.[0] ?? "15";
     return t("cashier.cooldown", { count: minutes });
@@ -87,6 +90,8 @@ function Cashier() {
   const [nameInput, setNameInput] = useState("");
   const [nameQuery, setNameQuery] = useState("");
   const autoStampRef = useRef(true);
+  // The scanned customer's one-time QR code, kept until the stamp spends it.
+  const qrTokenRef = useRef<string | null>(null);
   const viaCameraRef = useRef(false);
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const scannerRef = useRef<{ stop: () => void; destroy: () => void } | null>(null);
@@ -151,6 +156,7 @@ function Cashier() {
   const lookup = useMutation({
     mutationFn: (raw: string) => findCustomer({ data: { code: raw } }),
     onSuccess: (data) => {
+      qrTokenRef.current = data.qrToken ?? null;
       setError(null);
       setMessage(null);
       if (data.newCustomer) {
@@ -177,8 +183,9 @@ function Cashier() {
   });
 
   const enroll = useMutation({
-    mutationFn: (customerId: string) => enrollFn({ data: { customerId } }),
+    mutationFn: (customerId: string) => enrollFn({ data: { customerId, qrToken: qrTokenRef.current } }),
     onSuccess: (data) => {
+      qrTokenRef.current = null;
       setCustomer(data);
       setNewCustomerId(null);
       setError(null);
@@ -194,8 +201,9 @@ function Cashier() {
   });
 
   const award = useMutation({
-    mutationFn: (customerId: string) => stamp({ data: { customerId } }),
+    mutationFn: (customerId: string) => stamp({ data: { customerId, qrToken: qrTokenRef.current } }),
     onSuccess: (data) => {
+      qrTokenRef.current = null;
       setCustomer(data);
       setError(null);
       setMessage(null);
@@ -206,6 +214,12 @@ function Cashier() {
     onError: (e: Error) => {
       notify("error");
       setError(friendlyError(e.message));
+      // The one-time code ran out or was spent: this customer has to show a fresh QR.
+      if (e.message.includes("QR_INVALID") || e.message.includes("QR_CLAIMED")) {
+        qrTokenRef.current = null;
+        setCustomer(null);
+        setNewCustomerId(null);
+      }
     },
   });
 
@@ -275,7 +289,7 @@ function Cashier() {
     const value = raw.trim();
     if (value.startsWith("fellogram:o:")) {
       redeemOffer.mutate(value);
-    } else if (value.startsWith("fellogram:r:") || (forcedMode === "reward" && !value.startsWith("fellogram:c:"))) {
+    } else if (value.startsWith("fellogram:r:") || (forcedMode === "reward" && !value.startsWith("fellogram:c:") && !value.startsWith("fellogram:q:"))) {
       redeem.mutate(value);
     } else {
       lookup.mutate(value);
@@ -315,6 +329,7 @@ function Cashier() {
   };
 
   const nextCustomer = (restartScanner = false) => {
+    qrTokenRef.current = null;
     setCustomer(null);
     setNewCustomerId(null);
     setCode("");
@@ -408,50 +423,54 @@ function Cashier() {
               <Switch id="autoStamp" checked={autoStamp} onCheckedChange={toggleAutoStamp} />
             </div>
 
-            <div className="mt-3 border-t border-border pt-4">
-              <label htmlFor="nameSearch" className="text-xs font-semibold text-muted-foreground">
-                {t("cashier.search")}
-              </label>
-              <input
-                id="nameSearch"
-                type="search"
-                value={nameInput}
-                onChange={(event) => setNameInput(event.target.value)}
-                onKeyDown={(event) => {
-                  if (event.key === "Enter") event.preventDefault();
-                }}
-                placeholder={t("cashier.searchPlaceholder")}
-                className="mt-2 w-full rounded-md border border-border bg-background px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
-              />
-              {nameQuery.length === 1 && <p className="mt-2 text-xs text-muted-foreground">{t("cashier.searchMin")}</p>}
-              {nameQuery.length >= 2 && !searchingNames && nameResults && nameResults.results.length === 0 && (
-                <p className="mt-2 text-xs text-muted-foreground">{t("cashier.searchNone")}</p>
-              )}
-              {nameResults && nameResults.results.length > 0 && nameQuery.length >= 2 && (
-                <ul className="mt-2 space-y-1">
-                  {nameResults.results.map((person) => (
-                    <li key={person.customerId}>
-                      <button
-                        type="button"
-                        onClick={() => {
-                          viaCameraRef.current = false;
-                          lookup.mutate(person.customerId);
-                        }}
-                        className="touch-action flex w-full items-center justify-between gap-3 rounded-md border border-border bg-background px-3 py-3 text-start text-sm"
-                      >
-                        <span className="min-w-0">
-                          <span className="block truncate font-semibold">{person.name ?? (person.username ? `@${person.username}` : t("customers.anonymous"))}</span>
-                          {person.name && person.username && <span className="block truncate text-xs text-muted-foreground">@{person.username}</span>}
-                        </span>
-                        <span className="shrink-0 text-xs font-bold text-muted-foreground">
-                          {person.balance}/{person.required}
-                        </span>
-                      </button>
-                    </li>
-                  ))}
-                </ul>
-              )}
-            </div>
+            {store.manualAllowed ? (
+              <div className="mt-3 border-t border-border pt-4">
+                <label htmlFor="nameSearch" className="text-xs font-semibold text-muted-foreground">
+                  {t("cashier.search")}
+                </label>
+                <input
+                  id="nameSearch"
+                  type="search"
+                  value={nameInput}
+                  onChange={(event) => setNameInput(event.target.value)}
+                  onKeyDown={(event) => {
+                    if (event.key === "Enter") event.preventDefault();
+                  }}
+                  placeholder={t("cashier.searchPlaceholder")}
+                  className="mt-2 w-full rounded-md border border-border bg-background px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
+                />
+                {nameQuery.length === 1 && <p className="mt-2 text-xs text-muted-foreground">{t("cashier.searchMin")}</p>}
+                {nameQuery.length >= 2 && !searchingNames && nameResults && nameResults.results.length === 0 && (
+                  <p className="mt-2 text-xs text-muted-foreground">{t("cashier.searchNone")}</p>
+                )}
+                {nameResults && nameResults.results.length > 0 && nameQuery.length >= 2 && (
+                  <ul className="mt-2 space-y-1">
+                    {nameResults.results.map((person) => (
+                      <li key={person.customerId}>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            viaCameraRef.current = false;
+                            lookup.mutate(person.customerId);
+                          }}
+                          className="touch-action flex w-full items-center justify-between gap-3 rounded-md border border-border bg-background px-3 py-3 text-start text-sm"
+                        >
+                          <span className="min-w-0">
+                            <span className="block truncate font-semibold">{person.name ?? (person.username ? `@${person.username}` : t("customers.anonymous"))}</span>
+                            {person.name && person.username && <span className="block truncate text-xs text-muted-foreground">@{person.username}</span>}
+                          </span>
+                          <span className="shrink-0 text-xs font-bold text-muted-foreground">
+                            {person.balance}/{person.required}
+                          </span>
+                        </button>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </div>
+            ) : (
+              <p className="mt-3 rounded-md bg-muted px-3 py-3 text-xs text-muted-foreground">{t("cashier.scanOnly")}</p>
+            )}
 
             <form
               className="mt-5 border-t border-border pt-4"

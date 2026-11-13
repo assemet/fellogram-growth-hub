@@ -169,6 +169,13 @@
       "when": 1791676362386,
       "tag": "0023_rate_limits_reward_reminder",
       "breakpoints": true
+    },
+    {
+      "idx": 24,
+      "version": "7",
+      "when": 1791762762386,
+      "tag": "0024_qr_rotation_manual_stamps",
+      "breakpoints": true
     }
   ]
 }
