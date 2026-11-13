@@ -56,7 +56,7 @@ function DateTimeField({ label, value, onChange }: { label: string; value: strin
   return (
     <fieldset className="rounded-md border border-border p-3">
       <legend className="px-1 text-xs font-bold">{label}</legend>
-      <div className="grid grid-cols-[minmax(0,3fr)_minmax(0,2fr)] gap-2">
+      <div className="grid grid-cols-1 gap-2 min-[28rem]:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
         <label className="text-[11px] font-semibold text-muted-foreground">
           {t("promo.date")}
           <input type="date" value={date} onChange={(e) => set(e.target.value, time)} className={inputClass} />
