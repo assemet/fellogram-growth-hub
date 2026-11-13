@@ -226,15 +226,15 @@ function ProgramEditor() {
         <p className="mt-1 text-sm text-muted-foreground">{t("program.subtitle")}</p>
 
         <Tabs value={tab} onValueChange={(next) => setTab(next as Tab)} className="mt-4">
-          {/* Tabs come first and look like tabs: icon, label, and a clear line under the active one. */}
-          <TabsList className="grid h-auto w-full grid-cols-3 rounded-none border-b border-border bg-transparent p-0">
+          {/* Tabs come first and read as one segmented control: icon and label, the active one lifted on a white tile. */}
+          <TabsList className="grid h-auto w-full grid-cols-3 gap-1 rounded-2xl bg-secondary p-1">
             {tabs.map((id) => {
               const Icon = TAB_ICONS[id];
               return (
                 <TabsTrigger
                   key={id}
                   value={id}
-                  className="touch-action flex flex-col items-center gap-1 whitespace-normal rounded-none border-b-2 border-transparent bg-transparent px-1 py-3 text-center text-xs font-semibold leading-tight text-muted-foreground shadow-none focus-visible:ring-inset focus-visible:ring-offset-0 data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:text-primary data-[state=active]:shadow-none"
+                  className="touch-action flex min-h-14 flex-col items-center justify-center gap-1 whitespace-normal rounded-xl px-1 py-2 text-center text-xs font-bold leading-tight text-muted-foreground focus-visible:ring-inset focus-visible:ring-offset-0 data-[state=active]:bg-card data-[state=active]:text-foreground data-[state=active]:shadow-[var(--shadow-card)]"
                 >
                   <Icon className="h-5 w-5" aria-hidden="true" />
                   <span>{t(`program.tab.${id}` as TranslationKey)}</span>
