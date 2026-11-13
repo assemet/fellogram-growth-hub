@@ -41,7 +41,7 @@ setTimeout(function(){
     if(b&&b.innerText&&b.innerText.replace(/\\s/g,'').length>0){try{sessionStorage.removeItem('fg.reloaded')}catch(e){}return}
     var ar=(document.documentElement.lang||'')==='ar';
     var d=document.createElement('div');
-    d.setAttribute('style','position:fixed;inset:0;z-index:2147483647;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;padding:24px;text-align:center;background:#f3f7ff;color:#0b1f5c;font-family:system-ui,sans-serif');
+    d.setAttribute('style','position:fixed;inset:0;z-index:2147483647;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;padding:24px;text-align:center;background:#f5f3f0;color:#1c1a17;font-family:system-ui,sans-serif');
     var h=document.createElement('p');h.setAttribute('style','margin:0;font-size:18px;font-weight:700');
     h.textContent=ar?'تعذّر تحميل التطبيق':'The app could not load';
     var btn=document.createElement('button');btn.type='button';

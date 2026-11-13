@@ -6,7 +6,7 @@
 
 /*
  * Fellogram design system — precise, Telegram-native, mobile-first.
- * Violet + navy + teal (from the logo) frame store-specific colors without competing with them.
+ * A warm neutral shell lets each store's own colors lead; the blue of the logo lives in the mascot, the splash and the classic card.
  * All colors are oklch semantic tokens. Never hardcode colors in components.
  */
 
@@ -55,63 +55,63 @@
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-ring: var(--sidebar-ring);
 
-  --shadow-card: 0 16px 32px -24px oklch(0.3 0.12 262 / 0.35), 0 1px 3px oklch(0.3 0.1 262 / 0.1);
-  --shadow-float: 0 24px 50px -28px oklch(0.35 0.18 262 / 0.5);
+  --shadow-card: 0 16px 32px -24px oklch(0.25 0.02 80 / 0.35), 0 1px 3px oklch(0.25 0.02 80 / 0.1);
+  --shadow-float: 0 24px 50px -28px oklch(0.3 0.03 80 / 0.5);
 }
 
 :root {
   --radius: 0.75rem;
   /* Palette taken from the Fellogram mascot: royal blue, navy ink, sky-cyan, gold star. */
-  --background: oklch(0.975 0.009 250);
-  --foreground: oklch(0.24 0.075 265);
+  --background: oklch(0.965 0.004 80);
+  --foreground: oklch(0.22 0.01 80);
   --card: oklch(1 0 0);
-  --card-foreground: oklch(0.24 0.075 265);
+  --card-foreground: oklch(0.22 0.01 80);
   --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.24 0.075 265);
-  --primary: oklch(0.52 0.215 261);
-  --primary-foreground: oklch(0.99 0.004 250);
-  --secondary: oklch(0.948 0.022 252);
-  --secondary-foreground: oklch(0.3 0.1 263);
-  --muted: oklch(0.955 0.015 252);
-  --muted-foreground: oklch(0.47 0.05 262);
-  --accent: oklch(0.925 0.05 250);
-  --accent-foreground: oklch(0.3 0.12 262);
+  --popover-foreground: oklch(0.22 0.01 80);
+  --primary: oklch(0.27 0.012 80);
+  --primary-foreground: oklch(0.99 0.003 80);
+  --secondary: oklch(0.94 0.006 80);
+  --secondary-foreground: oklch(0.27 0.012 80);
+  --muted: oklch(0.945 0.005 80);
+  --muted-foreground: oklch(0.48 0.01 80);
+  --accent: oklch(0.92 0.008 80);
+  --accent-foreground: oklch(0.27 0.012 80);
   --gold: oklch(0.83 0.165 80);
   --gold-foreground: oklch(0.28 0.07 70);
   --growth: oklch(0.71 0.12 178);
   --growth-foreground: oklch(0.2 0.05 190);
   --destructive: oklch(0.6 0.22 22);
   --destructive-foreground: oklch(0.99 0.005 285);
-  --border: oklch(0.9 0.022 252);
-  --input: oklch(0.85 0.028 252);
-  --ring: oklch(0.52 0.215 261);
+  --border: oklch(0.9 0.006 80);
+  --input: oklch(0.85 0.008 80);
+  --ring: oklch(0.27 0.012 80);
   --brand-gradient: linear-gradient(135deg, oklch(0.56 0.22 258) 0%, oklch(0.4 0.18 265) 62%, oklch(0.3 0.12 268) 115%);
   --brand-foreground: oklch(0.99 0.005 250);
-  --sidebar: oklch(0.985 0.006 250);
-  --sidebar-foreground: oklch(0.22 0.07 265);
-  --sidebar-primary: oklch(0.53 0.21 260);
-  --sidebar-primary-foreground: oklch(0.99 0.005 250);
-  --sidebar-accent: oklch(0.94 0.03 250);
-  --sidebar-accent-foreground: oklch(0.34 0.12 262);
-  --sidebar-border: oklch(0.92 0.018 250);
-  --sidebar-ring: oklch(0.53 0.21 260);
+  --sidebar: oklch(0.975 0.004 80);
+  --sidebar-foreground: oklch(0.22 0.01 80);
+  --sidebar-primary: oklch(0.27 0.012 80);
+  --sidebar-primary-foreground: oklch(0.99 0.003 80);
+  --sidebar-accent: oklch(0.93 0.006 80);
+  --sidebar-accent-foreground: oklch(0.27 0.012 80);
+  --sidebar-border: oklch(0.91 0.006 80);
+  --sidebar-ring: oklch(0.27 0.012 80);
 }
 
 .dark {
-  --background: oklch(0.17 0.04 264);
-  --foreground: oklch(0.97 0.01 250);
-  --card: oklch(0.22 0.05 264);
-  --card-foreground: oklch(0.97 0.01 250);
-  --popover: oklch(0.24 0.055 264);
-  --popover-foreground: oklch(0.97 0.01 250);
-  --primary: oklch(0.72 0.15 252);
-  --primary-foreground: oklch(0.16 0.06 265);
-  --secondary: oklch(0.28 0.05 264);
-  --secondary-foreground: oklch(0.97 0.01 250);
-  --muted: oklch(0.27 0.045 264);
-  --muted-foreground: oklch(0.76 0.035 252);
-  --accent: oklch(0.33 0.08 262);
-  --accent-foreground: oklch(0.97 0.01 250);
+  --background: oklch(0.16 0.004 80);
+  --foreground: oklch(0.96 0.004 80);
+  --card: oklch(0.21 0.005 80);
+  --card-foreground: oklch(0.96 0.004 80);
+  --popover: oklch(0.23 0.006 80);
+  --popover-foreground: oklch(0.96 0.004 80);
+  --primary: oklch(0.94 0.004 80);
+  --primary-foreground: oklch(0.2 0.006 80);
+  --secondary: oklch(0.27 0.006 80);
+  --secondary-foreground: oklch(0.96 0.004 80);
+  --muted: oklch(0.26 0.005 80);
+  --muted-foreground: oklch(0.74 0.008 80);
+  --accent: oklch(0.31 0.008 80);
+  --accent-foreground: oklch(0.96 0.004 80);
   --gold: oklch(0.84 0.16 82);
   --gold-foreground: oklch(0.25 0.07 70);
   --growth: oklch(0.76 0.13 178);
@@ -120,32 +120,32 @@
   --destructive-foreground: oklch(0.99 0.005 285);
   --border: oklch(1 0 0 / 12%);
   --input: oklch(1 0 0 / 16%);
-  --ring: oklch(0.72 0.15 252);
+  --ring: oklch(0.75 0.01 80);
   --brand-gradient: linear-gradient(135deg, oklch(0.46 0.21 260), oklch(0.33 0.16 266) 65%, oklch(0.25 0.1 268));
   --brand-foreground: oklch(0.99 0.005 250);
-  --sidebar: oklch(0.22 0.04 255);
-  --sidebar-foreground: oklch(0.97 0.008 250);
-  --sidebar-primary: oklch(0.68 0.17 255);
-  --sidebar-primary-foreground: oklch(0.16 0.05 265);
-  --sidebar-accent: oklch(0.32 0.08 262);
-  --sidebar-accent-foreground: oklch(0.97 0.008 250);
+  --sidebar: oklch(0.2 0.005 80);
+  --sidebar-foreground: oklch(0.96 0.004 80);
+  --sidebar-primary: oklch(0.94 0.004 80);
+  --sidebar-primary-foreground: oklch(0.2 0.006 80);
+  --sidebar-accent: oklch(0.3 0.008 80);
+  --sidebar-accent-foreground: oklch(0.96 0.004 80);
   --sidebar-border: oklch(1 0 0 / 12%);
-  --sidebar-ring: oklch(0.68 0.17 255);
+  --sidebar-ring: oklch(0.75 0.01 80);
 }
 
 /* Telegram provides these properties inside the Mini App; native theme changes update them live. */
 .telegram-theme {
-  --background: var(--tg-theme-secondary-bg-color, var(--tg-theme-bg-color, oklch(0.977 0.008 250)));
-  --foreground: var(--tg-theme-text-color, oklch(0.24 0.075 265));
+  --background: var(--tg-theme-secondary-bg-color, var(--tg-theme-bg-color, oklch(0.965 0.004 80)));
+  --foreground: var(--tg-theme-text-color, oklch(0.22 0.01 80));
   --card: var(--tg-theme-bg-color, oklch(1 0 0));
-  --card-foreground: var(--tg-theme-text-color, oklch(0.24 0.075 265));
+  --card-foreground: var(--tg-theme-text-color, oklch(0.22 0.01 80));
   --popover: var(--tg-theme-bg-color, oklch(1 0 0));
-  --popover-foreground: var(--tg-theme-text-color, oklch(0.24 0.075 265));
-  --muted-foreground: var(--tg-theme-hint-color, oklch(0.5 0.05 262));
+  --popover-foreground: var(--tg-theme-text-color, oklch(0.22 0.01 80));
+  --muted-foreground: var(--tg-theme-hint-color, oklch(0.48 0.01 80));
 }
 /* Surfaces and text follow the user's Telegram theme; buttons and links keep the Fellogram blue
    (Telegram's own button color would make every app look the same). */
-.telegram-theme.dark { --primary: oklch(0.72 0.15 252); --primary-foreground: oklch(0.16 0.06 265); }
+.telegram-theme.dark { --primary: oklch(0.94 0.004 80); --primary-foreground: oklch(0.2 0.006 80); }
 
 @layer base {
   * {

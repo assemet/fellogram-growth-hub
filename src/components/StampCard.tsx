@@ -270,7 +270,7 @@ export function StampCard({ card, preview = false, focused = false }: { card: St
 
       {!preview && (
         <div>
-          <button type="button" onClick={() => setOpen((value) => !value)} className="loyalty-card-link touch-action mx-auto flex min-h-10 items-center gap-1 px-3 text-xs font-semibold" aria-expanded={open}>
+          <button type="button" onClick={() => setOpen((value) => !value)} className="touch-action mx-auto flex min-h-10 items-center gap-1 px-3 text-xs font-semibold text-muted-foreground" aria-expanded={open}>
             {open ? t("wallet.card.hide") : t("wallet.card.history")}
             <ChevronDown className={`h-3.5 w-3.5 transition-transform ${open ? "rotate-180" : ""}`} />
           </button>
