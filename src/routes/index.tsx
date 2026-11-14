@@ -10,6 +10,7 @@ import { toast } from "sonner";
 
 import { acceptReferral, getMyContext } from "@/lib/store.functions";
 import { acceptInvite } from "@/lib/team.functions";
+import { healSession, isUnauthorizedError } from "@/lib/session-heal";
 import { parseStoreCode } from "@/lib/join-code";
 import { acceptWithRetry, referralLanding } from "@/lib/referral-landing";
 import { pickStartTab, readLastTab, TAB_PATH } from "@/lib/start-tab";
@@ -64,21 +65,38 @@ function SplashRouter() {
         }
         if (pending?.startsWith("staff_")) {
           // Cashier invitation from the owner: join the team, then go straight to cashier mode.
-          clearPendingStartParam();
+          // The invitation stays saved until the server has answered for good, so a failed first attempt
+          // (a stale session, a weak connection) does not burn it and the next launch tries again.
+          const token = pending.slice("staff_".length);
+          const join = async () => {
+            try {
+              return await acceptStaff({ data: { token } });
+            } catch (firstError) {
+              // A rejected session is replaced by the request layer; try once more with the fresh one.
+              if (!isUnauthorizedError(firstError)) throw firstError;
+              await healSession();
+              return await acceptStaff({ data: { token } });
+            }
+          };
           try {
-            await acceptStaff({ data: { token: pending.slice("staff_".length) } });
+            await join();
+            clearPendingStartParam();
             if (cancelled) return;
             toast.success(t("team.accepted"));
             navigate({ to: "/cashier", replace: true });
             return;
           } catch (inviteError) {
             const message = String((inviteError as Error)?.message ?? "");
+            const definitive = /INVITE_(INVALID|USED|EXPIRED)/.test(message);
+            if (definitive) clearPendingStartParam();
             toast.error(
               message.includes("INVITE_USED")
                 ? t("team.used")
                 : message.includes("INVITE_EXPIRED")
                   ? t("team.expired")
-                  : t("team.invalid"),
+                  : definitive
+                    ? t("team.invalid")
+                    : t("team.joinFailed"),
             );
             // fall through to normal routing
           }

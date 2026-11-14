@@ -646,6 +646,7 @@ export const en = {
   "team.week.manual": "{count} by name ({pct}%)",
   "team.week.flag": "check this",
   "activity.manual": "by name",
+  "team.joinFailed": "Couldn't join the team right now. Open the invitation link again.",
 } satisfies Record<string, string>;
 
 export type TranslationKey = keyof typeof en;

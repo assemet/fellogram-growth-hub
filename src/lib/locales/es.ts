@@ -639,4 +639,5 @@ export const es: Record<TranslationKey, string> = {
   "team.week.manual": "{count} por nombre ({pct}%)",
   "team.week.flag": "revisar",
   "activity.manual": "por nombre",
+  "team.joinFailed": "No se pudo unir al equipo ahora. Abre el enlace de invitación de nuevo.",
 };

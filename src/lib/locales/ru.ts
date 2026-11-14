@@ -639,4 +639,5 @@ export const ru: Record<TranslationKey, string> = {
   "team.week.manual": "{count} по имени ({pct}%)",
   "team.week.flag": "проверьте",
   "activity.manual": "по имени",
+  "team.joinFailed": "Не удалось присоединиться к команде. Откройте ссылку-приглашение ещё раз.",
 };

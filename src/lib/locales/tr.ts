@@ -639,4 +639,5 @@ export const tr: Record<TranslationKey, string> = {
   "team.week.manual": "{count} isimle ({pct}%)",
   "team.week.flag": "kontrol et",
   "activity.manual": "isimle",
+  "team.joinFailed": "Şu an ekibe katılınamadı. Davet bağlantısını yeniden aç.",
 };

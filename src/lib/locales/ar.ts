@@ -638,4 +638,5 @@ export const ar: Record<TranslationKey, string> = {
   "team.week.manual": "{count} بالاسم ({pct}%)",
   "team.week.flag": "يستحق المراجعة",
   "activity.manual": "بالاسم",
+  "team.joinFailed": "تعذّر الانضمام للفريق الآن. افتح رابط الدعوة مرة أخرى.",
 };
