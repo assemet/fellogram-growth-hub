@@ -49,6 +49,27 @@ function NotFoundComponent() {
 // hooks, so do it once and no more.
 const RELOAD_FLAG = "fellogram-error-reload";
 
+// A session the server no longer accepts ("Unauthorized") survives reloads in local storage. Clear it once and
+// reload so the app signs in afresh from Telegram's launch data.
+const AUTH_RESET_FLAG = "fellogram-auth-reset";
+
+function resetBadSession(error: unknown): boolean {
+  if (typeof window === "undefined") return false;
+  const message = error instanceof Error ? error.message : String(error ?? "");
+  if (!/unauthorized/i.test(message)) return false;
+  try {
+    if (window.sessionStorage.getItem(AUTH_RESET_FLAG)) return false;
+    window.sessionStorage.setItem(AUTH_RESET_FLAG, "1");
+    for (const key of Object.keys(window.localStorage)) {
+      if (key.startsWith("sb-")) window.localStorage.removeItem(key);
+    }
+  } catch {
+    return false;
+  }
+  window.location.reload();
+  return true;
+}
+
 function reloadOnce(): boolean {
   if (typeof window === "undefined") return false;
   try {
@@ -64,6 +85,7 @@ function reloadOnce(): boolean {
 // Hook-free on purpose: when the crash is a broken module graph, any hook here
 // throws again and the visitor is left staring at a blank page.
 function ErrorComponent({ error }: { error: unknown }) {
+  if (resetBadSession(error)) return null;
   if (reloadOnce()) return null;
 
   console.error(error);
