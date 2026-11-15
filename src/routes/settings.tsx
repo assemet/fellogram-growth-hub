@@ -1,4 +1,4 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { useState } from "react";
 
 import { DeleteAccountSection, LeaveTeamRow } from "@/components/AccountDangerZone";
@@ -162,6 +162,9 @@ function SettingsPage() {
             <p className="font-display text-lg font-bold">{t("app.name")}</p>
             <p className="text-xs text-muted-foreground">{t("app.tagline")}</p>
           </div>
+          <Button asChild variant="outline" className="touch-action h-11 w-full font-semibold">
+            <Link to="/faq">{t("faq.open")}</Link>
+          </Button>
           <Button asChild variant="outline" className="touch-action h-11 w-full font-semibold">
             <a href={`https://t.me/${bot}`}>{t("notify.openBot")}</a>
           </Button>

@@ -11,6 +11,7 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as CashierRouteImport } from './routes/cashier'
+import { Route as FaqRouteImport } from './routes/faq'
 import { Route as PosterRouteImport } from './routes/poster'
 import { Route as SettingsRouteImport } from './routes/settings'
 import { Route as WalletRouteImport } from './routes/wallet'
@@ -32,6 +33,11 @@ const IndexRoute = IndexRouteImport.update({
 const CashierRoute = CashierRouteImport.update({
   id: '/cashier',
   path: '/cashier',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const FaqRoute = FaqRouteImport.update({
+  id: '/faq',
+  path: '/faq',
   getParentRoute: () => rootRouteImport,
 } as any)
 const PosterRoute = PosterRouteImport.update({
@@ -98,6 +104,7 @@ const MerchantTeamRoute = MerchantTeamRouteImport.update({
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/cashier': typeof CashierRoute
+  '/faq': typeof FaqRoute
   '/poster': typeof PosterRoute
   '/settings': typeof SettingsRoute
   '/wallet': typeof WalletRoute
@@ -114,6 +121,7 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/cashier': typeof CashierRoute
+  '/faq': typeof FaqRoute
   '/poster': typeof PosterRoute
   '/settings': typeof SettingsRoute
   '/wallet': typeof WalletRoute
@@ -131,6 +139,7 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/cashier': typeof CashierRoute
+  '/faq': typeof FaqRoute
   '/poster': typeof PosterRoute
   '/settings': typeof SettingsRoute
   '/wallet': typeof WalletRoute
@@ -149,6 +158,7 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/cashier'
+    | '/faq'
     | '/poster'
     | '/settings'
     | '/wallet'
@@ -165,6 +175,7 @@ export interface FileRouteTypes {
   to:
     | '/'
     | '/cashier'
+    | '/faq'
     | '/poster'
     | '/settings'
     | '/wallet'
@@ -181,6 +192,7 @@ export interface FileRouteTypes {
     | '__root__'
     | '/'
     | '/cashier'
+    | '/faq'
     | '/poster'
     | '/settings'
     | '/wallet'
@@ -198,6 +210,7 @@ export interface FileRouteTypes {
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   CashierRoute: typeof CashierRoute
+  FaqRoute: typeof FaqRoute
   PosterRoute: typeof PosterRoute
   SettingsRoute: typeof SettingsRoute
   WalletRoute: typeof WalletRoute
@@ -226,6 +239,13 @@ declare module '@tanstack/react-router' {
       path: '/cashier'
       fullPath: '/cashier'
       preLoaderRoute: typeof CashierRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/faq': {
+      id: '/faq'
+      path: '/faq'
+      fullPath: '/faq'
+      preLoaderRoute: typeof FaqRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/poster': {
@@ -318,6 +338,7 @@ declare module '@tanstack/react-router' {
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   CashierRoute: CashierRoute,
+  FaqRoute: FaqRoute,
   PosterRoute: PosterRoute,
   SettingsRoute: SettingsRoute,
   WalletRoute: WalletRoute,
