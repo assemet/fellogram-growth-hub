@@ -48,6 +48,11 @@ export function BottomNav({ current }: { current: Tab }) {
 
   if (!visible) return null;
 
+  return <BottomNavView tabs={tabs} current={current} />;
+}
+
+/** The bar itself, without the role lookup, so it can be rendered and checked on its own. */
+export function BottomNavView({ tabs, current }: { tabs: Tab[]; current: Tab }) {
   return (
     <nav
       aria-label={t("nav.main")}
@@ -62,11 +67,14 @@ export function BottomNav({ current }: { current: Tab }) {
               <Link
                 to={TAB_PATH[tab]}
                 aria-current={active ? "page" : undefined}
-                className={`touch-action flex h-14 flex-col items-center justify-center gap-0.5 rounded-md text-[0.6875rem] font-semibold transition-colors ${
-                  active ? "text-primary" : "text-muted-foreground"
+                className={`touch-action flex h-14 flex-col items-center justify-center gap-0.5 rounded-md text-[0.6875rem] transition-colors ${
+                  active ? "font-bold text-foreground" : "font-medium text-muted-foreground"
                 }`}
               >
-                <Icon className={`h-5 w-5 ${active ? "stroke-[2.4]" : ""}`} aria-hidden="true" />
+                {/* The pill, not just the colour, marks the current tab. */}
+                <span className={`flex h-7 w-14 items-center justify-center rounded-full transition-colors ${active ? "bg-foreground/10" : ""}`}>
+                  <Icon className={`h-5 w-5 ${active ? "stroke-[2.4]" : ""}`} aria-hidden="true" />
+                </span>
                 <span>{t(TAB_LABEL[tab])}</span>
               </Link>
             </li>
