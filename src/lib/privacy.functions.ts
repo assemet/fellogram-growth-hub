@@ -1,7 +1,9 @@
 import { createServerFn } from "@tanstack/react-start";
 
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
-import { currentOwnedStoreId, resolveCurrentStore } from "@/lib/current-store";
+import { getRequest } from "@tanstack/react-start/server";
+import { CASHIER_STORE_HEADER } from "@/lib/cashier-store";
+import { currentOwnedStoreId, listWorkStores } from "@/lib/current-store";
 import { isDeleteWord } from "@/lib/confirm-words";
 import { check, throwIfError } from "@/lib/db";
 import { adminClient } from "@/lib/notify";
@@ -30,9 +32,11 @@ export const leaveStore = createServerFn({ method: "POST" })
 export const leaveTeam = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
-    const current = await resolveCurrentStore(context.supabase, context.userId);
-    if (!current) throw new Error("NOT_ON_A_TEAM");
-    if (current.role !== "staff") throw new Error("OWNER_CANNOT_LEAVE");
+    // Someone can own a store and still be a cashier elsewhere: leave the cashier job, never their own store.
+    const teams = (await listWorkStores(context.supabase, context.userId)).filter((store) => store.role === "staff");
+    if (teams.length === 0) throw new Error("NOT_ON_A_TEAM");
+    const preferred = getRequest()?.headers.get(CASHIER_STORE_HEADER);
+    const current = teams.find((store) => store.storeId === preferred) ?? teams[0]!;
     const { data: removed, error } = await context.supabase.rpc("leave_team", { _store_id: current.storeId });
     throwIfError(error, "LEAVE_TEAM_FAILED");
     return { removed: Boolean(removed) };

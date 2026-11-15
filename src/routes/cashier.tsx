@@ -15,6 +15,7 @@ import { useFellogramAuth } from "@/hooks/useFellogramAuth";
 import { t } from "@/lib/i18n";
 import { awardStamp, enrollCustomer, getCashierStore, lookupCustomer, redeemOfferToken, redeemRewardToken, searchCustomers, undoLastStamp } from "@/lib/cashier.functions";
 import { notify, primeAudio } from "@/lib/feedback";
+import { setCashierStoreChoice } from "@/lib/cashier-store";
 
 export const Route = createFileRoute("/cashier")({
   ssr: false,
@@ -148,7 +149,7 @@ function Cashier() {
     return () => clearTimeout(id);
   }, [nameInput]);
   const { data: nameResults, isFetching: searchingNames } = useQuery({
-    queryKey: ["cashier-search", nameQuery],
+    queryKey: ["cashier-search", store?.storeId ?? null, nameQuery],
     queryFn: () => searchFn({ data: { q: nameQuery } }),
     enabled: state === "ready" && nameQuery.length >= 2,
   });
@@ -370,6 +371,29 @@ function Cashier() {
 
       <section className="app-shell space-y-4">
         <h1 className="text-2xl font-bold">{t("cashier.title")}</h1>
+        {store.stores.length > 1 && (
+          <div>
+            <label htmlFor="cashierStore" className="text-xs font-semibold text-muted-foreground">
+              {t("cashier.workingAt")}
+            </label>
+            <select
+              id="cashierStore"
+              value={store.storeId}
+              onChange={(event) => {
+                setCashierStoreChoice(event.target.value);
+                nextCustomer();
+                void refetchStore();
+              }}
+              className="mt-1 h-12 w-full rounded-md border border-border bg-card px-3 text-sm font-semibold"
+            >
+              {store.stores.map((option) => (
+                <option key={option.storeId} value={option.storeId}>
+                  {option.name} · {option.role === "owner" ? t("cashier.role.owner") : t("cashier.role.staff")}
+                </option>
+              ))}
+            </select>
+          </div>
+        )}
         {store.event && (
           <p className="rounded-md bg-growth/15 px-4 py-3 text-sm font-bold" role="status">
             {t("cashier.eventBanner", { n: store.event.multiplier, name: store.event.name })}

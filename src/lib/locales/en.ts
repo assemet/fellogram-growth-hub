@@ -647,6 +647,9 @@ export const en = {
   "team.week.flag": "check this",
   "activity.manual": "by name",
   "team.joinFailed": "Couldn't join the team right now. Open the invitation link again.",
+  "cashier.workingAt": "Working at",
+  "cashier.role.owner": "Owner",
+  "cashier.role.staff": "Cashier",
 } satisfies Record<string, string>;
 
 export type TranslationKey = keyof typeof en;

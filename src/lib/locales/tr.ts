@@ -640,4 +640,7 @@ export const tr: Record<TranslationKey, string> = {
   "team.week.flag": "kontrol et",
   "activity.manual": "isimle",
   "team.joinFailed": "Şu an ekibe katılınamadı. Davet bağlantısını yeniden aç.",
+  "cashier.workingAt": "Çalıştığınız yer",
+  "cashier.role.owner": "Sahip",
+  "cashier.role.staff": "Kasiyer",
 };

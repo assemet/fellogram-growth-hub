@@ -1,5 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
-import { resolveCurrentStore } from "@/lib/current-store";
+import { getRequest } from "@tanstack/react-start/server";
+import { CASHIER_STORE_HEADER } from "@/lib/cashier-store";
+import { listWorkStores, resolveWorkStore } from "@/lib/current-store";
 import { notifyRedemption, notifyStamp, withinBudget } from "@/lib/notify";
 import { check, throwIfError } from "@/lib/db";
 import { MIN_SEARCH_LENGTH, searchStoreCustomers, type SearchHit } from "@/lib/customer-search";
@@ -40,7 +42,7 @@ export function parseQrToken(raw: string): string | null {
 
 /** Resolves the store the signed-in user can stamp for (staff or owner only). */
 async function resolveStaffStore(supabase: any, userId: string) {
-  const current = await resolveCurrentStore(supabase, userId);
+  const current = await resolveWorkStore(supabase, userId, getRequest()?.headers.get(CASHIER_STORE_HEADER) ?? null);
   if (!current) return null;
   // select("*") so a database without the manual-stamps column still loads (cashiers then keep the old behaviour).
   const { data: store } = check(await supabase.from("stores").select("*").eq("id", current.storeId).maybeSingle(), "STORE_LOOKUP_FAILED");
@@ -79,7 +81,10 @@ export const getCashierStore = createServerFn({ method: "POST" })
       .order("multiplier", { ascending: false }).limit(1);
     const event = (eventRows as { name: string; multiplier: number; ends_at: string }[] | null)?.[0];
 
-    return { ...store, canUndo, program: program ?? null, event: event ? { name: event.name, multiplier: event.multiplier, endsAt: event.ends_at } : null };
+    // Several stores (their own plus one they are a cashier at): the screen offers a switch.
+    const stores = await listWorkStores(context.supabase, context.userId);
+
+    return { ...store, stores, canUndo, program: program ?? null, event: event ? { name: event.name, multiplier: event.multiplier, endsAt: event.ends_at } : null };
   });
 
 type CustomerState = {

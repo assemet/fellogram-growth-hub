@@ -640,4 +640,7 @@ export const ru: Record<TranslationKey, string> = {
   "team.week.flag": "проверьте",
   "activity.manual": "по имени",
   "team.joinFailed": "Не удалось присоединиться к команде. Откройте ссылку-приглашение ещё раз.",
+  "cashier.workingAt": "Работаете в",
+  "cashier.role.owner": "Владелец",
+  "cashier.role.staff": "Кассир",
 };

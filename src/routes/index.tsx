@@ -11,6 +11,7 @@ import { toast } from "sonner";
 import { acceptReferral, getMyContext } from "@/lib/store.functions";
 import { acceptInvite } from "@/lib/team.functions";
 import { healSession, isUnauthorizedError } from "@/lib/session-heal";
+import { setCashierStoreChoice } from "@/lib/cashier-store";
 import { parseStoreCode } from "@/lib/join-code";
 import { acceptWithRetry, referralLanding } from "@/lib/referral-landing";
 import { pickStartTab, readLastTab, TAB_PATH } from "@/lib/start-tab";
@@ -79,7 +80,8 @@ function SplashRouter() {
             }
           };
           try {
-            await join();
+            const joined = await join();
+            setCashierStoreChoice(joined.storeId);
             clearPendingStartParam();
             if (cancelled) return;
             toast.success(t("team.accepted"));

@@ -639,4 +639,7 @@ export const ar: Record<TranslationKey, string> = {
   "team.week.flag": "يستحق المراجعة",
   "activity.manual": "بالاسم",
   "team.joinFailed": "تعذّر الانضمام للفريق الآن. افتح رابط الدعوة مرة أخرى.",
+  "cashier.workingAt": "تعمل الآن في",
+  "cashier.role.owner": "مالك",
+  "cashier.role.staff": "كاشير",
 };

@@ -640,4 +640,7 @@ export const es: Record<TranslationKey, string> = {
   "team.week.flag": "revisar",
   "activity.manual": "por nombre",
   "team.joinFailed": "No se pudo unir al equipo ahora. Abre el enlace de invitación de nuevo.",
+  "cashier.workingAt": "Trabajando en",
+  "cashier.role.owner": "Dueño",
+  "cashier.role.staff": "Cajero",
 };

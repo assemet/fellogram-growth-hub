@@ -2,6 +2,7 @@
 import { createMiddleware } from '@tanstack/react-start'
 import { supabase } from './client'
 import { healSession, isUnauthorizedError } from '@/lib/session-heal'
+import { CASHIER_STORE_HEADER, getCashierStoreChoice } from '@/lib/cashier-store'
 
 // Must be registered as a global `functionMiddleware` in `src/start.ts`; otherwise
 // the browser never attaches the bearer token to serverFn RPCs.
@@ -11,7 +12,10 @@ export const attachSupabaseAuth = createMiddleware({ type: 'function' }).client(
     const token = data.session?.access_token
     try {
       return await next({
-        headers: token ? { Authorization: `Bearer ${token}` } : {},
+        headers: {
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+          ...(getCashierStoreChoice() ? { [CASHIER_STORE_HEADER]: getCashierStoreChoice() as string } : {}),
+        },
       })
     } catch (error) {
       // The server rejected our stored session: replace it now so the retry (or the reload) signs in cleanly.
