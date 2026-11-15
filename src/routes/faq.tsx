@@ -5,6 +5,7 @@ import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/
 import { AppHeader } from "@/components/BrandMark";
 import { BackLink } from "@/components/BackLink";
 import { BottomNav } from "@/components/BottomNav";
+import { LegalLinks } from "@/components/LegalLinks";
 import { SettingsCard } from "@/components/SettingsCard";
 import { Button } from "@/components/ui/button";
 import { useFellogramAuth } from "@/hooks/useFellogramAuth";
@@ -82,6 +83,8 @@ function FaqPage() {
             </Button>
           </SettingsCard>
         )}
+
+        <LegalLinks className="justify-center" />
       </section>
 
       <BottomNav current="settings" />

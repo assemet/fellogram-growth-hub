@@ -58,6 +58,11 @@ export const deleteMyAccount = createServerFn({ method: "POST" })
     if (Number(profile?.telegram_user_id) === PREVIEW_TELEGRAM_ID) throw new Error("PREVIEW_ACCOUNT");
     if (await currentOwnedStoreId(context.supabase, context.userId)) throw new Error("OWNS_STORE");
 
+    // Short-lived QR codes are not tied to the account by a foreign key, so they would outlive it: remove them first.
+    // Best effort on purpose: a cleanup problem here must never stop the person from deleting their account.
+    const qrCleanup = await admin.from("customer_qr_tokens").delete().eq("customer_id", context.userId);
+    if (qrCleanup.error) console.error("QR token cleanup failed", qrCleanup.error.message);
+
     // Cards, stamp history, referrals, team membership and the profile follow through the database's cascades.
     const { error } = await admin.auth.admin.deleteUser(context.userId);
     throwIfError(error, "DELETE_ACCOUNT_FAILED");

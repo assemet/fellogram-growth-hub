@@ -10,7 +10,9 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useFellogramAuth } from "@/hooks/useFellogramAuth";
-import { t } from "@/lib/i18n";
+import { LegalLinks } from "@/components/LegalLinks";
+import { getLocale, t } from "@/lib/i18n";
+import { legalContent } from "@/lib/legal";
 import { createStore, getMyStore } from "@/lib/store.functions";
 
 export const Route = createFileRoute("/merchant/new")({
@@ -156,8 +158,11 @@ function NewStore() {
               })}
             </div>
 
+            <p className="mt-5 text-center text-xs text-muted-foreground">{legalContent(getLocale()).agreeStore}</p>
+            <LegalLinks className="justify-center" />
+
             <Button
-              className="touch-action mt-5 h-12 w-full"
+              className="touch-action mt-1 h-12 w-full"
               disabled={rewardName.trim().length < 2 || mutation.isPending}
               onClick={() => mutation.mutate()}
             >

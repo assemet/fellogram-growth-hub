@@ -5,6 +5,7 @@ import { DeleteAccountSection, LeaveTeamRow } from "@/components/AccountDangerZo
 import { AppHeader } from "@/components/BrandMark";
 import { BottomNav } from "@/components/BottomNav";
 import { LanguagePicker } from "@/components/LanguageControls";
+import { LegalLinks } from "@/components/LegalLinks";
 import { QueryError } from "@/components/QueryError";
 import { SettingsCard } from "@/components/SettingsCard";
 import { StartStoreCard } from "@/components/StartStoreCard";
@@ -168,6 +169,7 @@ function SettingsPage() {
           <Button asChild variant="outline" className="touch-action h-11 w-full font-semibold">
             <a href={`https://t.me/${bot}`}>{t("notify.openBot")}</a>
           </Button>
+          <LegalLinks className="-mb-2 justify-center" />
         </SettingsCard>
       </section>
 

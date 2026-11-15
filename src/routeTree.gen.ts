@@ -13,7 +13,9 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as CashierRouteImport } from './routes/cashier'
 import { Route as FaqRouteImport } from './routes/faq'
 import { Route as PosterRouteImport } from './routes/poster'
+import { Route as PrivacyRouteImport } from './routes/privacy'
 import { Route as SettingsRouteImport } from './routes/settings'
+import { Route as TermsRouteImport } from './routes/terms'
 import { Route as WalletRouteImport } from './routes/wallet'
 import { Route as ApiHealthRouteImport } from './routes/api.health'
 import { Route as JoinStoreIdRouteImport } from './routes/join.$storeId'
@@ -45,9 +47,19 @@ const PosterRoute = PosterRouteImport.update({
   path: '/poster',
   getParentRoute: () => rootRouteImport,
 } as any)
+const PrivacyRoute = PrivacyRouteImport.update({
+  id: '/privacy',
+  path: '/privacy',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const SettingsRoute = SettingsRouteImport.update({
   id: '/settings',
   path: '/settings',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const TermsRoute = TermsRouteImport.update({
+  id: '/terms',
+  path: '/terms',
   getParentRoute: () => rootRouteImport,
 } as any)
 const WalletRoute = WalletRouteImport.update({
@@ -106,7 +118,9 @@ export interface FileRoutesByFullPath {
   '/cashier': typeof CashierRoute
   '/faq': typeof FaqRoute
   '/poster': typeof PosterRoute
+  '/privacy': typeof PrivacyRoute
   '/settings': typeof SettingsRoute
+  '/terms': typeof TermsRoute
   '/wallet': typeof WalletRoute
   '/api/health': typeof ApiHealthRoute
   '/join/$storeId': typeof JoinStoreIdRoute
@@ -123,7 +137,9 @@ export interface FileRoutesByTo {
   '/cashier': typeof CashierRoute
   '/faq': typeof FaqRoute
   '/poster': typeof PosterRoute
+  '/privacy': typeof PrivacyRoute
   '/settings': typeof SettingsRoute
+  '/terms': typeof TermsRoute
   '/wallet': typeof WalletRoute
   '/api/health': typeof ApiHealthRoute
   '/join/$storeId': typeof JoinStoreIdRoute
@@ -141,7 +157,9 @@ export interface FileRoutesById {
   '/cashier': typeof CashierRoute
   '/faq': typeof FaqRoute
   '/poster': typeof PosterRoute
+  '/privacy': typeof PrivacyRoute
   '/settings': typeof SettingsRoute
+  '/terms': typeof TermsRoute
   '/wallet': typeof WalletRoute
   '/api/health': typeof ApiHealthRoute
   '/join/$storeId': typeof JoinStoreIdRoute
@@ -160,7 +178,9 @@ export interface FileRouteTypes {
     | '/cashier'
     | '/faq'
     | '/poster'
+    | '/privacy'
     | '/settings'
+    | '/terms'
     | '/wallet'
     | '/api/health'
     | '/join/$storeId'
@@ -177,7 +197,9 @@ export interface FileRouteTypes {
     | '/cashier'
     | '/faq'
     | '/poster'
+    | '/privacy'
     | '/settings'
+    | '/terms'
     | '/wallet'
     | '/api/health'
     | '/join/$storeId'
@@ -194,7 +216,9 @@ export interface FileRouteTypes {
     | '/cashier'
     | '/faq'
     | '/poster'
+    | '/privacy'
     | '/settings'
+    | '/terms'
     | '/wallet'
     | '/api/health'
     | '/join/$storeId'
@@ -212,7 +236,9 @@ export interface RootRouteChildren {
   CashierRoute: typeof CashierRoute
   FaqRoute: typeof FaqRoute
   PosterRoute: typeof PosterRoute
+  PrivacyRoute: typeof PrivacyRoute
   SettingsRoute: typeof SettingsRoute
+  TermsRoute: typeof TermsRoute
   WalletRoute: typeof WalletRoute
   ApiHealthRoute: typeof ApiHealthRoute
   JoinStoreIdRoute: typeof JoinStoreIdRoute
@@ -255,11 +281,25 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof PosterRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/privacy': {
+      id: '/privacy'
+      path: '/privacy'
+      fullPath: '/privacy'
+      preLoaderRoute: typeof PrivacyRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/settings': {
       id: '/settings'
       path: '/settings'
       fullPath: '/settings'
       preLoaderRoute: typeof SettingsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/terms': {
+      id: '/terms'
+      path: '/terms'
+      fullPath: '/terms'
+      preLoaderRoute: typeof TermsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/wallet': {
@@ -340,7 +380,9 @@ const rootRouteChildren: RootRouteChildren = {
   CashierRoute: CashierRoute,
   FaqRoute: FaqRoute,
   PosterRoute: PosterRoute,
+  PrivacyRoute: PrivacyRoute,
   SettingsRoute: SettingsRoute,
+  TermsRoute: TermsRoute,
   WalletRoute: WalletRoute,
   ApiHealthRoute: ApiHealthRoute,
   JoinStoreIdRoute: JoinStoreIdRoute,

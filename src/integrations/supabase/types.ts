@@ -65,6 +65,36 @@ export type Database = {
           },
         ]
       }
+      customer_qr_tokens: {
+        Row: {
+          claimed_by: string | null
+          customer_id: string
+          expires_at: string
+          issued_at: string
+          token: string
+          used_at: string | null
+          used_by: string | null
+        }
+        Insert: {
+          claimed_by?: string | null
+          customer_id: string
+          expires_at: string
+          issued_at?: string
+          token: string
+          used_at?: string | null
+          used_by?: string | null
+        }
+        Update: {
+          claimed_by?: string | null
+          customer_id?: string
+          expires_at?: string
+          issued_at?: string
+          token?: string
+          used_at?: string | null
+          used_by?: string | null
+        }
+        Relationships: []
+      }
       loyalty_programs: {
         Row: {
           active: boolean
