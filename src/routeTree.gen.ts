@@ -14,6 +14,7 @@ import { Route as CashierRouteImport } from './routes/cashier'
 import { Route as PosterRouteImport } from './routes/poster'
 import { Route as SettingsRouteImport } from './routes/settings'
 import { Route as WalletRouteImport } from './routes/wallet'
+import { Route as ApiHealthRouteImport } from './routes/api.health'
 import { Route as JoinStoreIdRouteImport } from './routes/join.$storeId'
 import { Route as MerchantIndexRouteImport } from './routes/merchant/index'
 import { Route as MerchantCustomersRouteImport } from './routes/merchant/customers'
@@ -46,6 +47,11 @@ const SettingsRoute = SettingsRouteImport.update({
 const WalletRoute = WalletRouteImport.update({
   id: '/wallet',
   path: '/wallet',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiHealthRoute = ApiHealthRouteImport.update({
+  id: '/api/health',
+  path: '/api/health',
   getParentRoute: () => rootRouteImport,
 } as any)
 const JoinStoreIdRoute = JoinStoreIdRouteImport.update({
@@ -95,6 +101,7 @@ export interface FileRoutesByFullPath {
   '/poster': typeof PosterRoute
   '/settings': typeof SettingsRoute
   '/wallet': typeof WalletRoute
+  '/api/health': typeof ApiHealthRoute
   '/join/$storeId': typeof JoinStoreIdRoute
   '/merchant/customers': typeof MerchantCustomersRoute
   '/merchant/new': typeof MerchantNewRoute
@@ -110,6 +117,7 @@ export interface FileRoutesByTo {
   '/poster': typeof PosterRoute
   '/settings': typeof SettingsRoute
   '/wallet': typeof WalletRoute
+  '/api/health': typeof ApiHealthRoute
   '/join/$storeId': typeof JoinStoreIdRoute
   '/merchant/customers': typeof MerchantCustomersRoute
   '/merchant/new': typeof MerchantNewRoute
@@ -126,6 +134,7 @@ export interface FileRoutesById {
   '/poster': typeof PosterRoute
   '/settings': typeof SettingsRoute
   '/wallet': typeof WalletRoute
+  '/api/health': typeof ApiHealthRoute
   '/join/$storeId': typeof JoinStoreIdRoute
   '/merchant/customers': typeof MerchantCustomersRoute
   '/merchant/new': typeof MerchantNewRoute
@@ -143,6 +152,7 @@ export interface FileRouteTypes {
     | '/poster'
     | '/settings'
     | '/wallet'
+    | '/api/health'
     | '/join/$storeId'
     | '/merchant/customers'
     | '/merchant/new'
@@ -158,6 +168,7 @@ export interface FileRouteTypes {
     | '/poster'
     | '/settings'
     | '/wallet'
+    | '/api/health'
     | '/join/$storeId'
     | '/merchant/customers'
     | '/merchant/new'
@@ -173,6 +184,7 @@ export interface FileRouteTypes {
     | '/poster'
     | '/settings'
     | '/wallet'
+    | '/api/health'
     | '/join/$storeId'
     | '/merchant/customers'
     | '/merchant/new'
@@ -189,6 +201,7 @@ export interface RootRouteChildren {
   PosterRoute: typeof PosterRoute
   SettingsRoute: typeof SettingsRoute
   WalletRoute: typeof WalletRoute
+  ApiHealthRoute: typeof ApiHealthRoute
   JoinStoreIdRoute: typeof JoinStoreIdRoute
   MerchantCustomersRoute: typeof MerchantCustomersRoute
   MerchantNewRoute: typeof MerchantNewRoute
@@ -234,6 +247,13 @@ declare module '@tanstack/react-router' {
       path: '/wallet'
       fullPath: '/wallet'
       preLoaderRoute: typeof WalletRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/health': {
+      id: '/api/health'
+      path: '/api/health'
+      fullPath: '/api/health'
+      preLoaderRoute: typeof ApiHealthRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/join/$storeId': {
@@ -301,6 +321,7 @@ const rootRouteChildren: RootRouteChildren = {
   PosterRoute: PosterRoute,
   SettingsRoute: SettingsRoute,
   WalletRoute: WalletRoute,
+  ApiHealthRoute: ApiHealthRoute,
   JoinStoreIdRoute: JoinStoreIdRoute,
   MerchantCustomersRoute: MerchantCustomersRoute,
   MerchantNewRoute: MerchantNewRoute,
