@@ -183,6 +183,13 @@
       "when": 1791849162386,
       "tag": "0025_store_impact",
       "breakpoints": true
+    },
+    {
+      "idx": 26,
+      "version": "7",
+      "when": 1791935562386,
+      "tag": "0026_redeem_counts_as_visit",
+      "breakpoints": true
     }
   ]
 }

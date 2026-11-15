@@ -42,8 +42,23 @@ export function ReminderCard({ ready, kind = "inactive" }: { ready: boolean; kin
     },
   });
 
-  if (!data || data.count === 0) return null;
+  if (!data) return null;
   const count = data.count;
+
+  // Nobody to remind: still say so, so the owner knows the feature exists and why there is no button.
+  if (count === 0) {
+    return (
+      <div className="mb-4 flex items-start gap-3 rounded-lg border border-dashed border-border bg-card/50 p-3">
+        <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-muted text-muted-foreground" aria-hidden="true">
+          <BellRing className="h-4 w-4" />
+        </span>
+        <div className="min-w-0">
+          <p className="text-sm font-semibold">{reward ? t("reminder.reward.title") : t("reminder.title")}</p>
+          <p className="mt-0.5 text-xs text-muted-foreground">{reward ? t("reminder.reward.empty", { days: data.days }) : t("reminder.empty", { days: data.days })}</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="mb-4 rounded-lg border border-border bg-card p-4 shadow-[var(--shadow-card)]">
