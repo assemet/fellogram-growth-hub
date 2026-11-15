@@ -643,4 +643,6 @@ export const es: Record<TranslationKey, string> = {
   "cashier.workingAt": "Trabajando en",
   "cashier.role.owner": "Dueño",
   "cashier.role.staff": "Cajero",
+  "wallet.search.placeholder": "Buscar en tus tarjetas",
+  "wallet.search.empty": "Ninguna tarjeta coincide con «{q}».",
 };

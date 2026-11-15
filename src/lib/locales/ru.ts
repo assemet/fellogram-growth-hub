@@ -643,4 +643,6 @@ export const ru: Record<TranslationKey, string> = {
   "cashier.workingAt": "Работаете в",
   "cashier.role.owner": "Владелец",
   "cashier.role.staff": "Кассир",
+  "wallet.search.placeholder": "Поиск по картам",
+  "wallet.search.empty": "Нет карты, подходящей под «{q}».",
 };

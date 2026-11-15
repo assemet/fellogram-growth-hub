@@ -650,6 +650,8 @@ export const en = {
   "cashier.workingAt": "Working at",
   "cashier.role.owner": "Owner",
   "cashier.role.staff": "Cashier",
+  "wallet.search.placeholder": "Search your cards",
+  "wallet.search.empty": "No card matches “{q}”.",
 } satisfies Record<string, string>;
 
 export type TranslationKey = keyof typeof en;

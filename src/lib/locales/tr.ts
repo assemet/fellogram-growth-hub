@@ -643,4 +643,6 @@ export const tr: Record<TranslationKey, string> = {
   "cashier.workingAt": "Çalıştığınız yer",
   "cashier.role.owner": "Sahip",
   "cashier.role.staff": "Kasiyer",
+  "wallet.search.placeholder": "Kartlarında ara",
+  "wallet.search.empty": "«{q}» ile eşleşen kart yok.",
 };

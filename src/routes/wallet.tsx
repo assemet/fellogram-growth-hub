@@ -1,7 +1,8 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { useState } from "react";
+import { Fragment, useState } from "react";
+import { Search } from "lucide-react";
 import { z } from "zod";
 import { brandThemeStyle } from "@/lib/card-theme";
 
@@ -21,6 +22,7 @@ import { StampCard } from "@/components/StampCard";
 import { WalletCardRow, WalletCardTile, WalletViewToggle } from "@/components/WalletCardViews";
 import { useFellogramAuth } from "@/hooks/useFellogramAuth";
 import { t } from "@/lib/i18n";
+import { normalizeForSearch } from "@/lib/people";
 import { readWalletView, writeWalletView } from "@/lib/prefs";
 import { getMyCards, getMyContext } from "@/lib/store.functions";
 import { autoWalletView, sortWalletCards, type WalletView } from "@/lib/wallet-view";
@@ -47,6 +49,7 @@ function Wallet() {
   const loadContext = useServerFn(getMyContext);
   const loadCards = useServerFn(getMyCards);
   const [chosenView, setChosenView] = useState<WalletView | null>(() => readWalletView());
+  const [query, setQuery] = useState("");
 
   const { data } = useQuery({
     queryKey: ["my-context"],
@@ -70,7 +73,11 @@ function Wallet() {
   const focusedCard = cards.find((card) => card.storeId === focusedStoreId);
   // Until the person picks a layout, a few cards show in full and more show as a compact list.
   const view: WalletView = focusedCard ? "full" : chosenView ?? autoWalletView(cards.length);
-  const shown = focusedCard ? [focusedCard] : sortWalletCards(cards);
+  // With a few cards, finding one by store name is faster than scrolling.
+  const searchable = !focusedCard && cards.length >= 3;
+  const needle = searchable ? normalizeForSearch(query) : "";
+  const sorted = sortWalletCards(cards);
+  const shown = focusedCard ? [focusedCard] : needle ? sorted.filter((card) => normalizeForSearch(card.storeName).includes(needle)) : sorted;
   const chooseView = (next: WalletView) => {
     writeWalletView(next);
     setChosenView(next);
@@ -92,13 +99,31 @@ function Wallet() {
         )}
 
         {!focusedCard && cards.length >= 1 && (
-          <div className="mb-4 flex justify-end">
+          <div className="mb-4 flex items-center justify-between gap-3">
+            {searchable ? (
+              <div className="relative min-w-0 flex-1">
+                <Search className="pointer-events-none absolute start-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" aria-hidden="true" />
+                <input
+                  type="search"
+                  value={query}
+                  onChange={(event) => setQuery(event.target.value)}
+                  placeholder={t("wallet.search.placeholder")}
+                  aria-label={t("wallet.search.placeholder")}
+                  enterKeyHint="search"
+                  className="h-11 w-full rounded-md border border-border bg-card ps-9 pe-3 text-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                />
+              </div>
+            ) : (
+              <span />
+            )}
             <WalletViewToggle view={view} onChange={chooseView} />
           </div>
         )}
 
         {cards.length === 0 ? (
           <WalletEmptyState />
+        ) : shown.length === 0 ? (
+          <p className="rounded-lg border border-dashed border-border px-4 py-8 text-center text-sm text-muted-foreground">{t("wallet.search.empty", { q: query.trim() })}</p>
         ) : view === "list" ? (
           <ul className="space-y-3">
             {shown.map((card) => (
@@ -114,7 +139,15 @@ function Wallet() {
         ) : (
           <ul className="wallet-card-list space-y-7">
             {shown.map((card) => (
-              <StampCard key={card.id} card={card} focused={Boolean(focusedCard)} />
+              <Fragment key={card.id}>
+                {/* With several cards, a store-name divider shows where one card (and its offers) ends and the next begins. */}
+                {shown.length > 1 && (
+                  <li className="wallet-card-divider" aria-hidden="true">
+                    <span className="min-w-0 truncate">{card.storeName}</span>
+                  </li>
+                )}
+                <StampCard card={card} focused={Boolean(focusedCard)} />
+              </Fragment>
             ))}
           </ul>
         )}

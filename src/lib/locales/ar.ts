@@ -642,4 +642,6 @@ export const ar: Record<TranslationKey, string> = {
   "cashier.workingAt": "تعمل الآن في",
   "cashier.role.owner": "مالك",
   "cashier.role.staff": "كاشير",
+  "wallet.search.placeholder": "ابحث في بطاقاتك",
+  "wallet.search.empty": "لا توجد بطاقة تطابق «{q}».",
 };
