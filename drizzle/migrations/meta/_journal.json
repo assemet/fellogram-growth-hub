@@ -176,6 +176,13 @@
       "when": 1791762762386,
       "tag": "0024_qr_rotation_manual_stamps",
       "breakpoints": true
+    },
+    {
+      "idx": 25,
+      "version": "7",
+      "when": 1791849162386,
+      "tag": "0025_store_impact",
+      "breakpoints": true
     }
   ]
 }

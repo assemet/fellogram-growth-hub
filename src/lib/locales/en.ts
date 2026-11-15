@@ -652,6 +652,18 @@ export const en = {
   "cashier.role.staff": "Cashier",
   "wallet.search.placeholder": "Search your cards",
   "wallet.search.empty": "No card matches “{q}”.",
+  "impact.title": "What Fellogram brought back",
+  "impact.period": "Last {days} days",
+  "impact.returning.label": "Customers who came back",
+  "impact.vs": "visited 2+ times · {delta} vs the previous {days} days",
+  "impact.same": "no change",
+  "impact.wonBack.label": "Came back after a reminder",
+  "impact.wonBack.sub": "of {reminded} customers you reminded visited within 7 days",
+  "impact.wonBack.none": "You haven't sent a reminder in this period.",
+  "impact.wonBack.action": "Remind quiet customers",
+  "impact.out.label": "Rewards and offers used",
+  "impact.out.sub": "{rewards} rewards · {offers} offers",
+  "impact.note": "A visit within 7 days of a reminder is counted. It shows who came back, not proof that the reminder was the reason.",
 } satisfies Record<string, string>;
 
 export type TranslationKey = keyof typeof en;

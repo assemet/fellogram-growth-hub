@@ -10,6 +10,7 @@ import { useFellogramAuth } from "@/hooks/useFellogramAuth";
 import { t } from "@/lib/i18n";
 import { getMyStore } from "@/lib/store.functions";
 import { GrowthAnalytics } from "@/components/GrowthAnalytics";
+import { ImpactCard } from "@/components/ImpactCard";
 import { StoreJoinShare } from "@/components/StoreJoinShare";
 import { ChevronRight, Megaphone, Settings2, Store, UserPlus, Users } from "lucide-react";
 
@@ -108,6 +109,8 @@ function MerchantDashboard() {
             </Link>
           ))}
         </div>
+
+        <ImpactCard />
 
         <GrowthAnalytics />
 

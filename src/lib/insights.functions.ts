@@ -121,3 +121,28 @@ export const getStoreActivity = createServerFn({ method: "POST" })
       })),
     };
   });
+
+export type StoreImpact = {
+  days: number;
+  returning: { now: number; prev: number };
+  visits: { now: number; prev: number };
+  newCustomers: { now: number; prev: number };
+  reminded: number;
+  wonBack: number;
+  rewards: number;
+  offersUsed: number;
+};
+
+/** Owner: what came back in the last 30 days, with the 30 days before for comparison. Counts only. */
+export const getStoreImpact = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    const storeId = await ownedStoreId(context.supabase, context.userId);
+    const { data, error } = await context.supabase.rpc("store_impact", { _store_id: storeId, _days: 30 });
+    if (error) {
+      // 42883 / PGRST202: the impact migration has not been applied yet. The card simply stays hidden.
+      if (error.code === "42883" || error.code === "PGRST202") return { supported: false as const };
+      throw new Error(error.message);
+    }
+    return { supported: true as const, impact: data as unknown as StoreImpact };
+  });

@@ -612,6 +612,7 @@ export type Database = {
           transaction_id: string
         }[]
       }
+      store_impact: { Args: { _store_id: string; _days?: number }; Returns: Json }
       issue_customer_qr: { Args: Record<PropertyKey, never>; Returns: string }
       resolve_customer_qr: { Args: { _store_id: string; _token: string }; Returns: string }
       create_redemption: {
