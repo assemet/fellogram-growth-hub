@@ -1,4 +1,6 @@
+import { useQuery } from "@tanstack/react-query";
 import { createFileRoute, Link } from "@tanstack/react-router";
+import { useServerFn } from "@tanstack/react-start";
 import { useState } from "react";
 
 import { DeleteAccountSection, LeaveTeamRow } from "@/components/AccountDangerZone";
@@ -13,6 +15,7 @@ import { SegmentedControl } from "@/components/SegmentedControl";
 import { SplashScreen } from "@/components/SplashScreen";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
+import { amIAdmin } from "@/lib/admin.functions";
 import { useFellogramAuth } from "@/hooks/useFellogramAuth";
 import { useMyContext } from "@/hooks/useMyContext";
 import { useNotifications } from "@/hooks/useNotifications";
@@ -70,6 +73,8 @@ function SwitchRow({ label, checked, disabled, onChange }: { label: string; chec
 function SettingsPage() {
   const { state } = useFellogramAuth();
   const { data: context, error, refetch } = useMyContext(state === "ready");
+  const checkAdmin = useServerFn(amIAdmin);
+  const { data: adminCheck } = useQuery({ queryKey: ["am-i-admin"], queryFn: () => checkAdmin(), enabled: state === "ready", retry: false, staleTime: 300_000 });
   const { data: notifications, needsStart, enableMutation, disableMutation } = useNotifications();
 
   const [appearance, setAppearanceState] = useState<Appearance>(readAppearance);
@@ -101,6 +106,12 @@ function SettingsPage() {
         <h1 className="text-xl font-bold">{t("settings.title")}</h1>
 
         {!isOwner && <StartStoreCard />}
+
+        {adminCheck?.admin && (
+          <Link to="/admin" className="flex min-h-11 items-center justify-center rounded-lg border border-border bg-card px-4 text-sm font-semibold">
+            لوحة الإدارة
+          </Link>
+        )}
 
         <SettingsCard title={t("settings.language")}>
           <LanguagePicker />
