@@ -1,4 +1,4 @@
-import { APPEARANCE_EVENT, readAppearance } from "@/lib/prefs";
+import { APPEARANCE_EVENT, applyPalette, readAppearance, readPalette, type Palette } from "@/lib/prefs";
 /**
  * Browser-side Telegram Mini App helpers. The raw initData string is only ever
  * forwarded to the server, which validates it with HMAC before trusting it.
@@ -67,6 +67,14 @@ export function setTelegramBackButton(handler: (() => void) | null) {
   }
 }
 
+/** Page background of each palette (light, dark), so Telegram's header and overscroll area match. */
+const PALETTE_CHROME: Record<Exclude<Palette, "classic">, [string, string]> = {
+  sage: ["#ebf6ed", "#09120b"],
+  ocean: ["#e9f4fc", "#071117"],
+  rose: ["#fcefee", "#170c0b"],
+  graphite: ["#f2f2f2", "#0f0f0f"],
+};
+
 /** Keep the app in sync with Telegram's live appearance, or the device preference outside Telegram. */
 export function watchTelegramTheme() {
   if (typeof window === "undefined") return () => {};
@@ -75,10 +83,15 @@ export function watchTelegramTheme() {
   const root = document.documentElement;
   const sync = () => {
     const appearance = readAppearance();
+    const palette = readPalette();
+    applyPalette(palette);
     if (appearance === "auto") {
-      // Follow Telegram: its colorScheme, and its own surface colors (the "telegram-theme" class).
+      // Follow Telegram: its colorScheme, and (on the default palette only) its own surface colors.
       root.classList.toggle("dark", app?.colorScheme === "dark" || (!app?.colorScheme && media.matches));
-      root.classList.toggle("telegram-theme", Boolean(app && getComputedStyle(root).getPropertyValue("--tg-theme-bg-color").trim()));
+      root.classList.toggle(
+        "telegram-theme",
+        palette === "classic" && Boolean(app && getComputedStyle(root).getPropertyValue("--tg-theme-bg-color").trim()),
+      );
     } else {
       // A chosen look must not be overridden by Telegram's colors, so use our own palette only.
       root.classList.toggle("dark", appearance === "dark");
@@ -86,7 +99,15 @@ export function watchTelegramTheme() {
     }
     try {
       // Keep Telegram's own header and overscroll area matching whatever the app now looks like.
-      const chrome = appearance === "auto" ? "secondary_bg_color" : appearance === "dark" ? "#0e0d0b" : "#f5f3f0";
+      const dark = root.classList.contains("dark");
+      const chrome =
+        palette !== "classic"
+          ? PALETTE_CHROME[palette][dark ? 1 : 0]
+          : appearance === "auto"
+            ? "secondary_bg_color"
+            : dark
+              ? "#0e0d0b"
+              : "#f5f3f0";
       app?.setHeaderColor?.(chrome);
       app?.setBackgroundColor?.(chrome);
     } catch {

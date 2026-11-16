@@ -3,11 +3,14 @@ import { isWalletView, type WalletView } from "@/lib/wallet-view";
 /** Device-level preferences (never sent to the server). */
 export type Appearance = "auto" | "light" | "dark";
 export type TextSize = "normal" | "large";
+export const PALETTES = ["classic", "sage", "ocean", "rose", "graphite"] as const;
+export type Palette = (typeof PALETTES)[number];
 export type BoolPref = "sound" | "vibration" | "autoStamp";
 
 const KEYS = {
   appearance: "fellogram.appearance",
   textSize: "fellogram.textSize",
+  palette: "fellogram.palette",
   sound: "fellogram.sound",
   vibration: "fellogram.vibration",
   autoStamp: "fellogram.autoStamp",
@@ -52,6 +55,25 @@ export function readTextSize(): TextSize {
 /** All sizes are rem-based, so scaling the root font size scales the whole interface. */
 export function applyTextSize(size: TextSize): void {
   document.documentElement.style.fontSize = size === "large" ? "112.5%" : "";
+}
+
+export function readPalette(): Palette {
+  if (typeof window === "undefined") return "classic";
+  const value = read(KEYS.palette);
+  return PALETTES.find((name) => name === value) ?? "classic";
+}
+
+/** "classic" is the default look and sets no attribute at all. */
+export function applyPalette(palette: Palette): void {
+  if (palette === "classic") document.documentElement.removeAttribute("data-palette");
+  else document.documentElement.setAttribute("data-palette", palette);
+}
+
+/** Saves the choice, applies it, and lets the theme watcher refresh Telegram's header color. */
+export function setPalette(palette: Palette): void {
+  write(KEYS.palette, palette);
+  applyPalette(palette);
+  window.dispatchEvent(new Event(APPEARANCE_EVENT));
 }
 
 export function setTextSize(size: TextSize): void {

@@ -20,14 +20,27 @@ import { t } from "@/lib/i18n";
 import {
   readAppearance,
   readBool,
+  readPalette,
   readTextSize,
   setAppearance,
+  setPalette,
   setTextSize,
   writeBool,
   type Appearance,
   type BoolPref,
+  PALETTES,
+  type Palette,
   type TextSize,
 } from "@/lib/prefs";
+
+/** [page tint, action color] for the little round previews. */
+const SWATCHES: Record<Palette, [string, string]> = {
+  classic: ["#f5f3f0", "#3a3835"],
+  sage: ["#ebf6ed", "#3f5a45"],
+  ocean: ["#e9f4fc", "#3a5668"],
+  rose: ["#fcefee", "#6b4347"],
+  graphite: ["#f2f2f2", "#3c3c3c"],
+};
 
 export const Route = createFileRoute("/settings")({
   ssr: false,
@@ -61,6 +74,7 @@ function SettingsPage() {
 
   const [appearance, setAppearanceState] = useState<Appearance>(readAppearance);
   const [textSize, setTextSizeState] = useState<TextSize>(readTextSize);
+  const [palette, setPaletteState] = useState<Palette>(readPalette);
   const [prefs, setPrefs] = useState<Record<BoolPref, boolean>>(() => ({
     autoStamp: readBool("autoStamp"),
     sound: readBool("sound"),
@@ -106,6 +120,31 @@ function SettingsPage() {
               { value: "dark", label: t("settings.appearance.dark") },
             ]}
           />
+          <div>
+            <p className="mb-2 text-sm font-medium" id="palette-label">{t("settings.palette")}</p>
+            <div role="radiogroup" aria-labelledby="palette-label" className="flex flex-wrap gap-3">
+              {PALETTES.map((name) => (
+                <button
+                  key={name}
+                  type="button"
+                  role="radio"
+                  aria-checked={palette === name}
+                  onClick={() => {
+                    setPaletteState(name);
+                    setPalette(name);
+                  }}
+                  className="flex min-h-11 min-w-14 flex-col items-center gap-1.5 rounded-lg px-1 py-1 text-xs"
+                >
+                  <span
+                    aria-hidden
+                    className={`relative block h-9 w-9 overflow-hidden rounded-full border border-input ${palette === name ? "ring-2 ring-ring ring-offset-2 ring-offset-background" : ""}`}
+                    style={{ background: `linear-gradient(135deg, ${SWATCHES[name][0]} 50%, ${SWATCHES[name][1]} 50%)` }}
+                  />
+                  <span className={palette === name ? "font-semibold" : "text-muted-foreground"}>{t(`settings.palette.${name}`)}</span>
+                </button>
+              ))}
+            </div>
+          </div>
           <div>
             <p className="mb-2 text-sm font-medium">{t("settings.textSize")}</p>
             <SegmentedControl<TextSize>
