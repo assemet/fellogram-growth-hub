@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useState } from "react";
 
@@ -43,6 +43,13 @@ function StoreRow({ store, busy, onToggle }: { store: AdminStore; busy: boolean;
         <p className="text-xs text-muted-foreground">
           {store.customers.toLocaleString("en")} عميل · {dateFormat.format(new Date(store.createdAt))}
         </p>
+        {store.active ? (
+          <Link to="/join/$storeId" params={{ storeId: store.id }} className="mt-1 inline-flex min-h-11 items-center text-xs font-semibold underline underline-offset-4">
+            عرض صفحة المتجر وبطاقته
+          </Link>
+        ) : (
+          <p className="mt-1 text-xs text-muted-foreground">الصفحة لا تُفتح وهو موقوف، فعّله مؤقتاً لمعاينتها.</p>
+        )}
       </div>
       {store.active ? (
         confirming ? (
