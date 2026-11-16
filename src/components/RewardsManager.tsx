@@ -76,7 +76,7 @@ export function RewardsManager({ rewards, cardStamps }: { rewards: Reward[]; car
                 type="button"
                 aria-label={t("rewards.remove")}
                 onClick={() => remove.mutate(r.id)}
-                variant="ghost" size="icon" className="touch-action shrink-0 text-destructive"
+                variant="ghost" size="icon" className="touch-action h-11 w-11 shrink-0 text-destructive"
               >
                 <Trash2 className="h-4 w-4" />
               </Button>

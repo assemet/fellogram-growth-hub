@@ -22,12 +22,23 @@ export async function rateLimit(bucket: string, subject: string, max: number, wi
   if (!allowed) throw new Error("RATE_LIMITED");
 }
 
-/** Best-effort caller address for requests that have no signed-in user yet. */
+/**
+ * Best-effort caller address for requests that have no signed-in user yet.
+ * Only headers that the hosting platform sets itself are trusted, and they come first: on Vercel `x-real-ip` and
+ * `x-vercel-forwarded-for` are the address Vercel saw, while headers such as `cf-connecting-ip` are only
+ * trustworthy behind Cloudflare and are simply copied from the caller anywhere else, so a caller could invent a new
+ * "address" on every request and never reach the limit. They are used last, as a fallback.
+ */
+const ADDRESS_HEADERS = ["x-vercel-forwarded-for", "x-real-ip", "x-forwarded-for", "cf-connecting-ip"] as const;
+
 export function clientIp(): string {
   try {
     const headers = getRequest()?.headers;
-    const forwarded = headers?.get("cf-connecting-ip") ?? headers?.get("x-forwarded-for") ?? headers?.get("x-real-ip") ?? "";
-    return forwarded.split(",")[0]?.trim() || "unknown";
+    for (const name of ADDRESS_HEADERS) {
+      const value = headers?.get(name)?.split(",")[0]?.trim();
+      if (value) return value.slice(0, 64);
+    }
+    return "unknown";
   } catch {
     return "unknown";
   }

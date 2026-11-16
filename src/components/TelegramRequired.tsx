@@ -13,7 +13,8 @@ export function TelegramRequired() {
   if (!blocked) return null;
   const link = SHORT_NAME && SHORT_NAME.toLowerCase() !== "main" ? `https://t.me/${BOT}/${SHORT_NAME}` : `https://t.me/${BOT}`;
   return (
-    <div className="fixed inset-0 z-[60] flex flex-col items-center justify-center gap-4 bg-background px-6 text-center" role="alert">
+    <div className="fixed inset-0 z-[110] flex flex-col items-center justify-center gap-4 bg-background px-6 text-center" role="alert">
+      <img src="/logo-mascot.png" alt="" width={88} height={95} className="h-24 w-auto" decoding="async" />
       <h1 className="font-display text-2xl font-bold">{t("auth.telegramOnly.title")}</h1>
       <p className="max-w-sm text-sm text-muted-foreground">{t("auth.telegramOnly.body")}</p>
       <Button asChild className="touch-action h-12 px-6 text-base font-bold">

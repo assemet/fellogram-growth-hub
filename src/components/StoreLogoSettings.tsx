@@ -9,6 +9,14 @@ import { supabase } from "@/integrations/supabase/client";
 import { t } from "@/lib/i18n";
 import { updateStoreLogo } from "@/lib/store.functions";
 
+/** Accepted logo pictures and the file ending each one is stored with. */
+const LOGO_TYPES = new Map([
+  ["image/png", "png"],
+  ["image/jpeg", "jpg"],
+  ["image/webp", "webp"],
+  ["image/gif", "gif"],
+]);
+
 export function StoreLogoSettings({ logoUrl, onPreviewChange }: { logoUrl: string | null; onPreviewChange?: (url: string | null) => void }) {
   const inputRef = useRef<HTMLInputElement | null>(null);
   const queryClient = useQueryClient();
@@ -20,10 +28,11 @@ export function StoreLogoSettings({ logoUrl, onPreviewChange }: { logoUrl: strin
   const mutation = useMutation({
     mutationFn: async (file: File | null) => {
       if (!file) return saveLogo({ data: { objectPath: null } });
-      if (!file.type.startsWith("image/") || file.size > 2 * 1024 * 1024) throw new Error("INVALID_LOGO");
+      // Only plain raster pictures: SVG files can carry scripts, so they are not accepted.
+      if (!LOGO_TYPES.has(file.type) || file.size > 2 * 1024 * 1024) throw new Error("INVALID_LOGO");
       const { data: userData } = await supabase.auth.getUser();
       if (!userData.user) throw new Error("UNAUTHORIZED");
-      const extension = file.name.split(".").pop()?.toLowerCase().replace(/[^a-z0-9]/g, "") || "png";
+      const extension = LOGO_TYPES.get(file.type) ?? "png";
       const objectPath = `${userData.user.id}/logo-${Date.now()}.${extension}`;
       const { error } = await supabase.storage.from("store-logos").upload(objectPath, file, {
         cacheControl: "3600",

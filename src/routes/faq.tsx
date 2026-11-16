@@ -1,5 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { Mail } from "lucide-react";
+import { useEffect, useState } from "react";
 
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { AppHeader } from "@/components/BrandMark";
@@ -8,7 +9,7 @@ import { BottomNav } from "@/components/BottomNav";
 import { LegalLinks } from "@/components/LegalLinks";
 import { SettingsCard } from "@/components/SettingsCard";
 import { Button } from "@/components/ui/button";
-import { useFellogramAuth } from "@/hooks/useFellogramAuth";
+import { supabase } from "@/integrations/supabase/client";
 import { useMyContext } from "@/hooks/useMyContext";
 import { getLocale, t } from "@/lib/i18n";
 import { SUPPORT_EMAIL, supportMailto } from "@/lib/support";
@@ -44,8 +45,20 @@ function QuestionList({ title, numbers }: { title: string; numbers: readonly (1 
 }
 
 function FaqPage() {
-  const { state } = useFellogramAuth();
-  const { data: context } = useMyContext(state === "ready");
+  // Public page: it never starts a sign-in (outside Telegram that would cover it with the "open from Telegram" screen).
+  // If a session already exists, the email gets the person's details and the bottom bar is shown.
+  const [signedIn, setSignedIn] = useState(false);
+  useEffect(() => {
+    let live = true;
+    supabase.auth
+      .getSession()
+      .then(({ data }) => live && setSignedIn(Boolean(data.session)))
+      .catch(() => undefined);
+    return () => {
+      live = false;
+    };
+  }, []);
+  const { data: context } = useMyContext(signedIn);
 
   const role = context?.ownedStoreId ? "owner" : context?.staffStoreId ? "cashier" : "customer";
   const mailto = SUPPORT_EMAIL
@@ -87,7 +100,7 @@ function FaqPage() {
         <LegalLinks className="justify-center" />
       </section>
 
-      <BottomNav current="settings" />
+      {signedIn && <BottomNav current="settings" />}
     </main>
   );
 }

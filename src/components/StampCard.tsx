@@ -210,7 +210,7 @@ export function StampCard({ card, preview = false, focused = false }: { card: St
               <div key={offer.id} className="coupon-card">
               <div className={`coupon-body flex min-h-24 items-stretch rounded-2xl ${usable && !preview ? "coupon-ticket" : ""}`}>
                 <div className={`min-w-0 flex-1 px-4 py-3.5 ${usable ? "" : "opacity-60"}`}>
-                  <p className="coupon-kicker flex items-center gap-1.5 text-[11px] font-extrabold uppercase tracking-wider">
+                  <p className="coupon-kicker flex items-center gap-1.5 text-xs font-extrabold uppercase tracking-wider">
                     <Ticket className="h-3.5 w-3.5" aria-hidden="true" />
                     {t("promo.offers.title")}
                   </p>

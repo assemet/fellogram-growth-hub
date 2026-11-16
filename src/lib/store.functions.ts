@@ -468,7 +468,7 @@ export const updateStoreLogo = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((data: { objectPath: string | null }) => {
     const objectPath = data?.objectPath ? String(data.objectPath) : null;
-    if (objectPath && !/^[0-9a-f-]{36}\/logo-[0-9]+\.[a-z0-9]+$/i.test(objectPath)) throw new Error("INVALID_LOGO");
+    if (objectPath && !/^[0-9a-f-]{36}\/logo-[0-9]+\.(png|jpe?g|webp|gif)$/i.test(objectPath)) throw new Error("INVALID_LOGO");
     return { objectPath };
   })
   .handler(async ({ data, context }) => {

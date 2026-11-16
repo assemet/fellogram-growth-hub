@@ -1,6 +1,6 @@
 import { createServerFn } from "@tanstack/react-start";
 import { check, throwIfError } from "@/lib/db";
-import { createHmac, createHash } from "crypto";
+import { createHmac, createHash, timingSafeEqual } from "crypto";
 import { previewAccountAllowed } from "@/lib/preview-account";
 import { clientIp, rateLimit } from "@/lib/rate-limit";
 
@@ -43,15 +43,22 @@ function verifyInitData(initData: string, botToken: string): TelegramUser | null
 
   const secretKey = createHmac("sha256", "WebAppData").update(botToken).digest();
   const computed = createHmac("sha256", secretKey).update(dataCheckString).digest("hex");
-  if (computed !== hash) return null;
+  // Compare in constant time so the response time never hints at how much of a forged signature was right.
+  const given = Buffer.from(hash, "hex");
+  const expected = Buffer.from(computed, "hex");
+  if (given.length !== expected.length || !timingSafeEqual(given, expected)) return null;
 
   const authDate = Number(params.get("auth_date") ?? 0);
   if (!authDate || Date.now() / 1000 - authDate > MAX_INIT_DATA_AGE_SECONDS) return null;
 
   const rawUser = params.get("user");
   if (!rawUser) return null;
-  const user = JSON.parse(rawUser) as TelegramUser;
-  return typeof user.id === "number" ? user : null;
+  try {
+    const user = JSON.parse(rawUser) as TelegramUser;
+    return typeof user.id === "number" ? user : null;
+  } catch {
+    return null;
+  }
 }
 
 function accountFor(telegramUserId: number, serviceKey: string) {
