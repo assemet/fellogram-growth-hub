@@ -37,7 +37,7 @@ async function requireAdmin(userId: string): Promise<void> {
 }
 
 /** Cheap yes/no used only to decide whether Settings shows the link. Never throws. */
-export const amIAdmin = createServerFn({ method: "GET" })
+export const amIAdmin = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
     try {
@@ -67,7 +67,7 @@ function personName(first: string | null, last: string | null): string {
 }
 
 /** Platform owner: counts, newest stores and newest people. Read only. */
-export const adminOverview = createServerFn({ method: "GET" })
+export const adminOverview = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }): Promise<AdminOverview> => {
     await requireAdmin(context.userId);
