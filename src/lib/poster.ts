@@ -121,7 +121,7 @@ function roundRect(ctx: CanvasRenderingContext2D, x: number, y: number, w: numbe
 
 export type PosterOptions = {
   format?: PosterFormat;
-  /** The store's own logo (a short-lived signed URL). Without one, the store's first letter is drawn instead. */
+  /** The store's own logo (a short-lived signed URL). Without one, no mark is drawn: the poster shows the store name only. */
   storeLogoUrl?: string | null;
   /** The app mark in the footer. */
   brandLogoUrl?: string;
@@ -203,9 +203,9 @@ export async function renderPoster(link: string, text: PosterText, dir: "rtl" | 
   const captionGap = 92 * u; // last name baseline -> caption baseline
   const qrGap = 62 * u; // caption baseline -> QR top
 
-  // Store mark above the name: the logo in a circle, or the store's first letter when it has none.
-  const markSize = Math.round((format.id === "square" ? 190 : 230) * u);
-  const markGap = 56 * u;
+  // Store mark above the name: the logo in a circle. A store without a logo gets no mark, just its name.
+  const markSize = storeLogo ? Math.round((format.id === "square" ? 190 : 230) * u) : 0;
+  const markGap = storeLogo ? 56 * u : 0;
   const markBlock = markSize + markGap;
 
   // The QR takes whatever height is left; the whole block is centred above the footer.
@@ -219,35 +219,27 @@ export async function renderPoster(link: string, text: PosterText, dir: "rtl" | 
   const blockTop = top + (bottom - top - blockHeight) / 2;
 
   // Mark
-  const markCx = cx;
-  const markTop = Math.round(blockTop);
-  ctx.save();
-  ctx.beginPath();
-  ctx.arc(markCx, markTop + markSize / 2, markSize / 2, 0, Math.PI * 2);
-  ctx.closePath();
-  ctx.fillStyle = storeLogo ? "#ffffff" : NAVY;
-  ctx.fill();
   if (storeLogo) {
+    const markCx = cx;
+    const markTop = Math.round(blockTop);
+    ctx.save();
+    ctx.beginPath();
+    ctx.arc(markCx, markTop + markSize / 2, markSize / 2, 0, Math.PI * 2);
+    ctx.closePath();
+    ctx.fillStyle = "#ffffff";
+    ctx.fill();
     ctx.clip();
     // "cover" fit: fill the circle, cropping the longer side
     const scale = Math.max(markSize / storeLogo.naturalWidth, markSize / storeLogo.naturalHeight);
     const dw = storeLogo.naturalWidth * scale;
     const dh = storeLogo.naturalHeight * scale;
     ctx.drawImage(storeLogo, markCx - dw / 2, markTop + markSize / 2 - dh / 2, dw, dh);
-  }
-  ctx.restore();
-  ctx.strokeStyle = storeLogo ? "#d3dcf2" : NAVY;
-  ctx.lineWidth = Math.max(2, 5 * u);
-  ctx.beginPath();
-  ctx.arc(markCx, markTop + markSize / 2, markSize / 2, 0, Math.PI * 2);
-  ctx.stroke();
-  if (!storeLogo) {
-    const initial = Array.from(text.name.trim())[0]?.toUpperCase() ?? "";
-    ctx.fillStyle = "#ffffff";
-    ctx.font = `700 ${Math.round(markSize * 0.5)}px ${DISPLAY_FONT}`;
-    ctx.textBaseline = "middle";
-    ctx.fillText(initial, markCx, markTop + markSize / 2 + markSize * 0.03);
-    ctx.textBaseline = "alphabetic";
+    ctx.restore();
+    ctx.strokeStyle = "#d3dcf2";
+    ctx.lineWidth = Math.max(2, 5 * u);
+    ctx.beginPath();
+    ctx.arc(markCx, markTop + markSize / 2, markSize / 2, 0, Math.PI * 2);
+    ctx.stroke();
   }
 
   let y = Math.round(blockTop + markBlock + aboveBaseline);
