@@ -362,6 +362,23 @@
 .store-theme > header button { color: var(--foreground); }
 .store-theme :where(input, textarea, select) { background: var(--store-surface); color: var(--store-ink); }
 
+/* A card whose store chose no colors keeps the Fellogram blue header; its buttons, stamps and progress use the same
+   blue instead of following the app palette, so the whole card reads as one color. */
+.loyalty-card[data-card-theme="classic"]:not([data-custom-brand="true"]) {
+  --primary: oklch(0.5 0.2 258);
+  --primary-foreground: oklch(0.99 0.005 250);
+  --ring: oklch(0.5 0.2 258);
+  --secondary: oklch(0.945 0.02 258);
+  --secondary-foreground: oklch(0.3 0.06 258);
+}
+.dark .loyalty-card[data-card-theme="classic"]:not([data-custom-brand="true"]) {
+  --primary: oklch(0.72 0.15 258);
+  --primary-foreground: oklch(0.16 0.03 258);
+  --ring: oklch(0.72 0.15 258);
+  --secondary: oklch(0.28 0.04 258);
+  --secondary-foreground: oklch(0.96 0.01 255);
+}
+
 /* Existing card palettes remain available on the default wallet. */
 .loyalty-card[data-card-theme="coffee"], .card-theme-swatch[data-card-theme="coffee"] {
   --loyalty-bg: oklch(0.96 0.025 75); --loyalty-fg: oklch(0.26 0.04 55);
