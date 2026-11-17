@@ -5,6 +5,8 @@ export type Appearance = "auto" | "light" | "dark";
 export type TextSize = "normal" | "large";
 export const PALETTES = ["classic", "sage", "ocean", "rose", "graphite"] as const;
 export type Palette = (typeof PALETTES)[number];
+/** What anyone who never picked a palette gets. "classic" stays available as an explicit choice. */
+export const DEFAULT_PALETTE: Palette = "ocean";
 export type BoolPref = "sound" | "vibration" | "autoStamp";
 
 const KEYS = {
@@ -58,12 +60,12 @@ export function applyTextSize(size: TextSize): void {
 }
 
 export function readPalette(): Palette {
-  if (typeof window === "undefined") return "classic";
+  if (typeof window === "undefined") return DEFAULT_PALETTE;
   const value = read(KEYS.palette);
-  return PALETTES.find((name) => name === value) ?? "classic";
+  return PALETTES.find((name) => name === value) ?? DEFAULT_PALETTE;
 }
 
-/** "classic" is the default look and sets no attribute at all. */
+/** "classic" is the original look and sets no attribute at all. */
 export function applyPalette(palette: Palette): void {
   if (palette === "classic") document.documentElement.removeAttribute("data-palette");
   else document.documentElement.setAttribute("data-palette", palette);
