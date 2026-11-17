@@ -5,6 +5,7 @@ import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { openCamera, stopStream } from "@/lib/camera";
 import { parseStoreCode } from "@/lib/join-code";
 import { t } from "@/lib/i18n";
 import { openTelegramQrScanner } from "@/lib/telegram";
@@ -42,11 +43,27 @@ export function StoreScanButton({
   useEffect(() => {
     if (!open || !video) return;
     let scanner: { stop: () => void; destroy: () => void } | null = null;
+    let stream: MediaStream | null = null;
     let cancelled = false;
     (async () => {
       try {
         const QrScanner = (await import("qr-scanner")).default;
         if (cancelled) return;
+        // One permission request; a refusal closes the dialog at once with a clear message.
+        const camera = await openCamera("environment");
+        if ("error" in camera) {
+          if (!cancelled) {
+            setOpen(false);
+            toast.error(camera.error === "denied" ? t("wallet.scan.cameraDenied") : t("wallet.scan.cameraError"));
+          }
+          return;
+        }
+        stream = camera.stream;
+        if (cancelled) {
+          stopStream(stream);
+          return;
+        }
+        video.srcObject = stream;
         const instance = new QrScanner(
           video,
           (result: { data: string }) => {
@@ -73,6 +90,7 @@ export function StoreScanButton({
       cancelled = true;
       scanner?.stop();
       scanner?.destroy();
+      stopStream(stream);
     };
     // goToStore only closes over stable setters/navigate.
     // eslint-disable-next-line react-hooks/exhaustive-deps

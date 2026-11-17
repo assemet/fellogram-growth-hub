@@ -2,7 +2,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useEffect, useRef, useState } from "react";
-import { Camera, Check, Gift, Lock, ScanLine, Store as StoreIcon, Undo2, UserPlus } from "lucide-react";
+import { Camera, Check, Gift, Lock, RefreshCw, ScanLine, Store as StoreIcon, Undo2, UserPlus } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 
@@ -14,6 +14,7 @@ import { SplashScreen } from "@/components/SplashScreen";
 import { useFellogramAuth } from "@/hooks/useFellogramAuth";
 import { t } from "@/lib/i18n";
 import { awardStamp, enrollCustomer, getCashierStore, lookupCustomer, redeemOfferToken, redeemRewardToken, searchCustomers, undoLastStamp } from "@/lib/cashier.functions";
+import { type CameraFacing, openCamera, stopStream } from "@/lib/camera";
 import { notify, primeAudio } from "@/lib/feedback";
 import { cashierConfirmedThisLaunch, getCashierPinned, markCashierConfirmed, setCashierPinned, setCashierStoreChoice } from "@/lib/cashier-store";
 
@@ -101,6 +102,9 @@ function Cashier() {
   const viaCameraRef = useRef(false);
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const scannerRef = useRef<{ stop: () => void; destroy: () => void } | null>(null);
+  const streamRef = useRef<MediaStream | null>(null);
+  const facingRef = useRef<CameraFacing>("environment");
+  const scanTokenRef = useRef(0);
 
   const { data: store, isLoading, error: storeError, refetch: refetchStore } = useQuery({
     queryKey: ["cashier-store"],
@@ -109,9 +113,12 @@ function Cashier() {
   });
 
   const stopScanner = () => {
+    scanTokenRef.current += 1;
     scannerRef.current?.stop();
     scannerRef.current?.destroy();
     scannerRef.current = null;
+    stopStream(streamRef.current);
+    streamRef.current = null;
     setScanning(false);
   };
 
@@ -308,6 +315,7 @@ function Cashier() {
     setScanning(true);
     viaCameraRef.current = true;
     primeAudio();
+    const token = (scanTokenRef.current += 1);
     try {
       const QrScanner = (await import("qr-scanner")).default;
       // When restarting automatically the video element is re-mounting: wait for it.
@@ -316,6 +324,20 @@ function Cashier() {
         setScanning(false);
         return;
       }
+      // One permission request. A refusal ends here: no retries, no fallback to another camera.
+      const camera = await openCamera(facingRef.current);
+      if (token !== scanTokenRef.current) {
+        // Stopped while the permission prompt was open: release the camera we just got.
+        if ("stream" in camera) stopStream(camera.stream);
+        return;
+      }
+      if ("error" in camera) {
+        stopScanner();
+        setError(camera.error === "denied" ? t("cashier.cameraDenied") : t("cashier.cameraError"));
+        return;
+      }
+      streamRef.current = camera.stream;
+      videoRef.current.srcObject = camera.stream;
       const scanner = new QrScanner(
         videoRef.current,
         (result: { data: string }) => {
@@ -492,6 +514,19 @@ function Cashier() {
                   className="touch-action mt-3 h-12 w-full"
                 >
                   {t("cashier.stop")}
+                </Button>
+                <Button
+                  type="button"
+                  onClick={() => {
+                    facingRef.current = facingRef.current === "environment" ? "user" : "environment";
+                    stopScanner();
+                    void startScanner(mode);
+                  }}
+                  variant="ghost"
+                  className="touch-action mt-2 h-11 w-full gap-2"
+                >
+                  <RefreshCw className="h-4 w-4" aria-hidden="true" />
+                  {t("cashier.flipCamera")}
                 </Button>
               </>
             ) : (
