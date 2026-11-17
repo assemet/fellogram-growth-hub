@@ -2,7 +2,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useEffect, useRef, useState } from "react";
-import { Camera, Check, Gift, ScanLine, Undo2, UserPlus } from "lucide-react";
+import { Camera, Check, Gift, Lock, ScanLine, Store as StoreIcon, Undo2, UserPlus } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 
@@ -15,7 +15,7 @@ import { useFellogramAuth } from "@/hooks/useFellogramAuth";
 import { t } from "@/lib/i18n";
 import { awardStamp, enrollCustomer, getCashierStore, lookupCustomer, redeemOfferToken, redeemRewardToken, searchCustomers, undoLastStamp } from "@/lib/cashier.functions";
 import { notify, primeAudio } from "@/lib/feedback";
-import { setCashierStoreChoice } from "@/lib/cashier-store";
+import { cashierConfirmedThisLaunch, getCashierPinned, markCashierConfirmed, setCashierPinned, setCashierStoreChoice } from "@/lib/cashier-store";
 
 export const Route = createFileRoute("/cashier")({
   ssr: false,
@@ -78,6 +78,11 @@ function Cashier() {
   const enrollFn = useServerFn(enrollCustomer);
   const searchFn = useServerFn(searchCustomers);
   const [mode, setMode] = useState<"customer" | "reward">("customer");
+  // Several stores: which one this device is pinned to, whether it was asked since launch, and the picker.
+  const [pinnedStoreId, setPinnedStoreId] = useState<string | null>(getCashierPinned);
+  const [confirmedStore, setConfirmedStore] = useState(cashierConfirmedThisLaunch);
+  const [choosingStore, setChoosingStore] = useState(false);
+  const [pinOnPick, setPinOnPick] = useState(false);
 
   const [customer, setCustomer] = useState<CustomerState | null>(null);
   const [newCustomerId, setNewCustomerId] = useState<string | null>(null);
@@ -361,6 +366,75 @@ function Cashier() {
     );
   }
 
+  // A cashier at several stores must never stamp at the wrong one by accident: unless this device is pinned to a store,
+  // they are asked once per app launch, and the current store is always shown on screen.
+  const workStores = store.stores;
+  const hasSeveralStores = workStores.length > 1;
+  const pinnedHere = pinnedStoreId !== null && workStores.some((option) => option.storeId === pinnedStoreId);
+  const pickStore = (storeId: string) => {
+    setCashierStoreChoice(storeId);
+    if (pinOnPick) {
+      setCashierPinned(storeId);
+      setPinnedStoreId(storeId);
+    }
+    markCashierConfirmed();
+    setConfirmedStore(true);
+    setChoosingStore(false);
+    setPinOnPick(false);
+    nextCustomer();
+    void refetchStore();
+  };
+  const togglePin = (pinned: boolean) => {
+    const next = pinned ? store.storeId : null;
+    setCashierPinned(next);
+    setPinnedStoreId(next);
+    if (pinned) {
+      markCashierConfirmed();
+      setConfirmedStore(true);
+    }
+  };
+
+  if (hasSeveralStores && (choosingStore || (!pinnedHere && !confirmedStore))) {
+    return (
+      <main className="min-h-[100dvh] pb-[calc(2.5rem+env(safe-area-inset-bottom))]">
+        <AppHeader />
+        <section className="app-shell space-y-4">
+          <h1 className="text-2xl font-bold">{t("cashier.pickTitle")}</h1>
+          <p className="text-sm text-muted-foreground">{t("cashier.pickHint")}</p>
+          <ul className="space-y-3">
+            {workStores.map((option) => (
+              <li key={option.storeId}>
+                <button
+                  type="button"
+                  onClick={() => pickStore(option.storeId)}
+                  className="touch-action flex min-h-16 w-full items-center gap-3 rounded-lg border border-border bg-card p-4 text-start shadow-[var(--shadow-card)]"
+                >
+                  <StoreIcon className="h-5 w-5 shrink-0 text-primary" aria-hidden="true" />
+                  <span className="min-w-0 flex-1">
+                    <span className="block truncate text-base font-bold">{option.name}</span>
+                    <span className="block text-xs text-muted-foreground">
+                      {option.role === "owner" ? t("cashier.role.owner") : t("cashier.role.staff")}
+                    </span>
+                  </span>
+                  {option.storeId === store.storeId && <Check className="h-5 w-5 shrink-0 text-primary" aria-hidden="true" />}
+                </button>
+              </li>
+            ))}
+          </ul>
+          <label className="flex min-h-11 items-center justify-between gap-3 rounded-lg border border-border bg-card px-4 py-3 text-sm font-semibold">
+            {t("cashier.pinOnPick")}
+            <Switch checked={pinOnPick} onCheckedChange={setPinOnPick} />
+          </label>
+          {choosingStore && (
+            <Button type="button" variant="outline" className="h-12 w-full" onClick={() => setChoosingStore(false)}>
+              {t("cashier.pickCancel")}
+            </Button>
+          )}
+        </section>
+      </main>
+    );
+  }
+
   const cardFull = customer ? customer.stampBalance >= customer.stampsRequired * 2 : false;
   const extraStamps = customer ? Math.max(0, customer.stampBalance - customer.stampsRequired) : 0;
   const ready = customer ? customer.stampBalance >= customer.stampsRequired : false;
@@ -371,27 +445,29 @@ function Cashier() {
 
       <section className="app-shell space-y-4">
         <h1 className="text-2xl font-bold">{t("cashier.title")}</h1>
-        {store.stores.length > 1 && (
-          <div>
-            <label htmlFor="cashierStore" className="text-xs font-semibold text-muted-foreground">
-              {t("cashier.workingAt")}
+        {hasSeveralStores && (
+          <div role="status" className="rounded-lg border-2 border-primary/50 bg-primary/10 p-3">
+            <div className="flex items-center gap-3">
+              <StoreIcon className="h-5 w-5 shrink-0 text-primary" aria-hidden="true" />
+              <div className="min-w-0 flex-1">
+                <p className="text-xs font-semibold text-muted-foreground">{t("cashier.workingAt")}</p>
+                <p className="truncate text-lg font-extrabold leading-tight">{store.storeName}</p>
+              </div>
+              {pinnedHere ? (
+                <Lock className="h-4 w-4 shrink-0 text-muted-foreground" aria-label={t("cashier.pinned")} />
+              ) : (
+                <Button type="button" variant="outline" className="h-11 shrink-0" onClick={() => setChoosingStore(true)}>
+                  {t("cashier.change")}
+                </Button>
+              )}
+            </div>
+            <label className="mt-2 flex min-h-11 items-center justify-between gap-3 text-sm font-semibold">
+              <span>
+                {t("cashier.pinThis")}
+                {pinnedHere && <span className="block text-xs font-normal text-muted-foreground">{t("cashier.pinnedHint")}</span>}
+              </span>
+              <Switch checked={pinnedHere} onCheckedChange={togglePin} />
             </label>
-            <select
-              id="cashierStore"
-              value={store.storeId}
-              onChange={(event) => {
-                setCashierStoreChoice(event.target.value);
-                nextCustomer();
-                void refetchStore();
-              }}
-              className="mt-1 h-12 w-full rounded-md border border-border bg-card px-3 text-sm font-semibold"
-            >
-              {store.stores.map((option) => (
-                <option key={option.storeId} value={option.storeId}>
-                  {option.name} · {option.role === "owner" ? t("cashier.role.owner") : t("cashier.role.staff")}
-                </option>
-              ))}
-            </select>
           </div>
         )}
         {store.event && (
