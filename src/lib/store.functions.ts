@@ -3,6 +3,7 @@ import { currentOwnedStoreId, ownedIdOrNil } from "@/lib/current-store";
 import { isValidTier, mainRewardId, visibleRewards } from "@/lib/rewards";
 import { contactFromRow, normalizeContact, type ContactInput, type ContactValues } from "@/lib/store-contact";
 import { writeStoreProfile } from "@/lib/store-profile";
+import { normalizeRedeemNote } from "@/lib/redeem-note";
 import { miniAppLink } from "@/lib/bot-link";
 import { check, throwIfError, type Db } from "@/lib/db";
 import { isStampIconId, STAMP_LOGO_ID } from "@/lib/stamp-icons";
@@ -690,7 +691,7 @@ async function ownedStoreRow(supabase: Db, userId: string) {
 /** Owner renames the store and edits its short description. */
 export const updateStoreProfile = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((data: { name: string; description?: string; contact?: ContactInput }) => {
+  .inputValidator((data: { name: string; description?: string; contact?: ContactInput; redeemNote?: string | null }) => {
     const name = String(data?.name ?? "").trim().replace(/\s+/g, " ");
     if (name.length < 2 || name.length > 60) throw new Error("INVALID_NAME");
     const description = String(data?.description ?? "").trim().slice(0, 160);
@@ -702,7 +703,14 @@ export const updateStoreProfile = createServerFn({ method: "POST" })
       if (invalid.length > 0) throw new Error(`INVALID_CONTACT:${invalid.join(",")}`);
       contact = values;
     }
-    return { name, description: description || null, contact };
+    // Optional line under the "reward collected" message; undefined leaves it unchanged.
+    let redeemNote: string | null | undefined;
+    if (data?.redeemNote !== undefined) {
+      const note = normalizeRedeemNote(data.redeemNote);
+      if (note === "ERR") throw new Error("INVALID_REDEEM_NOTE");
+      redeemNote = note;
+    }
+    return { name, description: description || null, contact, redeemNote };
   })
   .handler(async ({ data, context }) => {
     const store = await ownedStoreRow(context.supabase, context.userId);

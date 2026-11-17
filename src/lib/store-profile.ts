@@ -10,7 +10,7 @@ const isMissingColumn = (error: { code?: string } | null) => error?.code === "42
 export async function writeStoreProfile(
   db: Db,
   storeId: string,
-  profile: { name: string; description: string | null; contact: ContactValues | null },
+  profile: { name: string; description: string | null; contact: ContactValues | null; redeemNote?: string | null | undefined },
 ): Promise<void> {
   const base = { name: profile.name, description: profile.description };
   if (!profile.contact) {
@@ -24,4 +24,14 @@ export async function writeStoreProfile(
     ({ error } = await db.from("stores").update(base).eq("id", storeId));
   }
   throwIfError(error, "STORE_UPDATE_FAILED");
+
+  // The "reward collected" line lives in its own update, so a database without the column still saves everything else.
+  if (profile.redeemNote !== undefined) {
+    const { error: noteError } = await db.from("stores").update({ redeem_note: profile.redeemNote } as never).eq("id", storeId);
+    if (isMissingColumn(noteError)) {
+      if (profile.redeemNote) throw new Error("DB_MIGRATION_REQUIRED");
+      return;
+    }
+    throwIfError(noteError, "STORE_UPDATE_FAILED");
+  }
 }

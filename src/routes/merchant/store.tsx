@@ -14,6 +14,7 @@ import { Button } from "@/components/ui/button";
 import { useFellogramAuth } from "@/hooks/useFellogramAuth";
 import { t, type TranslationKey } from "@/lib/i18n";
 import { deleteStore, getMyStore, updateStoreProfile } from "@/lib/store.functions";
+import { normalizeRedeemNote, redeemNoteFromRow, REDEEM_NOTE_MAX } from "@/lib/redeem-note";
 import { CONTACT_FIELDS, contactFromRow, normalizeContact, type ContactField } from "@/lib/store-contact";
 
 export const Route = createFileRoute("/merchant/store")({
@@ -80,6 +81,8 @@ function StoreSettingsPage() {
   const [touched, setTouched] = useState<Partial<Record<ContactField, boolean>>>({});
   const [submitted, setSubmitted] = useState(false);
   const [confirmName, setConfirmName] = useState("");
+  const [redeemNote, setRedeemNote] = useState("");
+  const [noteTouched, setNoteTouched] = useState(false);
 
   // Fill the form once the store loads; a background refresh must not wipe what is being typed.
   const [hydratedFor, setHydratedFor] = useState<string | null>(null);
@@ -89,11 +92,12 @@ function StoreSettingsPage() {
     setDescription(data.store.description ?? "");
     const stored = contactFromRow(data.store as unknown as Record<string, unknown>);
     setContact(Object.fromEntries(CONTACT_FIELDS.map((field) => [field, stored[field] ?? ""])) as Record<ContactField, string>);
+    setRedeemNote(redeemNoteFromRow(data.store as unknown as Record<string, unknown>) ?? "");
     setHydratedFor(data.store.id);
   }, [data, hydratedFor]);
 
   const saveMutation = useMutation({
-    mutationFn: () => saveProfile({ data: { name, description, contact } }),
+    mutationFn: () => saveProfile({ data: { name, description, contact, redeemNote } }),
     onSuccess: async () => {
       toast.success(t("store.saved"));
       await queryClient.invalidateQueries({ queryKey: ["my-store"] });
@@ -102,6 +106,7 @@ function StoreSettingsPage() {
     },
     onError: (e: Error) => {
       if (e.message.includes("INVALID_NAME")) toast.error(t("store.nameInvalid"));
+      else if (e.message.includes("INVALID_REDEEM_NOTE")) toast.error(t("store.redeemNote.error"));
       else if (e.message.includes("DB_MIGRATION_REQUIRED")) toast.error(t("error.migrationNeeded"));
       else toast.error(t("common.error"));
     },
@@ -126,7 +131,10 @@ function StoreSettingsPage() {
   const { values: contactValues, errors: contactErrors } = normalizeContact(contact);
   const stored = contactFromRow(data.store as unknown as Record<string, unknown>);
   const contactDirty = CONTACT_FIELDS.some((field) => (contactValues[field] ?? null) !== (stored[field] ?? null));
-  const dirty = trimmed !== data.store.name || description.trim() !== (data.store.description ?? "") || contactDirty;
+  const noteResult = normalizeRedeemNote(redeemNote);
+  const noteInvalid = noteResult === "ERR";
+  const noteDirty = (noteInvalid ? redeemNote : noteResult) !== redeemNoteFromRow(data.store as unknown as Record<string, unknown>);
+  const dirty = trimmed !== data.store.name || description.trim() !== (data.store.description ?? "") || contactDirty || noteDirty;
 
   const renderInput = ({ field, label, placeholder, hint, error, inputMode, ltr, maxLength }: ContactInputDef) => {
     const invalid = Boolean(contactErrors[field]) && (touched[field] || submitted);
@@ -185,6 +193,12 @@ function StoreSettingsPage() {
               toast.error(t("store.nameInvalid"));
               return;
             }
+            if (noteInvalid) {
+              setNoteTouched(true);
+              toast.error(t("store.redeemNote.error"));
+              document.getElementById("redeemNote")?.focus();
+              return;
+            }
             const firstError = CONTACT_INPUTS.concat(LINK_INPUTS).find((input) => contactErrors[input.field]);
             if (firstError) {
               setSubmitted(true);
@@ -227,6 +241,27 @@ function StoreSettingsPage() {
             </div>
             {CONTACT_INPUTS.map(renderInput)}
             {LINK_INPUTS.map(renderInput)}
+          </div>
+          <div className="space-y-2 border-t border-border pt-4">
+            <div>
+              <h2 className="text-sm font-bold">{t("store.redeemNote.title")}</h2>
+              <p className="mt-1 text-xs text-muted-foreground">{t("store.redeemNote.hint")}</p>
+            </div>
+            <input
+              id="redeemNote"
+              value={redeemNote}
+              maxLength={REDEEM_NOTE_MAX}
+              autoComplete="off"
+              aria-invalid={noteInvalid && (noteTouched || submitted)}
+              aria-describedby="redeemNote-help"
+              placeholder={t("store.redeemNote.ph")}
+              onChange={(event) => setRedeemNote(event.target.value)}
+              onBlur={() => setNoteTouched(true)}
+              className={`w-full rounded-md border bg-background px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-ring ${noteInvalid && (noteTouched || submitted) ? "border-destructive" : "border-border"}`}
+            />
+            <p id="redeemNote-help" role={noteInvalid && (noteTouched || submitted) ? "alert" : undefined} className={`text-xs ${noteInvalid && (noteTouched || submitted) ? "font-semibold text-destructive" : "text-muted-foreground"}`}>
+              {noteInvalid && (noteTouched || submitted) ? t("store.redeemNote.error") : `${[...redeemNote].length}/${REDEEM_NOTE_MAX}`}
+            </p>
           </div>
           <Button type="submit" disabled={!dirty || !nameValid || saveMutation.isPending} className="touch-action h-12 w-full font-bold">
             {saveMutation.isPending ? t("program.saving") : t("store.save")}

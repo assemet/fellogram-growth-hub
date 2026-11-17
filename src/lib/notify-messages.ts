@@ -43,7 +43,7 @@ const TEXTS: Record<NotifyLocale, Texts> = {
     ready: (s, p) => `🎉 Your reward is ready at ${s}!\nYou have ${p} stamps. Show your QR to the cashier to claim it.`,
     reminder: (s, p) => `👋 We miss you at ${s}!\nYour card is at ${p} stamps. We'd love to see you again soon.`,
     rewardWaiting: (s, p) => `🎁 Your reward is waiting at ${s}!\nYour card is complete (${p}). Show your QR to the cashier to collect it.`,
-    redeemed: (s) => `🎁 ${s}: reward collected. Enjoy!`,
+    redeemed: (s) => `🎁 ${s}: reward collected. Congratulations!`,
     reviewInvite: "Enjoyed your visit? Share your opinion if you like. It's optional.",
     rate: "Rate us",
     enabled: "🔔 Notifications are on. You'll get your stamp and reward updates here.",
@@ -55,7 +55,7 @@ const TEXTS: Record<NotifyLocale, Texts> = {
     ready: (s, p) => `🎉 مكافأتك جاهزة في ${s}!\nلديك ${p} من الطوابع. أظهر رمزك للكاشير لاستلامها.`,
     reminder: (s, p) => `👋 اشتقنا لك في ${s}!\nبطاقتك عند ${p} من الطوابع، وننتظر زيارتك قريباً.`,
     rewardWaiting: (s, p) => `🎁 مكافأتك بانتظارك في ${s}!\nبطاقتك مكتملة (${p}). أظهر رمزك للكاشير لاستلامها.`,
-    redeemed: (s) => `🎁 ${s}: تم استلام المكافأة. بالهناء!`,
+    redeemed: (s) => `🎁 ${s}: تم استلام المكافأة. مبروك!`,
     reviewInvite: "إن أعجبتك زيارتك، يسعدنا أن تشاركنا رأيك. الأمر اختياري.",
     rate: "قيّمنا",
     enabled: "🔔 تم تفعيل الإشعارات. ستصلك هنا أخبار طوابعك ومكافآتك.",
@@ -67,7 +67,7 @@ const TEXTS: Record<NotifyLocale, Texts> = {
     ready: (s, p) => `🎉 Ваша награда готова в ${s}!\nУ вас ${p} штампов. Покажите свой QR кассиру, чтобы получить её.`,
     reminder: (s, p) => `👋 Мы скучаем по вам в ${s}!\nНа вашей карте ${p} штампов. Будем рады видеть вас снова.`,
     rewardWaiting: (s, p) => `🎁 Ваша награда ждёт вас в ${s}!\nКарта заполнена (${p}). Покажите QR кассиру, чтобы получить её.`,
-    redeemed: (s) => `🎁 ${s}: награда получена. Приятного!`,
+    redeemed: (s) => `🎁 ${s}: награда получена. Поздравляем!`,
     reviewInvite: "Понравился визит? Поделитесь мнением, если хотите. Это необязательно.",
     rate: "Оценить",
     enabled: "🔔 Уведомления включены. Здесь вы будете получать новости о штампах и наградах.",
@@ -79,7 +79,7 @@ const TEXTS: Record<NotifyLocale, Texts> = {
     ready: (s, p) => `🎉 ¡Tu recompensa está lista en ${s}!\nTienes ${p} sellos. Muestra tu QR al cajero para canjearla.`,
     reminder: (s, p) => `👋 ¡Te echamos de menos en ${s}!\nTu tarjeta lleva ${p} sellos. Nos encantará verte pronto.`,
     rewardWaiting: (s, p) => `🎁 ¡Tu premio te espera en ${s}!\nTu tarjeta está completa (${p}). Muestra tu QR en caja para recogerlo.`,
-    redeemed: (s) => `🎁 ${s}: recompensa canjeada. ¡Que la disfrutes!`,
+    redeemed: (s) => `🎁 ${s}: recompensa canjeada. ¡Felicidades!`,
     reviewInvite: "¿Te gustó tu visita? Cuéntanos tu opinión si quieres. Es opcional.",
     rate: "Valóranos",
     enabled: "🔔 Notificaciones activadas. Aquí recibirás novedades de tus sellos y recompensas.",
@@ -91,7 +91,7 @@ const TEXTS: Record<NotifyLocale, Texts> = {
     ready: (s, p) => `🎉 ${s} mağazasında ödülün hazır!\n${p} damgan var. Almak için QR kodunu kasiyere göster.`,
     reminder: (s, p) => `👋 ${s} seni özledi!\nKartın ${p} damgada. Seni yakında tekrar görmek isteriz.`,
     rewardWaiting: (s, p) => `🎁 Ödülün ${s} için seni bekliyor!\nKartın tamamlandı (${p}). Almak için QR kodunu kasada göster.`,
-    redeemed: (s) => `🎁 ${s}: ödül alındı. Afiyet olsun!`,
+    redeemed: (s) => `🎁 ${s}: ödül alındı. Tebrikler!`,
     reviewInvite: "Ziyaretini beğendin mi? İstersen fikrini paylaşabilirsin. İsteğe bağlı.",
     rate: "Bizi değerlendir",
     enabled: "🔔 Bildirimler açık. Damgaların ve ödüllerinle ilgili haberleri burada alacaksın.",
@@ -103,7 +103,7 @@ const TEXTS: Record<NotifyLocale, Texts> = {
     ready: (s, p) => `🎉 Ваша винагорода готова в ${s}!\nУ вас ${p} штампів. Покажіть свій QR касиру, щоб отримати її.`,
     reminder: (s, p) => `👋 Ми сумуємо за вами в ${s}!\nНа вашій картці ${p} штампів. Будемо раді бачити вас знову.`,
     rewardWaiting: (s, p) => `🎁 Ваша винагорода чекає на вас у ${s}!\nКартку заповнено (${p}). Покажіть QR касиру, щоб отримати її.`,
-    redeemed: (s) => `🎁 ${s}: винагороду отримано. Смачного!`,
+    redeemed: (s) => `🎁 ${s}: винагороду отримано. Вітаємо!`,
     reviewInvite: "Сподобався візит? Поділіться враженнями, якщо хочете. Це необов'язково.",
     rate: "Оцінити",
     enabled: "🔔 Сповіщення ввімкнено. Тут ви отримуватимете новини про штампи та винагороди.",
@@ -115,7 +115,7 @@ const TEXTS: Record<NotifyLocale, Texts> = {
     ready: (s, p) => `🎉 ${s} da mukofotingiz tayyor!\nSizda ${p} shtamp bor. Olish uchun QR kodingizni kassirga ko'rsating.`,
     reminder: (s, p) => `👋 ${s} sizni sog'indi!\nKartangizda ${p} shtamp bor. Sizni yana ko'rishdan xursand bo'lamiz.`,
     rewardWaiting: (s, p) => `🎁 Mukofotingiz ${s} da sizni kutmoqda!\nKartangiz to'lgan (${p}). Olish uchun QR kodni kassirga ko'rsating.`,
-    redeemed: (s) => `🎁 ${s}: mukofot olindi. Yoqimli ishtaha!`,
+    redeemed: (s) => `🎁 ${s}: mukofot olindi. Tabriklaymiz!`,
     reviewInvite: "Tashrif yoqdimi? Xohlasangiz, fikringizni ulashing. Bu ixtiyoriy.",
     rate: "Baholash",
     enabled: "🔔 Bildirishnomalar yoqildi. Shtamp va mukofotlaringiz haqidagi yangiliklarni shu yerda olasiz.",
@@ -127,7 +127,7 @@ const TEXTS: Record<NotifyLocale, Texts> = {
     ready: (s, p) => `🎉 Hadiah Anda siap di ${s}!\nAnda punya ${p} stempel. Tunjukkan QR Anda ke kasir untuk mengambilnya.`,
     reminder: (s, p) => `👋 Kami merindukan Anda di ${s}!\nKartu Anda berada di ${p} stempel. Kami senang bertemu Anda lagi.`,
     rewardWaiting: (s, p) => `🎁 Hadiah Anda menunggu di ${s}!\nKartu Anda sudah penuh (${p}). Tunjukkan QR Anda ke kasir untuk mengambilnya.`,
-    redeemed: (s) => `🎁 ${s}: hadiah diambil. Selamat menikmati!`,
+    redeemed: (s) => `🎁 ${s}: hadiah diambil. Selamat!`,
     reviewInvite: "Menikmati kunjungan Anda? Bagikan pendapat Anda jika berkenan. Ini opsional.",
     rate: "Beri ulasan",
     enabled: "🔔 Notifikasi aktif. Kabar tentang stempel dan hadiah Anda akan datang ke sini.",
@@ -160,10 +160,11 @@ export function openCardLabel(locale: NotifyLocale): string {
   return TEXTS[locale].open;
 }
 
-/** After a reward is collected. The review line only appears when the store has set a review link. */
-export function redeemedMessage(locale: NotifyLocale, store: string, withReviewInvite: boolean): string {
+/** After a reward is collected. The review line only appears when the store has set a review link; the store may add one short line of its own. */
+export function redeemedMessage(locale: NotifyLocale, store: string, withReviewInvite: boolean, storeNote?: string | null): string {
   const texts = TEXTS[locale];
-  const base = texts.redeemed(bold(store));
+  // The store's own line (already validated: plain text, no links) goes right under the neutral confirmation.
+  const base = storeNote ? `${texts.redeemed(bold(store))}\n${escapeHtml(storeNote)}` : texts.redeemed(bold(store));
   return withReviewInvite ? `${base}\n\n${escapeHtml(texts.reviewInvite)}` : base;
 }
 
