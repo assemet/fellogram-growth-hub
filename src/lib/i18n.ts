@@ -8,6 +8,9 @@ import { en, type TranslationKey } from "./locales/en";
 import { es } from "./locales/es";
 import { ru } from "./locales/ru";
 import { tr } from "./locales/tr";
+import { id } from "./locales/id";
+import { uk } from "./locales/uk";
+import { uz } from "./locales/uz";
 
 export type { TranslationKey };
 
@@ -18,13 +21,16 @@ export const LOCALES = [
   { code: "ru", name: "Русский", dir: "ltr" },
   { code: "es", name: "Español", dir: "ltr" },
   { code: "tr", name: "Türkçe", dir: "ltr" },
+  { code: "uk", name: "Українська", dir: "ltr" },
+  { code: "uz", name: "Oʻzbekcha", dir: "ltr" },
+  { code: "id", name: "Bahasa Indonesia", dir: "ltr" },
 ] as const;
 
 export type Locale = (typeof LOCALES)[number]["code"];
 export const DEFAULT_LOCALE: Locale = "en";
 export const LOCALE_STORAGE_KEY = "fellogram.locale";
 
-const dictionaries: Record<Locale, Record<TranslationKey, string>> = { en, ar, ru, es, tr };
+const dictionaries: Record<Locale, Record<TranslationKey, string>> = { en, ar, ru, es, tr, uk, uz, id };
 
 export function isLocale(value: unknown): value is Locale {
   return LOCALES.some((locale) => locale.code === value);

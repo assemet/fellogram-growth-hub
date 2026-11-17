@@ -85,7 +85,7 @@ export function tsvCell(value: string | number): string {
   return guard(String(value)).replace(/[\t\r\n]+/g, " ");
 }
 
-export const EXPORT_LOCALES = ["ar", "en", "ru", "es", "tr"] as const;
+export const EXPORT_LOCALES = ["ar", "en", "ru", "es", "tr", "uk", "uz", "id"] as const;
 export type ExportLocale = (typeof EXPORT_LOCALES)[number];
 
 /** Anything that is not one of our languages is exported in English. */
@@ -99,6 +99,9 @@ const HEADERS: Record<ExportLocale, string[]> = {
   ru: ["Имя", "Имя пользователя", "Штампы", "Нужно штампов", "Награда готова", "Последний визит", "Дата вступления"],
   es: ["Nombre", "Usuario", "Sellos", "Sellos necesarios", "Recompensa lista", "Última visita", "Se unió"],
   tr: ["Ad", "Kullanıcı adı", "Damga", "Gereken damga", "Ödül hazır", "Son ziyaret", "Katılım"],
+  uk: ["Ім'я", "Ім'я користувача", "Штампи", "Потрібно штампів", "Винагорода готова", "Останній візит", "Дата приєднання"],
+  uz: ["Ism", "Foydalanuvchi nomi", "Shtamplar", "Kerakli shtamp", "Mukofot tayyor", "Oxirgi tashrif", "Qo'shilgan sana"],
+  id: ["Nama", "Username", "Stempel", "Stempel dibutuhkan", "Hadiah siap", "Kunjungan terakhir", "Bergabung"],
 };
 const YES_NO: Record<ExportLocale, [string, string]> = {
   en: ["yes", "no"],
@@ -106,6 +109,9 @@ const YES_NO: Record<ExportLocale, [string, string]> = {
   ru: ["да", "нет"],
   es: ["sí", "no"],
   tr: ["evet", "hayır"],
+  uk: ["так", "ні"],
+  uz: ["ha", "yo'q"],
+  id: ["ya", "tidak"],
 };
 
 const day = (iso: string | null) => (iso ? iso.slice(0, 10) : "");

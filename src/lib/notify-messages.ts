@@ -1,5 +1,5 @@
 /** Bot message texts (pure, so they are easy to test). Telegram parse mode is HTML, so names are escaped. */
-export const NOTIFY_LOCALES = ["ar", "en", "ru", "es", "tr"] as const;
+export const NOTIFY_LOCALES = ["ar", "en", "ru", "es", "tr", "uk", "uz", "id"] as const;
 export type NotifyLocale = (typeof NOTIFY_LOCALES)[number];
 export type StampKind = "stamp" | "near_reward" | "reward_ready";
 
@@ -96,6 +96,42 @@ const TEXTS: Record<NotifyLocale, Texts> = {
     rate: "Bizi değerlendir",
     enabled: "🔔 Bildirimler açık. Damgaların ve ödüllerinle ilgili haberleri burada alacaksın.",
     open: "Kartımı aç",
+  },
+  uk: {
+    stamp: (s, p) => `✅ ${s}: штамп додано (${p}).`,
+    near: (s, p) => `🔥 ${s}: штамп додано (${p}).\nЗалишився лише один штамп до винагороди!`,
+    ready: (s, p) => `🎉 Ваша винагорода готова в ${s}!\nУ вас ${p} штампів. Покажіть свій QR касиру, щоб отримати її.`,
+    reminder: (s, p) => `👋 Ми сумуємо за вами в ${s}!\nНа вашій картці ${p} штампів. Будемо раді бачити вас знову.`,
+    rewardWaiting: (s, p) => `🎁 Ваша винагорода чекає на вас у ${s}!\nКартку заповнено (${p}). Покажіть QR касиру, щоб отримати її.`,
+    redeemed: (s) => `🎁 ${s}: винагороду отримано. Смачного!`,
+    reviewInvite: "Сподобався візит? Поділіться враженнями, якщо хочете. Це необов'язково.",
+    rate: "Оцінити",
+    enabled: "🔔 Сповіщення ввімкнено. Тут ви отримуватимете новини про штампи та винагороди.",
+    open: "Відкрити мою картку",
+  },
+  uz: {
+    stamp: (s, p) => `✅ ${s}: shtamp qo'shildi (${p}).`,
+    near: (s, p) => `🔥 ${s}: shtamp qo'shildi (${p}).\nMukofotgacha atigi bitta shtamp qoldi!`,
+    ready: (s, p) => `🎉 ${s} da mukofotingiz tayyor!\nSizda ${p} shtamp bor. Olish uchun QR kodingizni kassirga ko'rsating.`,
+    reminder: (s, p) => `👋 ${s} sizni sog'indi!\nKartangizda ${p} shtamp bor. Sizni yana ko'rishdan xursand bo'lamiz.`,
+    rewardWaiting: (s, p) => `🎁 Mukofotingiz ${s} da sizni kutmoqda!\nKartangiz to'lgan (${p}). Olish uchun QR kodni kassirga ko'rsating.`,
+    redeemed: (s) => `🎁 ${s}: mukofot olindi. Yoqimli ishtaha!`,
+    reviewInvite: "Tashrif yoqdimi? Xohlasangiz, fikringizni ulashing. Bu ixtiyoriy.",
+    rate: "Baholash",
+    enabled: "🔔 Bildirishnomalar yoqildi. Shtamp va mukofotlaringiz haqidagi yangiliklarni shu yerda olasiz.",
+    open: "Kartamni ochish",
+  },
+  id: {
+    stamp: (s, p) => `✅ ${s}: stempel ditambahkan (${p}).`,
+    near: (s, p) => `🔥 ${s}: stempel ditambahkan (${p}).\nTinggal satu stempel lagi untuk hadiah Anda!`,
+    ready: (s, p) => `🎉 Hadiah Anda siap di ${s}!\nAnda punya ${p} stempel. Tunjukkan QR Anda ke kasir untuk mengambilnya.`,
+    reminder: (s, p) => `👋 Kami merindukan Anda di ${s}!\nKartu Anda berada di ${p} stempel. Kami senang bertemu Anda lagi.`,
+    rewardWaiting: (s, p) => `🎁 Hadiah Anda menunggu di ${s}!\nKartu Anda sudah penuh (${p}). Tunjukkan QR Anda ke kasir untuk mengambilnya.`,
+    redeemed: (s) => `🎁 ${s}: hadiah diambil. Selamat menikmati!`,
+    reviewInvite: "Menikmati kunjungan Anda? Bagikan pendapat Anda jika berkenan. Ini opsional.",
+    rate: "Beri ulasan",
+    enabled: "🔔 Notifikasi aktif. Kabar tentang stempel dan hadiah Anda akan datang ke sini.",
+    open: "Buka kartu saya",
   },
 };
 
