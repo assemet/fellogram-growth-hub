@@ -37,8 +37,8 @@ const MUTED = "#4a5a86";
 const TINT = "#eaf1fe";
 // The app's own fonts, so the printed poster matches the screen; system fonts only as a last resort.
 const FALLBACK = `system-ui, -apple-system, "Segoe UI", "Noto Sans Arabic", "Noto Sans", Roboto, Arial, sans-serif`;
-const FONT = `"Golos Text", "Readex Pro", ${FALLBACK}`;
-const DISPLAY_FONT = `"Golos Text", "Readex Pro", ${FALLBACK}`;
+const FONT = `"DM Sans", "Cairo", "Inter", ${FALLBACK}`;
+const DISPLAY_FONT = `"Space Grotesk", "DM Sans", "Cairo", "Inter", ${FALLBACK}`;
 
 /**
  * The app's fonts only download when text in their range appears, so draw nothing until they are ready: a canvas
@@ -47,7 +47,7 @@ const DISPLAY_FONT = `"Golos Text", "Readex Pro", ${FALLBACK}`;
 async function loadFonts(text: PosterText): Promise<void> {
   if (typeof document === "undefined" || !document.fonts) return;
   const sample = `${text.name} ${text.caption} ${text.powered} ${text.address}`;
-  const wanted = [`700 46px "Golos Text"`, `500 36px "Golos Text"`, `700 112px "Golos Text"`, `700 46px "Readex Pro"`, `500 36px "Readex Pro"`];
+  const wanted = [`700 46px "DM Sans"`, `500 36px "DM Sans"`, `700 112px "Space Grotesk"`, `700 46px "Cairo"`, `500 36px "Cairo"`];
   const loading = Promise.all(wanted.map((font) => document.fonts.load(font, sample))).then(() => undefined);
   const timeout = new Promise<void>((resolve) => setTimeout(resolve, 3000));
   try {

@@ -1,4 +1,6 @@
 Fonts bundled with Fellogram, all under the SIL Open Font License 1.1 (https://openfontlicense.org):
-- Golos Text (The Golos Text Project Authors, ParaType): Latin, Latin Extended and Cyrillic
-- Readex Pro (The Readex Pro Project Authors, Thomas Jockin, Lettersoup): Arabic
+- DM Sans (Colophon Foundry, Jonathan Barnbrook, Indian Type Foundry)
+- Space Grotesk (Florian Karsten)
+- Cairo (Mohamed Gaber, Accademia di Belle Arti di Urbino)
+- Inter (Rasmus Andersson), Cyrillic subset only
 Files come from the @fontsource-variable packages (variable-weight woff2, Latin, Latin Extended, Cyrillic and Arabic subsets only).
