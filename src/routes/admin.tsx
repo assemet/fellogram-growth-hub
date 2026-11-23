@@ -10,7 +10,8 @@ import { SettingsCard } from "@/components/SettingsCard";
 import { SplashScreen } from "@/components/SplashScreen";
 import { Button } from "@/components/ui/button";
 import { useFellogramAuth } from "@/hooks/useFellogramAuth";
-import { adminOverview, adminSetStoreActive, type AdminStore } from "@/lib/admin.functions";
+import { PlansCard, SettingsPanel, StorePlan } from "@/components/admin/BillingPanels";
+import { adminBilling, adminOverview, adminSetStoreActive, type AdminBilling, type AdminStore } from "@/lib/admin.functions";
 
 export const Route = createFileRoute("/admin")({
   ssr: false,
@@ -30,7 +31,7 @@ function Stat({ label, value }: { label: string; value: number }) {
   );
 }
 
-function StoreRow({ store, busy, onToggle }: { store: AdminStore; busy: boolean; onToggle: (active: boolean) => void }) {
+function StoreRow({ store, busy, onToggle, billing }: { store: AdminStore; busy: boolean; onToggle: (active: boolean) => void; billing: AdminBilling | undefined }) {
   const [confirming, setConfirming] = useState(false);
   return (
     <li className="flex items-center justify-between gap-3 py-3">
@@ -50,6 +51,7 @@ function StoreRow({ store, busy, onToggle }: { store: AdminStore; busy: boolean;
         ) : (
           <p className="mt-1 text-xs text-muted-foreground">الصفحة لا تُفتح وهو موقوف، فعّله مؤقتاً لمعاينتها.</p>
         )}
+        {billing && <StorePlan storeId={store.id} billing={billing} current={billing.current.find((c) => c.storeId === store.id)} />}
       </div>
       {store.active ? (
         confirming ? (
@@ -81,6 +83,9 @@ function AdminPage() {
   const setActive = useServerFn(adminSetStoreActive);
   const queryClient = useQueryClient();
   const { data, error, refetch } = useQuery({ queryKey: ["admin-overview"], queryFn: () => load(), enabled: state === "ready", retry: false });
+  const loadBilling = useServerFn(adminBilling);
+  const billingQuery = useQuery({ queryKey: ["admin-billing"], queryFn: () => loadBilling(), enabled: state === "ready" && !error, retry: false });
+  const billing = billingQuery.data;
   const toggle = useMutation({
     mutationFn: (input: { storeId: string; active: boolean }) => setActive({ data: input }),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ["admin-overview"] }),
@@ -120,6 +125,14 @@ function AdminPage() {
           </div>
         </SettingsCard>
 
+        {billingQuery.isError && (
+          <SettingsCard title="الباقات" description="تعذّر تحميل الباقات. إن لم تُنفّذ ملف SQL الخاص بـ part96 في Supabase فنفّذه أولاً.">
+            <p dir="ltr" className="text-xs text-muted-foreground">{String((billingQuery.error as Error).message)}</p>
+          </SettingsCard>
+        )}
+        {billing && <PlansCard billing={billing} onSaved={() => void billingQuery.refetch()} />}
+        {billing && <SettingsPanel key={JSON.stringify(billing.settings)} settings={billing.settings} onSaved={() => void billingQuery.refetch()} />}
+
         <SettingsCard title="أحدث المتاجر" description="الإيقاف يخفي المتجر عن العملاء، ويبقى مرئياً لصاحبه.">
           {toggle.isError && <p role="alert" className="text-sm text-destructive">تعذّر التنفيذ: {String((toggle.error as Error).message)}</p>}
           <ul className="-my-3 divide-y divide-border">
@@ -128,6 +141,7 @@ function AdminPage() {
                 key={store.id}
                 store={store}
                 busy={toggle.isPending}
+                billing={billing}
                 onToggle={(active) => toggle.mutate({ storeId: store.id, active })}
               />
             ))}
