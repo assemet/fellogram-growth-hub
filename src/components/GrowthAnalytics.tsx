@@ -3,6 +3,8 @@ import { useServerFn } from "@tanstack/react-start";
 import { Link } from "@tanstack/react-router";
 import { ArrowUpRight, BellRing, Gift, Stamp, TrendingUp, Users } from "lucide-react";
 
+import { LockedNotice } from "@/components/LockedNotice";
+import { isLocked, useMyPlan } from "@/hooks/useMyPlan";
 import { t } from "@/lib/i18n";
 import { getStoreImpact } from "@/lib/insights.functions";
 import { getStoreAnalytics } from "@/lib/store.functions";
@@ -31,13 +33,16 @@ function Metric({ icon, label, value, sub, trend }: { icon: React.ReactNode; lab
 }
 
 export function GrowthAnalytics() {
+  const { plan } = useMyPlan();
+  const locked = isLocked(plan, "analytics");
   const load = useServerFn(getStoreAnalytics);
-  const { data: a } = useQuery({ queryKey: ["store-analytics"], queryFn: () => load() });
+  const { data: a } = useQuery({ queryKey: ["store-analytics"], queryFn: () => load(), enabled: plan !== undefined && !locked });
   // The comparison with the period before and the win-back numbers come from one database function. If it is not
   // installed yet, those lines are simply left out.
   const loadImpact = useServerFn(getStoreImpact);
-  const { data: impactData } = useQuery({ queryKey: ["store-impact"], queryFn: () => loadImpact(), staleTime: 60_000 });
+  const { data: impactData } = useQuery({ queryKey: ["store-impact"], queryFn: () => loadImpact(), staleTime: 60_000, enabled: plan !== undefined && !locked });
   const impact = impactData?.supported ? impactData.impact : null;
+  if (locked) return <LockedNotice feature="analytics" className="mt-4" />;
   if (!a) return <div className="mt-4 h-40 animate-pulse rounded-lg bg-muted" />;
   const verdict =
     a.visits === 0

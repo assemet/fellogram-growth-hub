@@ -1,3 +1,4 @@
+import { requireFeature } from "@/lib/entitlements";
 import { createServerFn } from "@tanstack/react-start";
 import { ownedIdOrNil } from "@/lib/current-store";
 import { check } from "@/lib/db";
@@ -56,6 +57,7 @@ export const saveStampEvent = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     await rateLimit("save-event", context.userId, 30, 60);
     const storeId = await ownedStore(context.supabase, context.userId);
+    await requireFeature(storeId, "promotions");
     const { error } = await table(context.supabase, "stamp_events").insert({
       store_id: storeId, name: data.name, multiplier: data.multiplier, starts_at: data.startsAt, ends_at: data.endsAt,
     });
@@ -73,6 +75,7 @@ export const saveOffer = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     await rateLimit("save-offer", context.userId, 30, 60);
     const storeId = await ownedStore(context.supabase, context.userId);
+    await requireFeature(storeId, "promotions");
     const { error } = await table(context.supabase, "offers").insert({
       store_id: storeId, title: data.title, details: data.details, starts_at: data.startsAt, ends_at: data.endsAt,
     });
@@ -109,6 +112,7 @@ export const reactivatePromotion = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     await rateLimit("promo-manage", context.userId, 30, 60);
     const storeId = await ownedStore(context.supabase, context.userId);
+    await requireFeature(storeId, "promotions");
     const { data: rows, error } = await table(context.supabase, data.kind === "offer" ? "offers" : "stamp_events")
       .update({ active: true }).eq("id", data.id).eq("store_id", storeId).gt("ends_at", new Date().toISOString()).select("id");
     if (error) throw new Error(error.message);

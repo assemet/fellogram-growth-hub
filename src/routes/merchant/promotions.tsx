@@ -10,7 +10,9 @@ import { BackLink } from "@/components/BackLink";
 import { QueryError } from "@/components/QueryError";
 import { SplashScreen } from "@/components/SplashScreen";
 import { Button } from "@/components/ui/button";
+import { LockedNotice } from "@/components/LockedNotice";
 import { useFellogramAuth } from "@/hooks/useFellogramAuth";
+import { isLocked, useMyPlan } from "@/hooks/useMyPlan";
 import { formatDateTime } from "@/lib/format";
 import { t } from "@/lib/i18n";
 import { promoStatus, wasStopped, toLocalInput, type PromoStatus } from "@/lib/promotions";
@@ -34,6 +36,7 @@ const inputClass = "mt-1 w-full rounded-md border border-border bg-background px
 
 function friendly(message: string) {
   if (message.includes("INVALID_DATES") || message.includes("_window")) return t("promo.invalidDates");
+  if (message.includes("FEATURE_LOCKED")) return t("plans.lockedError");
   if (message.includes("PROMO_EXPIRED")) return t("promo.expiredNow");
   if (message.includes("OFFER_HAS_USES")) return t("promo.keptHistory");
   return t("common.error");
@@ -87,6 +90,8 @@ function WindowFields({ start, end, onStart, onEnd }: { start: string; end: stri
 
 function PromotionsPage() {
   const { state } = useFellogramAuth();
+  const { plan } = useMyPlan();
+  const locked = isLocked(plan, "promotions");
   const queryClient = useQueryClient();
   const load = useServerFn(getPromotions);
   const createEvent = useServerFn(saveStampEvent);
@@ -222,6 +227,9 @@ function PromotionsPage() {
         <div className="mt-5 rounded-lg border border-border bg-card p-4 shadow-[var(--shadow-card)]">
           <h2 className="flex items-center gap-2 text-sm font-bold"><Zap className="h-4 w-4 text-primary" aria-hidden="true" />{t("promo.events")}</h2>
           <p className="mt-1 text-xs text-muted-foreground">{t("promo.events.hint")}</p>
+          {locked ? (
+            <LockedNotice feature="promotions" className="mt-4" />
+          ) : (
           <form
             className="mt-4 space-y-3"
             onSubmit={(e) => {
@@ -254,6 +262,7 @@ function PromotionsPage() {
               {t("promo.event.create")}
             </Button>
           </form>
+          )}
 
           {data.events.length > 0 && (
             <ul className="mt-4 space-y-2 border-t border-border pt-3">
@@ -276,6 +285,9 @@ function PromotionsPage() {
         <div className="mt-5 rounded-lg border border-border bg-card p-4 shadow-[var(--shadow-card)]">
           <h2 className="flex items-center gap-2 text-sm font-bold"><Ticket className="h-4 w-4 text-primary" aria-hidden="true" />{t("promo.offers")}</h2>
           <p className="mt-1 text-xs text-muted-foreground">{t("promo.offers.hint")}</p>
+          {locked ? (
+            <LockedNotice feature="promotions" className="mt-4" />
+          ) : (
           <form
             className="mt-4 space-y-3"
             onSubmit={(e) => {
@@ -296,6 +308,7 @@ function PromotionsPage() {
               {t("promo.offer.create")}
             </Button>
           </form>
+          )}
 
           {data.offers.length > 0 && (
             <ul className="mt-4 space-y-2 border-t border-border pt-3">

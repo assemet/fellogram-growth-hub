@@ -13,6 +13,8 @@ import { SplashScreen } from "@/components/SplashScreen";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useFellogramAuth } from "@/hooks/useFellogramAuth";
+import { LockedNotice } from "@/components/LockedNotice";
+import { isLocked, useMyPlan } from "@/hooks/useMyPlan";
 import { formatRelative } from "@/lib/format";
 import { FILTERS, SORTS, type Filter, type Sort } from "@/lib/customer-views";
 import { exportStoreCustomers, getStoreActivity, getStoreCustomers } from "@/lib/insights.functions";
@@ -67,6 +69,8 @@ function CustomersPage() {
 function CustomersTab({ ready }: { ready: boolean }) {
   const load = useServerFn(getStoreCustomers);
   const exportFn = useServerFn(exportStoreCustomers);
+  const { plan } = useMyPlan();
+  const exportLocked = isLocked(plan, "export");
   const [input, setInput] = useState("");
   const [q, setQ] = useState("");
   const [filter, setFilter] = useState<Filter>("all");
@@ -209,7 +213,8 @@ function CustomersTab({ ready }: { ready: boolean }) {
       )}
       {data.capped && <p className="mt-2 text-center text-xs text-muted-foreground">{t("customers.capped")}</p>}
 
-      {data.total > 0 && (
+      {data.total > 0 && exportLocked && <LockedNotice feature="export" className="mt-6" />}
+      {data.total > 0 && !exportLocked && (
         <div className="mt-6 rounded-lg border border-border bg-card p-4">
           <p className="text-xs text-muted-foreground">{t("customers.export.hint")}</p>
           <div className="mt-3 grid grid-cols-2 gap-2">

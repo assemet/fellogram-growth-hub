@@ -1,3 +1,4 @@
+import { hasFeature } from "@/lib/entitlements";
 import { miniAppLink } from "@/lib/bot-link";
 import { check, type Db } from "@/lib/db";
 import { contactFromRow, contactLinks } from "@/lib/store-contact";
@@ -139,7 +140,7 @@ export async function notifyRedemption(o: { storeId: string; storeName: string; 
     // Rebuilt from the validated value, so a bad row can never become a bad link.
     const reviewUrl = contactLinks(contactFromRow(store as Record<string, unknown> | null)).find((link) => link.kind === "review")?.href;
 
-    const text = redeemedMessage(reachable.locale, o.storeName, Boolean(reviewUrl), redeemNoteFromRow(store as Record<string, unknown> | null));
+    const text = redeemedMessage(reachable.locale, o.storeName, Boolean(reviewUrl), (await hasFeature(o.storeId, "redeem_note")) ? redeemNoteFromRow(store as Record<string, unknown> | null) : null);
     const buttons = [{ text: openCardLabel(reachable.locale), url: miniAppLink(`join_${o.storeId}`) }, ...(reviewUrl ? [{ text: rateLabel(reachable.locale), url: reviewUrl }] : [])];
     const result = await sendTelegramMessage(reachable.chatId, text, buttons);
     if (result.ok) await logSent(db, [{ store_id: o.storeId, customer_id: o.customerId, kind: "reward_redeemed" }]);

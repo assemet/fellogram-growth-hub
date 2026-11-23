@@ -33,6 +33,7 @@ export const Route = createFileRoute("/merchant/team")({
 
 function friendly(message: string) {
   if (message.includes("TOO_MANY_INVITATIONS")) return t("team.tooMany");
+  if (message.includes("CASHIER_LIMIT") || message.includes("FEATURE_LOCKED")) return t("plans.lockedError");
   return t("common.error");
 }
 
@@ -101,6 +102,9 @@ function TeamPage() {
     }
   };
 
+  // The owner counts as the first cashier, and open invitation links count too.
+  const limitReached = data.cashierLimit != null && 1 + data.staff.length + data.invitations.length >= data.cashierLimit;
+
   return (
     <main className="min-h-screen pb-14">
       <AppHeader subtitle={data.storeName} />
@@ -110,15 +114,24 @@ function TeamPage() {
         <h1 className="mt-3 text-xl font-bold">{t("team.title")}</h1>
         <p className="mt-1 text-sm text-muted-foreground">{t("team.subtitle")}</p>
 
-        <Button
-          type="button"
-          onClick={() => createMutation.mutate()}
-          disabled={createMutation.isPending}
-          className="touch-action mt-5 h-14 w-full gap-2 text-base font-bold shadow-[var(--shadow-float)]"
-        >
-          <UserPlus className="h-5 w-5" />
-          {createMutation.isPending ? t("team.inviting") : t("team.invite")}
-        </Button>
+        {limitReached ? (
+          <div className="mt-5 rounded-lg border border-dashed border-border bg-card/50 p-3">
+            <p className="text-sm text-muted-foreground">{t("plans.cashierLimit", { count: data.cashierLimit ?? 1 })}</p>
+            <Link to="/merchant/plans" className="touch-action inline-flex min-h-11 items-center text-sm font-semibold text-primary">
+              {t("plans.locked.cta")}
+            </Link>
+          </div>
+        ) : (
+          <Button
+            type="button"
+            onClick={() => createMutation.mutate()}
+            disabled={createMutation.isPending}
+            className="touch-action mt-5 h-14 w-full gap-2 text-base font-bold shadow-[var(--shadow-float)]"
+          >
+            <UserPlus className="h-5 w-5" />
+            {createMutation.isPending ? t("team.inviting") : t("team.invite")}
+          </Button>
+        )}
 
         {fresh && (
           <div className="mt-4">

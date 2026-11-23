@@ -1,3 +1,4 @@
+import { hasFeature, requireFeature } from "@/lib/entitlements";
 import { createServerFn } from "@tanstack/react-start";
 import { currentOwnedStoreId, ownedIdOrNil } from "@/lib/current-store";
 import { isValidTier, mainRewardId, visibleRewards } from "@/lib/rewards";
@@ -387,14 +388,14 @@ export const updateProgram = createServerFn({ method: "POST" })
 
     const { data: store } = check(await supabase
       .from("stores")
-      .select("id, logo_url")
+      .select("id, logo_url, card_theme, brand_primary, brand_accent, background_tint")
       .eq("id", await ownedIdOrNil(supabase, userId))
       .maybeSingle(), "STORE_LOOKUP_FAILED");
     if (!store) throw new Error("STORE_NOT_FOUND");
 
     const { data: program } = check(await supabase
       .from("loyalty_programs")
-      .select("id")
+      .select("id, stamp_icon")
       .eq("store_id", store.id)
       .order("created_at")
       .limit(1)
@@ -402,7 +403,13 @@ export const updateProgram = createServerFn({ method: "POST" })
     if (!program) throw new Error("PROGRAM_NOT_FOUND");
 
     // "Use my logo as the stamp" only makes sense once a logo exists.
-    const stampIcon = data.stampIcon === STAMP_LOGO_ID && !store.logo_url ? "stamp" : data.stampIcon;
+    // Without the branding feature the look (theme, colours, stamp icon) stays exactly as it is now.
+    const branding = await hasFeature(store.id, "branding");
+    const requestedIcon = branding ? data.stampIcon : program.stamp_icon ?? data.stampIcon;
+    const stampIcon = requestedIcon === STAMP_LOGO_ID && !store.logo_url ? "stamp" : requestedIcon;
+    const look = branding
+      ? { cardTheme: data.cardTheme, brandPrimary: data.brandPrimary, brandAccent: data.brandAccent, backgroundTint: data.backgroundTint }
+      : { cardTheme: store.card_theme ?? data.cardTheme, brandPrimary: store.brand_primary, brandAccent: store.brand_accent, backgroundTint: store.background_tint };
 
     const programUpdate = {
       name: data.programName,
@@ -458,7 +465,7 @@ export const updateProgram = createServerFn({ method: "POST" })
       if (error) throw new Error(error.message);
     }
 
-    const { error: themeError } = await supabase.from("stores").update({ card_theme: data.cardTheme, brand_primary: data.brandPrimary, brand_accent: data.brandAccent, background_tint: data.backgroundTint }).eq("id", store.id);
+    const { error: themeError } = await supabase.from("stores").update({ card_theme: look.cardTheme, brand_primary: look.brandPrimary, brand_accent: look.brandAccent, background_tint: look.backgroundTint }).eq("id", store.id);
     if (themeError) throw new Error(themeError.message);
 
     return { ok: true };
@@ -478,6 +485,8 @@ export const updateStoreLogo = createServerFn({ method: "POST" })
     if (data.objectPath && !data.objectPath.startsWith(`${userId}/`)) throw new Error("UNAUTHORIZED");
     const { data: store } = check(await supabase.from("stores").select("id, logo_url").eq("id", await ownedIdOrNil(supabase, userId)).maybeSingle(), "STORE_LOOKUP_FAILED");
     if (!store) throw new Error("STORE_NOT_FOUND");
+    // Removing a logo is always allowed; putting a new one needs the branding feature.
+    if (data.objectPath) await requireFeature(store.id, "branding");
     const previous = store.logo_url;
     const { error } = await supabase.from("stores").update({ logo_url: data.objectPath }).eq("id", store.id);
     if (error) throw new Error(error.message);
@@ -642,6 +651,7 @@ export const getStoreAnalytics = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
     const storeId = await ownedStore(context.supabase, context.userId);
+    await requireFeature(storeId, "analytics");
     const sb = context.supabase;
     const [{ data: members, error: membersError }, { data: txs, error: txsError }, { data: refs, error: refsError }] = await Promise.all([
       sb.from("customer_memberships").select("customer_id, joined_at").eq("store_id", storeId),
@@ -714,7 +724,9 @@ export const updateStoreProfile = createServerFn({ method: "POST" })
   })
   .handler(async ({ data, context }) => {
     const store = await ownedStoreRow(context.supabase, context.userId);
-    await writeStoreProfile(context.supabase, store.id, data);
+    // Without the feature the saved line is left as it is (never cleared, never changed).
+    const profile = (await hasFeature(store.id, "redeem_note")) ? data : { ...data, redeemNote: undefined };
+    await writeStoreProfile(context.supabase, store.id, profile);
     return { ok: true };
   });
 

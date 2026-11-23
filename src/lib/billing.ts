@@ -33,6 +33,8 @@ export type PlatformSettings = {
   referralCapMonths: number;
   referralReleaseDays: number;
   pricingGroup: PriceGroup;
+  /** Off until the owner is ready: while off, every store has every feature and no limits. */
+  enforceLimits: boolean;
 };
 
 export const DEFAULT_SETTINGS: PlatformSettings = {
@@ -44,6 +46,7 @@ export const DEFAULT_SETTINGS: PlatformSettings = {
   referralCapMonths: 12,
   referralReleaseDays: 7,
   pricingGroup: "A",
+  enforceLimits: false,
 };
 
 /** Setting key in the database, its field here and the allowed range. */
@@ -56,6 +59,7 @@ export const SETTING_KEYS: { key: string; field: keyof PlatformSettings; min?: n
   { key: "referral_cap_months", field: "referralCapMonths", min: 0, max: 120 },
   { key: "referral_release_days", field: "referralReleaseDays", min: 0, max: 90 },
   { key: "pricing_group", field: "pricingGroup" },
+  { key: "enforce_limits", field: "enforceLimits" },
 ];
 
 export function settingsFromRows(rows: { key: string; value: unknown }[]): PlatformSettings {

@@ -5,6 +5,7 @@ import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { miniAppLink } from "@/lib/bot-link";
 import { check, throwIfError, type Db } from "@/lib/db";
 import { loadNames } from "@/lib/people";
+import { loadEntitlements } from "@/lib/entitlements";
 
 const TOKEN_RE = /^[0-9a-f]{64}$/i;
 const ID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -76,8 +77,10 @@ export const getTeam = createServerFn({ method: "POST" })
     }
 
     const names = await loadNames(supabase, (members.data ?? []).map((m) => m.user_id));
+    const limits = await loadEntitlements(store.id);
     return {
       storeName: store.name,
+      cashierLimit: limits.enforced ? limits.maxCashiers : null,
       rules,
       staff: (members.data ?? []).map((m) => ({
         userId: m.user_id,
@@ -101,6 +104,16 @@ export const createInvite = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
     const store = await ownedStore(context.supabase, context.userId);
+    // The owner counts as the first cashier; open invitations count too so the limit cannot be passed by sending many links.
+    const entitlements = await loadEntitlements(store.id);
+    if (entitlements.enforced) {
+      const [members, open] = await Promise.all([
+        context.supabase.from("store_members").select("user_id", { count: "exact", head: true }).eq("store_id", store.id).eq("role", "staff"),
+        context.supabase.from("staff_invitations").select("id", { count: "exact", head: true }).eq("store_id", store.id).is("used_at", null).is("revoked_at", null).gt("expires_at", new Date().toISOString()),
+      ]);
+      throwIfError(members.error ?? open.error, "TEAM_LOOKUP_FAILED");
+      if (1 + (members.count ?? 0) + (open.count ?? 0) >= entitlements.maxCashiers) throw new Error("CASHIER_LIMIT");
+    }
     const { data: token, error } = await context.supabase.rpc("create_staff_invitation", { _store_id: store.id });
     if (error) throw new Error(error.message);
     return { link: inviteLink(String(token)), storeName: store.name };

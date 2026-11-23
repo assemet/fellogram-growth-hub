@@ -4,7 +4,9 @@ import { useServerFn } from "@tanstack/react-start";
 import { BellRing } from "lucide-react";
 import { toast } from "sonner";
 
+import { LockedNotice } from "@/components/LockedNotice";
 import { Button } from "@/components/ui/button";
+import { isLocked, useMyPlan } from "@/hooks/useMyPlan";
 import { t } from "@/lib/i18n";
 import { getReminderSummary, getRewardReminderSummary, sendReminders, sendRewardReminders } from "@/lib/notifications.functions";
 
@@ -15,11 +17,13 @@ export function ReminderCard({ ready, kind = "inactive" }: { ready: boolean; kin
   const load = useServerFn(reward ? getRewardReminderSummary : getReminderSummary);
   const send = useServerFn(reward ? sendRewardReminders : sendReminders);
   const [confirming, setConfirming] = useState(false);
+  const { plan } = useMyPlan();
+  const locked = isLocked(plan, "reminders");
 
   const { data } = useQuery({ queryKey: ["reminder-summary", kind], queryFn: async () => {
       const result = await load();
       return { count: "waiting" in result ? result.waiting : result.inactive, days: result.days, reachable: result.reachable, perSend: result.perSend };
-    }, enabled: ready, staleTime: 30_000 });
+    }, enabled: ready && !locked, staleTime: 30_000 });
 
   // The "tap again" step lapses on its own so a stray tap never sends later.
   useEffect(() => {
@@ -42,6 +46,8 @@ export function ReminderCard({ ready, kind = "inactive" }: { ready: boolean; kin
     },
   });
 
+  // One notice for both reminder cards, shown by the first.
+  if (locked) return reward ? null : <LockedNotice feature="reminders" className="mb-4" />;
   if (!data) return null;
   const count = data.count;
 

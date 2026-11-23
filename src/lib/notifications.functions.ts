@@ -1,3 +1,4 @@
+import { requireFeature } from "@/lib/entitlements";
 import { createServerFn } from "@tanstack/react-start";
 
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
@@ -163,6 +164,7 @@ export const sendReminders = createServerFn({ method: "POST" })
   .handler(async ({ context }) => {
     await rateLimit("send-reminders", context.userId, 6, 3600);
     const store = await ownerStore(context.supabase, context.userId);
+    await requireFeature(store.id, "reminders");
     const { db, targets } = await reminderPlan(context.supabase, store.id);
     const batch = targets.slice(0, MAX_REMINDERS_PER_SEND);
 
@@ -202,6 +204,7 @@ export const sendRewardReminders = createServerFn({ method: "POST" })
   .handler(async ({ context }) => {
     await rateLimit("send-reward-reminders", context.userId, 6, 3600);
     const store = await ownerStore(context.supabase, context.userId);
+    await requireFeature(store.id, "reminders");
     const { db, targets } = await rewardPlan(context.supabase, store.id);
     const batch = targets.slice(0, MAX_REMINDERS_PER_SEND);
 

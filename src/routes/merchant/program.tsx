@@ -19,7 +19,9 @@ import { ReferralSettings } from "@/components/ReferralSettings";
 import { RewardsManager } from "@/components/RewardsManager";
 import { QueryError } from "@/components/QueryError";
 import { SplashScreen } from "@/components/SplashScreen";
+import { LockedNotice } from "@/components/LockedNotice";
 import { useFellogramAuth } from "@/hooks/useFellogramAuth";
+import { isLocked, useMyPlan } from "@/hooks/useMyPlan";
 import { t, type TranslationKey } from "@/lib/i18n";
 import { getMyStore, updateProgram } from "@/lib/store.functions";
 
@@ -92,6 +94,9 @@ function ProgramEditor() {
   const [brandAccent, setBrandAccent] = useState<string | null>(null);
   const [backgroundTint, setBackgroundTint] = useState<string | null>(null);
   const [previewLogo, setPreviewLogo] = useState<string | null>(null);
+  const { plan } = useMyPlan();
+  // Logo, colours and stamp icon belong to the branding feature; without it they stay as they are.
+  const brandingLocked = isLocked(plan, "branding");
   const [savedKey, setSavedKey] = useState<string | null>(null);
 
   const values: FormValues = {
@@ -268,7 +273,7 @@ function ProgramEditor() {
           )}
 
           <TabsContent value="design" className="mt-4">
-            <StoreLogoSettings logoUrl={data.logoUrl} onPreviewChange={setPreviewLogo} />
+            {brandingLocked ? <LockedNotice feature="branding" /> : <StoreLogoSettings logoUrl={data.logoUrl} onPreviewChange={setPreviewLogo} />}
           </TabsContent>
 
           <form
@@ -288,6 +293,8 @@ function ProgramEditor() {
                 <input id="programName" aria-label={t("program.name")} value={programName} onChange={(event) => setProgramName(event.target.value)} className={INPUT} />
               </SettingsCard>
 
+              {!brandingLocked && (
+                <>
               <SettingsCard title={t("program.stampIcon")}>
                 <StampIconPicker value={stampIcon} onChange={setStampIcon} logoUrl={previewLogo} />
               </SettingsCard>
@@ -355,6 +362,8 @@ function ProgramEditor() {
                   </div>
                 </details>
               </SettingsCard>
+                </>
+              )}
             </TabsContent>
 
             <TabsContent value="reward" className="mt-4 min-w-0 space-y-4">

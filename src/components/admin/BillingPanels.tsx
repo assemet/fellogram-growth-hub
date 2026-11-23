@@ -99,6 +99,15 @@ export function SettingsPanel({ settings, onSaved }: { settings: PlatformSetting
   const set = <K extends keyof PlatformSettings>(key: K, value: PlatformSettings[K]) => setDraft((d) => ({ ...d, [key]: value }));
   return (
     <SettingsCard title="التجربة والإحالة" description="القيم تُقرأ من قاعدة البيانات، وتغييرها لا يحتاج نسخة جديدة.">
+      <div className="rounded-lg border border-destructive/40 bg-destructive/5 p-3">
+        <label className="flex min-h-11 items-center gap-2 text-sm font-bold">
+          <input type="checkbox" className="size-5" checked={draft.enforceLimits} onChange={(e) => set("enforceLimits", e.target.checked)} />
+          تفعيل حدود الباقات
+        </label>
+        <p className="mt-1 text-xs text-muted-foreground">
+          مغلق: كل المحلات تستعمل كل الميزات كما اليوم. مفتوح: المحل بلا اشتراك يُعامل كباقة مجانية ويفقد الميزات المقفلة، والمحل المشترك يحصل على ميزات باقته فقط. فعّله بعد أن تفعّل باقات المحلات التي تريد إبقاء ميزاتها.
+        </p>
+      </div>
       <div className="grid grid-cols-2 gap-2">
         <NumberField label="أيام التجربة" value={draft.trialDays} onChange={(v) => set("trialDays", v)} />
         <NumberField label="أيام التمديد" value={draft.trialExtendDays} onChange={(v) => set("trialExtendDays", v)} />

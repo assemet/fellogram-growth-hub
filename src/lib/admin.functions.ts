@@ -14,6 +14,7 @@ import {
   type Plan,
   type PlatformSettings,
 } from "@/lib/billing";
+import { looseClient, rows } from "@/lib/billing-db";
 import { rateLimit } from "@/lib/rate-limit";
 
 const ID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -153,29 +154,6 @@ export const adminSetStoreActive = createServerFn({ method: "POST" })
   });
 
 /* ---------- Plans, platform settings and manual activation (part 96) ---------- */
-
-/** The billing tables are not in the generated types yet, so they are reached through a small untyped door. */
-type LooseResult = { data: unknown; error: { message: string } | null };
-type LooseQuery = PromiseLike<LooseResult> & {
-  select: (columns?: string) => LooseQuery;
-  insert: (row: unknown) => LooseQuery;
-  update: (row: unknown) => LooseQuery;
-  upsert: (row: unknown, options?: unknown) => LooseQuery;
-  eq: (column: string, value: unknown) => LooseQuery;
-  lte: (column: string, value: unknown) => LooseQuery;
-  gt: (column: string, value: unknown) => LooseQuery;
-  order: (column: string, options?: unknown) => LooseQuery;
-  limit: (count: number) => LooseQuery;
-  maybeSingle: () => LooseQuery;
-};
-type LooseDb = { from: (table: string) => LooseQuery };
-async function looseClient(): Promise<LooseDb> {
-  return (await adminClient()) as unknown as LooseDb;
-}
-function rows(result: LooseResult, label: string): Record<string, unknown>[] {
-  if (result.error) throw new Error(`${label}: ${result.error.message}`);
-  return (result.data as Record<string, unknown>[] | null) ?? [];
-}
 
 export type AdminSubscription = { storeId: string; planCode: string; endsAt: string; source: string; note: string | null };
 export type AdminBilling = { plans: Plan[]; settings: PlatformSettings; current: AdminSubscription[] };

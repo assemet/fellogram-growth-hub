@@ -11,7 +11,9 @@ import { QueryError } from "@/components/QueryError";
 import { StoreLogoSettings } from "@/components/StoreLogoSettings";
 import { SplashScreen } from "@/components/SplashScreen";
 import { Button } from "@/components/ui/button";
+import { LockedNotice } from "@/components/LockedNotice";
 import { useFellogramAuth } from "@/hooks/useFellogramAuth";
+import { isLocked, useMyPlan } from "@/hooks/useMyPlan";
 import { t, type TranslationKey } from "@/lib/i18n";
 import { deleteStore, getMyStore, updateStoreProfile } from "@/lib/store.functions";
 import { normalizeRedeemNote, redeemNoteFromRow, REDEEM_NOTE_MAX } from "@/lib/redeem-note";
@@ -82,6 +84,9 @@ function StoreSettingsPage() {
   const [submitted, setSubmitted] = useState(false);
   const [confirmName, setConfirmName] = useState("");
   const [redeemNote, setRedeemNote] = useState("");
+  const { plan } = useMyPlan();
+  const brandingLocked = isLocked(plan, "branding");
+  const noteLocked = isLocked(plan, "redeem_note");
   const [noteTouched, setNoteTouched] = useState(false);
 
   // Fill the form once the store loads; a background refresh must not wipe what is being typed.
@@ -182,7 +187,7 @@ function StoreSettingsPage() {
         <p className="mt-1 text-sm text-muted-foreground">{t("store.subtitle")}</p>
 
         <div className="mt-5">
-          <StoreLogoSettings logoUrl={data.logoUrl} />
+          {brandingLocked ? <LockedNotice feature="branding" /> : <StoreLogoSettings logoUrl={data.logoUrl} />}
         </div>
 
         <form
@@ -247,6 +252,10 @@ function StoreSettingsPage() {
               <h2 className="text-sm font-bold">{t("store.redeemNote.title")}</h2>
               <p className="mt-1 text-xs text-muted-foreground">{t("store.redeemNote.hint")}</p>
             </div>
+            {noteLocked ? (
+              <LockedNotice feature="redeem_note" />
+            ) : (
+              <>
             <input
               id="redeemNote"
               value={redeemNote}
@@ -262,6 +271,8 @@ function StoreSettingsPage() {
             <p id="redeemNote-help" role={noteInvalid && (noteTouched || submitted) ? "alert" : undefined} className={`text-xs ${noteInvalid && (noteTouched || submitted) ? "font-semibold text-destructive" : "text-muted-foreground"}`}>
               {noteInvalid && (noteTouched || submitted) ? t("store.redeemNote.error") : `${[...redeemNote].length}/${REDEEM_NOTE_MAX}`}
             </p>
+              </>
+            )}
           </div>
           <Button type="submit" disabled={!dirty || !nameValid || saveMutation.isPending} className="touch-action h-12 w-full font-bold">
             {saveMutation.isPending ? t("program.saving") : t("store.save")}

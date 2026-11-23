@@ -1,3 +1,4 @@
+import { requireFeature } from "@/lib/entitlements";
 import { createServerFn } from "@tanstack/react-start";
 import { ownedIdOrNil } from "@/lib/current-store";
 
@@ -83,6 +84,7 @@ export const exportStoreCustomers = createServerFn({ method: "POST" })
   }))
   .handler(async ({ data, context }) => {
     const storeId = await ownedStoreId(context.supabase, context.userId);
+    await requireFeature(storeId, "export");
     const rows = sortRows(await loadCustomerRows(context.supabase, storeId), "recent");
     return {
       text: exportRows(rows, data.locale, data.format),
@@ -138,6 +140,7 @@ export const getStoreImpact = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
     const storeId = await ownedStoreId(context.supabase, context.userId);
+    await requireFeature(storeId, "analytics");
     const { data, error } = await context.supabase.rpc("store_impact", { _store_id: storeId, _days: 30 });
     if (error) {
       // 42883 / PGRST202: the impact migration has not been applied yet. The card simply stays hidden.
