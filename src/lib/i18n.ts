@@ -18,6 +18,7 @@ export const LOCALES = [
   { code: "uk", name: "Українська", dir: "ltr" },
   { code: "uz", name: "Oʻzbekcha", dir: "ltr" },
   { code: "id", name: "Bahasa Indonesia", dir: "ltr" },
+  { code: "it", name: "Italiano", dir: "ltr" },
 ] as const;
 
 export type Locale = (typeof LOCALES)[number]["code"];
@@ -34,6 +35,7 @@ const loaders: Record<Exclude<Locale, "en">, () => Promise<Dictionary>> = {
   uk: () => import("./locales/uk").then((module) => module.uk),
   uz: () => import("./locales/uz").then((module) => module.uz),
   id: () => import("./locales/id").then((module) => module.id),
+  it: () => import("./locales/it").then((module) => module.it),
 };
 
 const loaded: Partial<Record<Locale, Dictionary>> = { en };

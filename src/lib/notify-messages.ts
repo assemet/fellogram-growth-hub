@@ -1,5 +1,5 @@
 /** Bot message texts (pure, so they are easy to test). Telegram parse mode is HTML, so names are escaped. */
-export const NOTIFY_LOCALES = ["ar", "en", "ru", "es", "tr", "uk", "uz", "id"] as const;
+export const NOTIFY_LOCALES = ["ar", "en", "ru", "es", "tr", "uk", "uz", "id", "it"] as const;
 export type NotifyLocale = (typeof NOTIFY_LOCALES)[number];
 export type StampKind = "stamp" | "near_reward" | "reward_ready";
 
@@ -132,6 +132,18 @@ const TEXTS: Record<NotifyLocale, Texts> = {
     rate: "Beri ulasan",
     enabled: "🔔 Notifikasi aktif. Kabar tentang stempel dan hadiah Anda akan datang ke sini.",
     open: "Buka kartu saya",
+  },
+  it: {
+    stamp: (s, p) => `✅ ${s}: timbro aggiunto (${p}).`,
+    near: (s, p) => `🔥 ${s}: timbro aggiunto (${p}).\nTi manca solo un timbro per il tuo premio!`,
+    ready: (s, p) => `🎉 Il tuo premio ti aspetta da ${s}!\nHai ${p} timbri. Mostra il tuo QR alla cassa per ritirarlo.`,
+    reminder: (s, p) => `👋 Ci manchi da ${s}!\nLa tua carta è a ${p} timbri. Ci farebbe piacere rivederti presto.`,
+    rewardWaiting: (s, p) => `🎁 Il tuo premio ti aspetta da ${s}!\nLa tua carta è completa (${p}). Mostra il tuo QR alla cassa per ritirarlo.`,
+    redeemed: (s) => `🎁 ${s}: premio ritirato. Complimenti!`,
+    reviewInvite: "Ti è piaciuta la visita? Se vuoi, condividi la tua opinione. È facoltativo.",
+    rate: "Lascia una recensione",
+    enabled: "🔔 Notifiche attivate. Qui riceverai novità sui tuoi timbri e premi.",
+    open: "Apri la mia carta",
   },
 };
 

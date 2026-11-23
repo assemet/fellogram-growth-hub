@@ -85,7 +85,7 @@ export function tsvCell(value: string | number): string {
   return guard(String(value)).replace(/[\t\r\n]+/g, " ");
 }
 
-export const EXPORT_LOCALES = ["ar", "en", "ru", "es", "tr", "uk", "uz", "id"] as const;
+export const EXPORT_LOCALES = ["ar", "en", "ru", "es", "tr", "uk", "uz", "id", "it"] as const;
 export type ExportLocale = (typeof EXPORT_LOCALES)[number];
 
 /** Anything that is not one of our languages is exported in English. */
@@ -102,6 +102,7 @@ const HEADERS: Record<ExportLocale, string[]> = {
   uk: ["Ім'я", "Ім'я користувача", "Штампи", "Потрібно штампів", "Винагорода готова", "Останній візит", "Дата приєднання"],
   uz: ["Ism", "Foydalanuvchi nomi", "Shtamplar", "Kerakli shtamp", "Mukofot tayyor", "Oxirgi tashrif", "Qo'shilgan sana"],
   id: ["Nama", "Username", "Stempel", "Stempel dibutuhkan", "Hadiah siap", "Kunjungan terakhir", "Bergabung"],
+  it: ["Nome", "Nome utente", "Timbri", "Timbri necessari", "Premio pronto", "Ultima visita", "Iscritto dal"],
 };
 const YES_NO: Record<ExportLocale, [string, string]> = {
   en: ["yes", "no"],
@@ -112,6 +113,7 @@ const YES_NO: Record<ExportLocale, [string, string]> = {
   uk: ["так", "ні"],
   uz: ["ha", "yo'q"],
   id: ["ya", "tidak"],
+  it: ["sì", "no"],
 };
 
 const day = (iso: string | null) => (iso ? iso.slice(0, 10) : "");
