@@ -143,7 +143,7 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { rel: "stylesheet", href: appCss },
       // The Latin text font is needed on every screen, so fetch it before the CSS asks for it. The Arabic font is
       // preloaded by the inline language script below, only for Arabic, so English never downloads it.
-      { rel: "preload", href: "/fonts/golos-text-latin.woff2", as: "font", type: "font/woff2", crossOrigin: "anonymous" },
+      { rel: "preload", href: "/fonts/manrope-latin.woff2", as: "font", type: "font/woff2", crossOrigin: "anonymous" },
       { rel: "icon", type: "image/png", href: "/favicon.png" },
       { rel: "preload", as: "image", href: "/logo-mascot.png" },
     ],
