@@ -467,4 +467,4 @@ lacks objects the app needs (columns such as `card_theme`, functions such as `cr
 - Every new schema change must be added to **both** folders, idempotent (`IF NOT EXISTS`,
   `CREATE OR REPLACE`), so running it twice is harmless.
 - Server code reads with `select("*")` where a column is optional and always checks `error`
-  (see `src/lib/db.ts`), so a schema gap shows up as a visible error instead of an empty screen.
+  (see `src/lib/db.ts`), so a schema gap shows up as a visible error instead of an empty screen. 
