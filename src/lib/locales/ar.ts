@@ -727,4 +727,13 @@ export const ar: Record<TranslationKey, string> = {
   "plans.lockedError": "هذه الأداة ليست ضمن باقتك.",
   "plans.dash.title": "الباقات",
   "plans.dash.hint": "ما تشمله باقتك وكيف ترقّيها",
+  "plans.trial": "تجربة مجانية · حتى {date}",
+  "plans.referral.title": "ادعُ متجرًا واحصل على أشهر مجانية",
+  "plans.referral.body": "عندما يدفع متجر دعوته أول دفعة، تحصلان معًا على أشهر مجانية: {months}.",
+  "plans.referral.copy": "نسخ الرابط",
+  "plans.referral.copied": "تم نسخ الرابط",
+  "plans.referral.share": "مشاركة",
+  "plans.referral.shareText": "أدير مكافآت عملائي على Fellogram. افتح متجرك عبر رابطي:",
+  "plans.referral.stats": "المدعوون: {invited} · المكافَأون: {rewarded} · الأشهر المجانية المكتسبة: {earned}",
+  "plans.referral.cap": "الحد الأقصى {cap} شهرًا مجانيًا في المجموع.",
 };

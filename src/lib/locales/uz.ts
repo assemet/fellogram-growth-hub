@@ -737,4 +737,13 @@ export const uz: Record<TranslationKey, string> = {
   "plans.lockedError": "Bu vosita tarifingizga kirmaydi.",
   "plans.dash.title": "Tariflar",
   "plans.dash.hint": "Tarifingizda nimalar bor va qanday yangilash mumkin",
+  "plans.trial": "Bepul sinov · {date} gacha",
+  "plans.referral.title": "Do'konni taklif qiling, bepul oylar oling",
+  "plans.referral.body": "Siz taklif qilgan do'kon birinchi to'lovini qilganda, ikkalangiz bepul oylar olasiz: {months}.",
+  "plans.referral.copy": "Havolani nusxalash",
+  "plans.referral.copied": "Havola nusxalandi",
+  "plans.referral.share": "Ulashish",
+  "plans.referral.shareText": "Men mijozlar mukofotlarini Fellogram'da yuritaman. Do'koningizni mening havolam orqali oching:",
+  "plans.referral.stats": "Taklif qilingan: {invited} · Mukofotlangan: {rewarded} · Olingan bepul oylar: {earned}",
+  "plans.referral.cap": "Jami {cap} tagacha bepul oy.",
 };

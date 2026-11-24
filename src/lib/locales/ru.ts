@@ -728,4 +728,13 @@ export const ru: Record<TranslationKey, string> = {
   "plans.lockedError": "Этот инструмент не входит в ваш тариф.",
   "plans.dash.title": "Тарифы",
   "plans.dash.hint": "Что входит в ваш тариф и как перейти на другой",
+  "plans.trial": "Пробный период · до {date}",
+  "plans.referral.title": "Пригласите магазин и получите бесплатные месяцы",
+  "plans.referral.body": "Когда приглашённый вами магазин сделает первую оплату, вы оба получите бесплатные месяцы: {months}.",
+  "plans.referral.copy": "Скопировать ссылку",
+  "plans.referral.copied": "Ссылка скопирована",
+  "plans.referral.share": "Поделиться",
+  "plans.referral.shareText": "Я веду награды для клиентов в Fellogram. Откройте свой магазин по моей ссылке:",
+  "plans.referral.stats": "Приглашено: {invited} · Награждено: {rewarded} · Бесплатных месяцев получено: {earned}",
+  "plans.referral.cap": "Всего не более {cap} бесплатных месяцев.",
 };

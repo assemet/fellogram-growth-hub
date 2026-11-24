@@ -25,6 +25,9 @@ export type Plan = {
 };
 
 export type PlatformSettings = {
+  trialEnabled: boolean;
+  /** Plan whose features a new store gets during its trial. */
+  trialPlan: string;
   trialDays: number;
   trialExtendDays: number;
   trialExtendMinStamps: number;
@@ -38,6 +41,8 @@ export type PlatformSettings = {
 };
 
 export const DEFAULT_SETTINGS: PlatformSettings = {
+  trialEnabled: true,
+  trialPlan: "pro",
   trialDays: 30,
   trialExtendDays: 14,
   trialExtendMinStamps: 20,
@@ -49,32 +54,44 @@ export const DEFAULT_SETTINGS: PlatformSettings = {
   enforceLimits: false,
 };
 
-/** Setting key in the database, its field here and the allowed range. */
-export const SETTING_KEYS: { key: string; field: keyof PlatformSettings; min?: number; max?: number }[] = [
-  { key: "trial_days", field: "trialDays", min: 0, max: 365 },
-  { key: "trial_extend_days", field: "trialExtendDays", min: 0, max: 365 },
-  { key: "trial_extend_min_stamps", field: "trialExtendMinStamps", min: 0, max: 10000 },
-  { key: "referral_enabled", field: "referralEnabled" },
-  { key: "referral_reward_months", field: "referralRewardMonths", min: 0, max: 24 },
-  { key: "referral_cap_months", field: "referralCapMonths", min: 0, max: 120 },
-  { key: "referral_release_days", field: "referralReleaseDays", min: 0, max: 90 },
-  { key: "pricing_group", field: "pricingGroup" },
-  { key: "enforce_limits", field: "enforceLimits" },
+type SettingSpec = { key: string; field: keyof PlatformSettings; kind: "int" | "bool" | "group" | "plan"; min?: number; max?: number };
+
+/** Setting key in the database, its field here, its type and the allowed range. */
+export const SETTING_KEYS: SettingSpec[] = [
+  { key: "trial_enabled", field: "trialEnabled", kind: "bool" },
+  { key: "trial_plan", field: "trialPlan", kind: "plan" },
+  { key: "trial_days", field: "trialDays", kind: "int", min: 0, max: 365 },
+  { key: "trial_extend_days", field: "trialExtendDays", kind: "int", min: 0, max: 365 },
+  { key: "trial_extend_min_stamps", field: "trialExtendMinStamps", kind: "int", min: 0, max: 10000 },
+  { key: "referral_enabled", field: "referralEnabled", kind: "bool" },
+  { key: "referral_reward_months", field: "referralRewardMonths", kind: "int", min: 0, max: 24 },
+  { key: "referral_cap_months", field: "referralCapMonths", kind: "int", min: 0, max: 120 },
+  { key: "referral_release_days", field: "referralReleaseDays", kind: "int", min: 0, max: 90 },
+  { key: "pricing_group", field: "pricingGroup", kind: "group" },
+  { key: "enforce_limits", field: "enforceLimits", kind: "bool" },
 ];
+
+const PLAN_CODE = /^[a-z][a-z0-9_]{1,23}$/;
+
+function validValue(spec: SettingSpec, value: unknown): boolean {
+  switch (spec.kind) {
+    case "int":
+      return typeof value === "number" && Number.isInteger(value) && value >= (spec.min ?? 0) && value <= (spec.max ?? 1000000);
+    case "bool":
+      return typeof value === "boolean";
+    case "group":
+      return PRICE_GROUPS.includes(value as PriceGroup);
+    case "plan":
+      return typeof value === "string" && PLAN_CODE.test(value);
+  }
+}
 
 export function settingsFromRows(rows: { key: string; value: unknown }[]): PlatformSettings {
   const out: Record<string, unknown> = { ...DEFAULT_SETTINGS };
   const byKey = new Map(rows.map((r) => [r.key, r.value]));
   for (const spec of SETTING_KEYS) {
     const raw = byKey.get(spec.key);
-    const fallback = DEFAULT_SETTINGS[spec.field];
-    if (typeof fallback === "number") {
-      out[spec.field] = typeof raw === "number" && Number.isFinite(raw) ? raw : fallback;
-    } else if (typeof fallback === "boolean") {
-      out[spec.field] = typeof raw === "boolean" ? raw : fallback;
-    } else {
-      out[spec.field] = PRICE_GROUPS.includes(raw as PriceGroup) ? raw : fallback;
-    }
+    if (validValue(spec, raw)) out[spec.field] = raw;
   }
   return out as PlatformSettings;
 }
@@ -85,14 +102,7 @@ export function validateSettings(input: unknown): PlatformSettings {
   const out: Record<string, unknown> = {};
   for (const spec of SETTING_KEYS) {
     const value = src[spec.field];
-    const fallback = DEFAULT_SETTINGS[spec.field];
-    if (typeof fallback === "number") {
-      if (typeof value !== "number" || !Number.isInteger(value) || value < (spec.min ?? 0) || value > (spec.max ?? 1000000)) throw new Error("INVALID_SETTING");
-    } else if (typeof fallback === "boolean") {
-      if (typeof value !== "boolean") throw new Error("INVALID_SETTING");
-    } else if (!PRICE_GROUPS.includes(value as PriceGroup)) {
-      throw new Error("INVALID_SETTING");
-    }
+    if (!validValue(spec, value)) throw new Error("INVALID_SETTING");
     out[spec.field] = value;
   }
   return out as PlatformSettings;

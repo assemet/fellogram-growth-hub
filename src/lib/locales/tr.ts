@@ -728,4 +728,13 @@ export const tr: Record<TranslationKey, string> = {
   "plans.lockedError": "Bu araç paketinde yok.",
   "plans.dash.title": "Paketler",
   "plans.dash.hint": "Paketinde neler var ve nasıl yükseltilir",
+  "plans.trial": "Ücretsiz deneme · {date} tarihine kadar",
+  "plans.referral.title": "Bir mağaza davet et, ücretsiz aylar kazan",
+  "plans.referral.body": "Davet ettiğin mağaza ilk ödemesini yaptığında ikiniz de ücretsiz ay kazanırsınız: {months}.",
+  "plans.referral.copy": "Bağlantıyı kopyala",
+  "plans.referral.copied": "Bağlantı kopyalandı",
+  "plans.referral.share": "Paylaş",
+  "plans.referral.shareText": "Müşteri ödüllerimi Fellogram'da yönetiyorum. Mağazanı benim bağlantımla aç:",
+  "plans.referral.stats": "Davet edilen: {invited} · Ödüllendirilen: {rewarded} · Kazanılan ücretsiz ay: {earned}",
+  "plans.referral.cap": "Toplamda en fazla {cap} ücretsiz ay.",
 };

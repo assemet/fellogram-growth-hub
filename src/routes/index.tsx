@@ -15,6 +15,7 @@ import { setCashierStoreChoice } from "@/lib/cashier-store";
 import { parseStoreCode } from "@/lib/join-code";
 import { acceptWithRetry, referralLanding } from "@/lib/referral-landing";
 import { pickStartTab, readLastTab, TAB_PATH } from "@/lib/start-tab";
+import { rememberMerchantRef } from "@/lib/merchant-ref";
 import { clearPendingStartParam, readPendingStartParam } from "@/lib/telegram";
 
 export const Route = createFileRoute("/")({
@@ -55,6 +56,11 @@ function SplashRouter() {
     (async () => {
       try {
         const pending = readPendingStartParam();
+        if (pending?.startsWith("mref_")) {
+          // Another store owner's invitation to open a store: keep the pointer for the create-store step and carry on.
+          rememberMerchantRef(pending);
+          clearPendingStartParam();
+        }
         if (pending?.startsWith("join_")) {
           // Store QR/link: go straight to that store's join screen.
           clearPendingStartParam();

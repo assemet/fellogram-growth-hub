@@ -13,6 +13,7 @@ import { useFellogramAuth } from "@/hooks/useFellogramAuth";
 import { LegalLinks } from "@/components/LegalLinks";
 import { getLocale, t } from "@/lib/i18n";
 import { legalContent } from "@/lib/legal";
+import { clearMerchantRef, readMerchantRef } from "@/lib/merchant-ref";
 import { createStore, getMyStore } from "@/lib/store.functions";
 
 export const Route = createFileRoute("/merchant/new")({
@@ -52,9 +53,12 @@ function NewStore() {
   const mutation = useMutation({
     mutationFn: () =>
       submit({
-        data: { storeName, description, programName, stampsRequired, rewardName },
+        data: { storeName, description, programName, stampsRequired, rewardName, referredBy: readMerchantRef() },
       }),
-    onSuccess: () => setStep(2),
+    onSuccess: () => {
+      clearMerchantRef();
+      setStep(2);
+    },
     onError: (e: Error) => {
       if (e.message.includes("STORE_ALREADY_EXISTS")) {
         toast.error(t("onboarding.alreadyOwner"));

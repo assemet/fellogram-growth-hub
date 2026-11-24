@@ -737,4 +737,13 @@ export const uk: Record<TranslationKey, string> = {
   "plans.lockedError": "Цей інструмент не входить у ваш тариф.",
   "plans.dash.title": "Тарифи",
   "plans.dash.hint": "Що входить у ваш тариф і як перейти на інший",
+  "plans.trial": "Пробний період · до {date}",
+  "plans.referral.title": "Запросіть магазин і отримайте безкоштовні місяці",
+  "plans.referral.body": "Коли запрошений вами магазин зробить першу оплату, ви обоє отримаєте безкоштовні місяці: {months}.",
+  "plans.referral.copy": "Копіювати посилання",
+  "plans.referral.copied": "Посилання скопійовано",
+  "plans.referral.share": "Поділитися",
+  "plans.referral.shareText": "Я веду нагороди для клієнтів у Fellogram. Відкрийте свій магазин за моїм посиланням:",
+  "plans.referral.stats": "Запрошено: {invited} · Винагороджено: {rewarded} · Отримано безкоштовних місяців: {earned}",
+  "plans.referral.cap": "Усього не більше {cap} безкоштовних місяців.",
 };

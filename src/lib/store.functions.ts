@@ -1,3 +1,4 @@
+import { registerReferral, startTrial } from "@/lib/billing-server";
 import { hasFeature, requireFeature } from "@/lib/entitlements";
 import { createServerFn } from "@tanstack/react-start";
 import { currentOwnedStoreId, ownedIdOrNil } from "@/lib/current-store";
@@ -75,6 +76,7 @@ type CreateStoreInput = {
   programName: string;
   stampsRequired: number;
   rewardName: string;
+  referredBy?: string | null;
 };
 
 /**
@@ -90,12 +92,15 @@ export const createStore = createServerFn({ method: "POST" })
     const stampsRequired = Math.min(100, Math.max(1, Number(data?.stampsRequired ?? 10)));
     if (storeName.length < 2) throw new Error("STORE_NAME_REQUIRED");
     if (rewardName.length < 2) throw new Error("REWARD_NAME_REQUIRED");
+    // The store that invited this one (a merchant referral link); anything that is not an id is ignored.
+    const invitedBy = String(data?.referredBy ?? "").toLowerCase();
     return {
       storeName,
       description: String(data?.description ?? "").trim() || null,
       programName,
       rewardName,
       stampsRequired,
+      referredBy: /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/.test(invitedBy) ? invitedBy : null,
     };
   })
   .handler(async ({ data, context }) => {
@@ -147,6 +152,14 @@ export const createStore = createServerFn({ method: "POST" })
       kind: "standard",
     });
     if (rewardError) await rollback(rewardError.message);
+
+    // The trial and the referral are extras: a failure here must never undo or fail the store the owner just made.
+    try {
+      await startTrial(store.id);
+      if (data.referredBy) await registerReferral(store.id, data.referredBy);
+    } catch (error) {
+      console.error("[billing] trial or referral setup failed", error);
+    }
 
     return { storeId: store.id };
   });

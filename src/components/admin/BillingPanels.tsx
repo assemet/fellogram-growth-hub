@@ -1,4 +1,4 @@
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useState } from "react";
 
@@ -8,9 +8,13 @@ import { Input } from "@/components/ui/input";
 import {
   adminActivatePlan,
   adminCancelPlan,
+  adminGrantTrialToExisting,
+  adminReferrals,
+  adminReviewReferral,
   adminSavePlan,
   adminSaveSettings,
   type AdminBilling,
+  type AdminReferral,
   type AdminSubscription,
 } from "@/lib/admin.functions";
 import { PLAN_FEATURES, PRICE_GROUPS, type Plan, type PlatformSettings, type PriceGroup } from "@/lib/billing";
@@ -92,7 +96,7 @@ export function PlansCard({ billing, onSaved }: { billing: AdminBilling; onSaved
   );
 }
 
-export function SettingsPanel({ settings, onSaved }: { settings: PlatformSettings; onSaved: () => void }) {
+export function SettingsPanel({ settings, plans, onSaved }: { settings: PlatformSettings; plans: Plan[]; onSaved: () => void }) {
   const save = useServerFn(adminSaveSettings);
   const [draft, setDraft] = useState<PlatformSettings>(settings);
   const mutation = useMutation({ mutationFn: (s: PlatformSettings) => save({ data: s }), onSuccess: onSaved });
@@ -107,6 +111,20 @@ export function SettingsPanel({ settings, onSaved }: { settings: PlatformSetting
         <p className="mt-1 text-xs text-muted-foreground">
           مغلق: كل المحلات تستعمل كل الميزات كما اليوم. مفتوح: المحل بلا اشتراك يُعامل كباقة مجانية ويفقد الميزات المقفلة، والمحل المشترك يحصل على ميزات باقته فقط. فعّله بعد أن تفعّل باقات المحلات التي تريد إبقاء ميزاتها.
         </p>
+      </div>
+      <div className="space-y-2 rounded-lg border border-border p-3">
+        <label className="flex min-h-11 items-center gap-2 text-sm font-bold">
+          <input type="checkbox" className="size-5" checked={draft.trialEnabled} onChange={(e) => set("trialEnabled", e.target.checked)} />
+          التجربة التلقائية للمحلات الجديدة
+        </label>
+        <label className="block text-xs text-muted-foreground">
+          باقة التجربة (ميزاتها يحصل عليها المحل أثناء التجربة)
+          <select className={`${selectClass} mt-1 text-foreground`} value={draft.trialPlan} onChange={(e) => set("trialPlan", e.target.value)}>
+            {plans.map((p) => (
+              <option key={p.code} value={p.code}>{p.name}</option>
+            ))}
+          </select>
+        </label>
       </div>
       <div className="grid grid-cols-2 gap-2">
         <NumberField label="أيام التجربة" value={draft.trialDays} onChange={(v) => set("trialDays", v)} />
@@ -194,5 +212,69 @@ export function StorePlan({ storeId, billing, current }: { storeId: string; bill
         </div>
       </div>
     </details>
+  );
+}
+
+/** One-time button: the stores that exist today get the same trial a new store gets. */
+export function ExistingTrialCard({ settings }: { settings: PlatformSettings }) {
+  const grant = useServerFn(adminGrantTrialToExisting);
+  const [confirming, setConfirming] = useState(false);
+  const mutation = useMutation({ mutationFn: () => grant(), onSuccess: () => setConfirming(false) });
+  return (
+    <SettingsCard title="تجربة للمحلات القائمة" description={`تمنح كل محل لم تُفعَّل له أي باقة من قبل تجربة ${settings.trialDays} يومًا بباقة ${settings.trialPlan} تبدأ الآن. المحلات التي سبق أن أخذت أي باقة لا تتأثر، فلا تتكرر التجربة.`}>
+      {mutation.isSuccess && <p className="text-sm text-muted-foreground">مُنحت التجربة لـ {mutation.data.granted} محل، وتُرك {mutation.data.skipped}.</p>}
+      {mutation.isError && <p role="alert" className="text-sm text-destructive">تعذّر التنفيذ: {errorText(mutation.error)}</p>}
+      <Button type="button" variant={confirming ? "destructive" : "outline"} disabled={mutation.isPending} className="h-11 w-full" onClick={() => (confirming ? mutation.mutate() : setConfirming(true))}>
+        {confirming ? "اضغط مرة أخرى للتأكيد" : "منح التجربة للمحلات القائمة"}
+      </Button>
+    </SettingsCard>
+  );
+}
+
+const FLAG_LABELS: Record<string, string> = { same_name: "اسم متشابه", same_phone: "نفس الهاتف", same_address: "نفس العنوان" };
+const STATUS_LABELS: Record<AdminReferral["status"], string> = { pending: "قيد الانتظار", review: "تحتاج مراجعة", rewarded: "تمت المكافأة", rejected: "مرفوضة" };
+
+/** Store-to-store referrals; the ones that look like duplicates wait here for the owner's decision. */
+export function ReferralsCard() {
+  const queryClient = useQueryClient();
+  const load = useServerFn(adminReferrals);
+  const review = useServerFn(adminReviewReferral);
+  const query = useQuery({ queryKey: ["admin-referrals"], queryFn: () => load(), retry: false });
+  const decide = useMutation({
+    mutationFn: (input: { id: string; decision: "approve" | "reject" }) => review({ data: input }),
+    onSuccess: () => void queryClient.invalidateQueries({ queryKey: ["admin-referrals"] }),
+  });
+  const list = query.data ?? [];
+  return (
+    <SettingsCard title="إحالات المحلات" description="الإحالة التي تتشابه فيها المحلات (الاسم أو الهاتف أو العنوان) لا تُكافأ حتى تقرر أنت.">
+      {query.isError && <p role="alert" className="text-sm text-destructive">{errorText(query.error)}</p>}
+      {decide.isError && <p role="alert" className="text-sm text-destructive">تعذّر التنفيذ: {errorText(decide.error)}</p>}
+      {query.isSuccess && list.length === 0 && <p className="text-sm text-muted-foreground">لا توجد إحالات بعد.</p>}
+      <ul className="space-y-2">
+        {list.map((r) => (
+          <li key={r.id} className="rounded-lg border border-border bg-background p-3 text-sm">
+            <p className="font-semibold">
+              {r.referrerName} ← {r.referredName}
+            </p>
+            <p className="mt-0.5 text-xs text-muted-foreground">
+              {STATUS_LABELS[r.status]} · {day.format(new Date(r.createdAt))}
+              {r.paidAt ? ` · دفع ${day.format(new Date(r.paidAt))}` : " · لم يدفع بعد"}
+              {r.status === "rewarded" ? ` · أشهر المُحيل: ${r.rewardMonths}` : ""}
+            </p>
+            {r.flags.length > 0 && <p className="mt-1 text-xs font-semibold text-destructive">{r.flags.map((f) => FLAG_LABELS[f] ?? f).join("، ")}</p>}
+            {r.status === "review" && (
+              <div className="mt-2 flex gap-2">
+                <Button type="button" className="h-11 flex-1" disabled={decide.isPending} onClick={() => decide.mutate({ id: r.id, decision: "approve" })}>
+                  قبول
+                </Button>
+                <Button type="button" variant="outline" className="h-11 flex-1" disabled={decide.isPending} onClick={() => decide.mutate({ id: r.id, decision: "reject" })}>
+                  رفض
+                </Button>
+              </div>
+            )}
+          </li>
+        ))}
+      </ul>
+    </SettingsCard>
   );
 }

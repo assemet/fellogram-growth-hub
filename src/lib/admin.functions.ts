@@ -15,6 +15,7 @@ import {
   type PlatformSettings,
 } from "@/lib/billing";
 import { looseClient, rows } from "@/lib/billing-db";
+import { grantPeriod, grantTrialToExistingStores, onPaidActivation, processDueReferrals, reviewReferral } from "@/lib/billing-server";
 import { rateLimit } from "@/lib/rate-limit";
 
 const ID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -164,6 +165,8 @@ export const adminBilling = createServerFn({ method: "POST" })
   .handler(async ({ context }): Promise<AdminBilling> => {
     await requireAdmin(context.userId);
     await rateLimit("admin-read", context.userId, 60, 600);
+    // Opening the panel also pays any referral reward whose waiting days are over.
+    await processDueReferrals().catch((error) => console.error("[billing] due referrals failed", error));
     const db = await looseClient();
     const now = new Date().toISOString();
     const [planRows, settingRows, subRows] = await Promise.all([
@@ -211,6 +214,7 @@ export const adminSaveSettings = createServerFn({ method: "POST" })
     await requireAdmin(context.userId);
     await rateLimit("admin-write", context.userId, 30, 600);
     const db = await looseClient();
+    if (rows(await db.from("plans").select("code").eq("code", data.trialPlan), "PLAN_LOOKUP_FAILED").length === 0) throw new Error("PLAN_NOT_FOUND");
     const now = new Date().toISOString();
     const payload = SETTING_KEYS.map((spec) => ({ key: spec.key, value: data[spec.field], updated_at: now }));
     rows(await db.from("app_settings").upsert(payload, { onConflict: "key" }), "SAVE_SETTINGS_FAILED");
@@ -246,38 +250,15 @@ export const adminActivatePlan = createServerFn({ method: "POST" })
     const plan = rows(await db.from("plans").select("code").eq("code", data.planCode), "PLAN_LOOKUP_FAILED")[0];
     if (!plan) throw new Error("PLAN_NOT_FOUND");
 
-    const nowDate = new Date();
-    const now = nowDate.toISOString();
-    // The latest period the store holds or has queued: a repeat of the same plan queues behind it.
-    const latest = rows(
-      await db.from("store_subscriptions").select("plan_code, ends_at").eq("store_id", data.storeId).eq("status", "active").gt("ends_at", now).order("ends_at", { ascending: false }).limit(1),
-      "CURRENT_SUBSCRIPTION_FAILED",
-    )[0];
-
-    let startsAt = nowDate;
-    if (latest) {
-      if (String(latest["plan_code"]) === data.planCode) {
-        startsAt = new Date(String(latest["ends_at"]));
-      } else {
-        // Another plan replaces everything: running periods end now, queued ones are cancelled.
-        rows(await db.from("store_subscriptions").update({ status: "replaced", ends_at: now }).eq("store_id", data.storeId).eq("status", "active").lte("starts_at", now).gt("ends_at", now), "REPLACE_FAILED");
-        rows(await db.from("store_subscriptions").update({ status: "cancelled" }).eq("store_id", data.storeId).eq("status", "active").gt("starts_at", now), "REPLACE_FAILED");
+    const { endsAt } = await grantPeriod(db, { storeId: data.storeId, planCode: data.planCode, months: data.months, source: data.source as "manual" | "gift", note: data.note || undefined, createdBy: context.userId });
+    // A paid activation of a referred store starts the clock on the referral rewards. It never fails the activation.
+    if (data.source === "manual") {
+      try {
+        await onPaidActivation(data.storeId);
+      } catch (error) {
+        console.error("[billing] referral follow-up failed", error);
       }
     }
-    const endsAt = addMonths(startsAt, data.months);
-    rows(
-      await db.from("store_subscriptions").insert({
-        store_id: data.storeId,
-        plan_code: data.planCode,
-        status: "active",
-        starts_at: startsAt.toISOString(),
-        ends_at: endsAt.toISOString(),
-        source: data.source,
-        note: data.note || null,
-        created_by: context.userId,
-      }),
-      "ACTIVATE_FAILED",
-    );
     console.info(`[admin] ${context.userId} activated ${data.planCode} x${data.months} for store ${data.storeId} (${data.source})`);
     return { endsAt: endsAt.toISOString() };
   });
@@ -300,4 +281,69 @@ export const adminCancelPlan = createServerFn({ method: "POST" })
     rows(await db.from("store_subscriptions").update({ status: "cancelled" }).eq("store_id", data.storeId).eq("status", "active").gt("starts_at", now), "CANCEL_FAILED");
     console.info(`[admin] ${context.userId} cancelled plan of store ${data.storeId}`);
     return { ok: true as const };
+  });
+
+export type AdminReferral = {
+  id: string;
+  status: "pending" | "review" | "rewarded" | "rejected";
+  flags: string[];
+  referrerName: string;
+  referredName: string;
+  createdAt: string;
+  paidAt: string | null;
+  rewardAfter: string | null;
+  rewardMonths: number;
+};
+
+/** Platform owner: the latest store-to-store referrals, with the ones that need a decision first. */
+export const adminReferrals = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }): Promise<AdminReferral[]> => {
+    await requireAdmin(context.userId);
+    await rateLimit("admin-read", context.userId, 60, 600);
+    const db = await looseClient();
+    const list = rows(await db.from("store_referrals").select("*").order("created_at", { ascending: false }).limit(100), "REFERRALS_FAILED");
+    const ids = [...new Set(list.flatMap((r) => [String(r["referrer_store_id"]), String(r["referred_store_id"])]))];
+    const names = new Map<string, string>();
+    if (ids.length > 0) for (const s of rows(await db.from("stores").select("id, name").in("id", ids), "STORES_FAILED")) names.set(String(s["id"]), String(s["name"]));
+    const out = list.map((r) => ({
+      id: String(r["id"]),
+      status: String(r["status"]) as AdminReferral["status"],
+      flags: Array.isArray(r["flags"]) ? (r["flags"] as unknown[]).map(String) : [],
+      referrerName: names.get(String(r["referrer_store_id"])) ?? "?",
+      referredName: names.get(String(r["referred_store_id"])) ?? "?",
+      createdAt: String(r["created_at"]),
+      paidAt: (r["paid_at"] as string | null) ?? null,
+      rewardAfter: (r["reward_after"] as string | null) ?? null,
+      rewardMonths: Number(r["reward_months"]) || 0,
+    }));
+    return [...out.filter((r) => r.status === "review"), ...out.filter((r) => r.status !== "review")];
+  });
+
+/** Platform owner: approve or reject a flagged referral. */
+export const adminReviewReferral = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((data: { id: string; decision: "approve" | "reject" }) => {
+    const id = String(data?.id ?? "");
+    if (!ID_RE.test(id)) throw new Error("INVALID_REFERRAL");
+    if (data?.decision !== "approve" && data?.decision !== "reject") throw new Error("INVALID_DECISION");
+    return { id, decision: data.decision };
+  })
+  .handler(async ({ data, context }) => {
+    await requireAdmin(context.userId);
+    await rateLimit("admin-write", context.userId, 30, 600);
+    await reviewReferral(data.id, data.decision);
+    console.info(`[admin] ${context.userId} ${data.decision}d referral ${data.id}`);
+    return { ok: true as const };
+  });
+
+/** Platform owner: one-time trial for every store that has never held a plan. */
+export const adminGrantTrialToExisting = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    await requireAdmin(context.userId);
+    await rateLimit("admin-bulk", context.userId, 5, 3600);
+    const result = await grantTrialToExistingStores();
+    console.info(`[admin] ${context.userId} granted trial to ${result.granted} existing stores`);
+    return result;
   });

@@ -737,4 +737,13 @@ export const id: Record<TranslationKey, string> = {
   "plans.lockedError": "Alat ini bukan bagian dari paket Anda.",
   "plans.dash.title": "Paket",
   "plans.dash.hint": "Isi paket Anda dan cara upgrade",
+  "plans.trial": "Uji coba gratis · sampai {date}",
+  "plans.referral.title": "Undang toko, dapatkan bulan gratis",
+  "plans.referral.body": "Saat toko yang Anda undang melakukan pembayaran pertama, Anda berdua mendapat bulan gratis: {months}.",
+  "plans.referral.copy": "Salin tautan",
+  "plans.referral.copied": "Tautan disalin",
+  "plans.referral.share": "Bagikan",
+  "plans.referral.shareText": "Saya mengelola hadiah pelanggan di Fellogram. Buka toko Anda lewat tautan saya:",
+  "plans.referral.stats": "Diundang: {invited} · Dihadiahi: {rewarded} · Bulan gratis didapat: {earned}",
+  "plans.referral.cap": "Maksimal {cap} bulan gratis secara total.",
 };

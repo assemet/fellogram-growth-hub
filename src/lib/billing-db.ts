@@ -1,11 +1,14 @@
 /** The billing tables are not in the generated types yet, so they are reached through a small untyped door. */
-export type LooseResult = { data: unknown; error: { message: string } | null };
+export type LooseResult = { data: unknown; count?: number | null; error: { message: string } | null };
 export type LooseQuery = PromiseLike<LooseResult> & {
-  select: (columns?: string) => LooseQuery;
+  select: (columns?: string, options?: unknown) => LooseQuery;
   insert: (row: unknown) => LooseQuery;
   update: (row: unknown) => LooseQuery;
   upsert: (row: unknown, options?: unknown) => LooseQuery;
   eq: (column: string, value: unknown) => LooseQuery;
+  is: (column: string, value: unknown) => LooseQuery;
+  in: (column: string, values: unknown[]) => LooseQuery;
+  gte: (column: string, value: unknown) => LooseQuery;
   lte: (column: string, value: unknown) => LooseQuery;
   gt: (column: string, value: unknown) => LooseQuery;
   order: (column: string, options?: unknown) => LooseQuery;

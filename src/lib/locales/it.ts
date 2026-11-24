@@ -737,4 +737,13 @@ export const it: Record<TranslationKey, string> = {
   "plans.lockedError": "Questo strumento non fa parte del tuo piano.",
   "plans.dash.title": "Piani",
   "plans.dash.hint": "Cosa include il tuo piano e come passare a uno superiore",
+  "plans.trial": "Prova gratuita · fino al {date}",
+  "plans.referral.title": "Invita un negozio, ottieni mesi gratis",
+  "plans.referral.body": "Quando un negozio che inviti fa il primo pagamento, entrambi ricevete mesi gratis: {months}.",
+  "plans.referral.copy": "Copia il link",
+  "plans.referral.copied": "Link copiato",
+  "plans.referral.share": "Condividi",
+  "plans.referral.shareText": "Gestisco i premi dei miei clienti con Fellogram. Apri il tuo negozio con il mio link:",
+  "plans.referral.stats": "Invitati: {invited} · Premiati: {rewarded} · Mesi gratis ottenuti: {earned}",
+  "plans.referral.cap": "Al massimo {cap} mesi gratis in totale.",
 };

@@ -1,16 +1,19 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { Check, Lock } from "lucide-react";
+import { Check, Copy, Lock, Share2 } from "lucide-react";
+import { toast } from "sonner";
 
 import { AppHeader } from "@/components/BrandMark";
 import { BackLink } from "@/components/BackLink";
 import { BottomNav } from "@/components/BottomNav";
 import { SplashScreen } from "@/components/SplashScreen";
+import { Button } from "@/components/ui/button";
 import { useMyPlan } from "@/hooks/useMyPlan";
 import { PLAN_FEATURES } from "@/lib/billing";
 import { formatDate } from "@/lib/format";
 import { getLocale, t, type TranslationKey } from "@/lib/i18n";
 import { SUPPORT_EMAIL, supportMailto } from "@/lib/support";
 import { useMyContext } from "@/hooks/useMyContext";
+import { shareViaTelegram } from "@/lib/telegram";
 
 export const Route = createFileRoute("/merchant/plans")({
   ssr: false,
@@ -65,7 +68,7 @@ function PlansPage() {
                       </div>
                       {mine && <span className="shrink-0 rounded-full bg-primary px-2.5 py-1 text-xs font-bold text-primary-foreground">{t("plans.current")}</span>}
                     </div>
-                    {mine && plan.current.endsAt && <p className="mt-1 text-xs text-muted-foreground">{t("plans.until", { date: formatDate(plan.current.endsAt) })}</p>}
+                    {mine && plan.current.endsAt && <p className="mt-1 text-xs text-muted-foreground">{t(plan.current.trial ? "plans.trial" : "plans.until", { date: formatDate(plan.current.endsAt) })}</p>}
                     <p className="mt-2 text-xs font-semibold">{t("plans.cashiers", { count: card.maxCashiers })}</p>
                     <ul className="mt-2 space-y-1.5">
                       {PLAN_FEATURES.map((feature) => {
@@ -82,6 +85,33 @@ function PlansPage() {
                 );
               })}
             </ul>
+            {plan.referral && (
+              <div className="rounded-lg border border-border bg-card p-4">
+                <h2 className="text-base font-bold">{t("plans.referral.title")}</h2>
+                <p className="mt-1 text-sm text-muted-foreground">{t("plans.referral.body", { months: plan.referral.rewardMonths })}</p>
+                <p className="mt-2 text-xs font-semibold">
+                  {t("plans.referral.stats", { invited: plan.referral.invited, rewarded: plan.referral.rewarded, earned: plan.referral.earnedMonths })}
+                </p>
+                {plan.referral.capMonths > 0 && <p className="mt-1 text-xs text-muted-foreground">{t("plans.referral.cap", { cap: plan.referral.capMonths })}</p>}
+                <div className="mt-3 grid grid-cols-2 gap-2">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    className="touch-action h-11 gap-2 text-xs font-semibold"
+                    onClick={() => {
+                      void navigator.clipboard.writeText(plan.referral!.link).then(() => toast.success(t("plans.referral.copied")));
+                    }}
+                  >
+                    <Copy className="h-4 w-4" />
+                    {t("plans.referral.copy")}
+                  </Button>
+                  <Button type="button" className="touch-action h-11 gap-2 text-xs font-semibold" onClick={() => shareViaTelegram(plan.referral!.link, t("plans.referral.shareText"))}>
+                    <Share2 className="h-4 w-4" />
+                    {t("plans.referral.share")}
+                  </Button>
+                </div>
+              </div>
+            )}
             <div className="rounded-lg border border-border bg-card p-4">
               <p className="text-sm text-muted-foreground">{t("plans.howTo")}</p>
               {mailto && (

@@ -735,6 +735,15 @@ export const en = {
   "plans.lockedError": "This tool is not part of your plan.",
   "plans.dash.title": "Plans",
   "plans.dash.hint": "What your plan includes and how to upgrade",
+  "plans.trial": "Free trial · until {date}",
+  "plans.referral.title": "Invite a store, get free months",
+  "plans.referral.body": "When a store you invite makes its first payment, you both get free months: {months}.",
+  "plans.referral.copy": "Copy link",
+  "plans.referral.copied": "Link copied",
+  "plans.referral.share": "Share",
+  "plans.referral.shareText": "I run my customer rewards on Fellogram. Open a store with my link:",
+  "plans.referral.stats": "Invited: {invited} · Rewarded: {rewarded} · Free months earned: {earned}",
+  "plans.referral.cap": "Up to {cap} free months in total.",
 } satisfies Record<string, string>;
 
 export type TranslationKey = keyof typeof en;
