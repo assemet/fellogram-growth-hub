@@ -10,7 +10,7 @@ import { SettingsCard } from "@/components/SettingsCard";
 import { SplashScreen } from "@/components/SplashScreen";
 import { Button } from "@/components/ui/button";
 import { useFellogramAuth } from "@/hooks/useFellogramAuth";
-import { ExistingTrialCard, PlansCard, ReferralsCard, SettingsPanel, StorePlan } from "@/components/admin/BillingPanels";
+import { ExistingTrialCard, PlansCard, ReferralsCard, SettingsPanel, StarsCard, StorePlan } from "@/components/admin/BillingPanels";
 import { adminBilling, adminOverview, adminSetStoreActive, type AdminBilling, type AdminStore } from "@/lib/admin.functions";
 
 export const Route = createFileRoute("/admin")({
@@ -134,6 +134,7 @@ function AdminPage() {
         {billing && <SettingsPanel key={JSON.stringify(billing.settings)} settings={billing.settings} plans={billing.plans} onSaved={() => void billingQuery.refetch()} />}
         {billing && <ExistingTrialCard settings={billing.settings} />}
         {billing && <ReferralsCard />}
+        {billing && <StarsCard />}
 
         <SettingsCard title="أحدث المتاجر" description="الإيقاف يخفي المتجر عن العملاء، ويبقى مرئياً لصاحبه.">
           {toggle.isError && <p role="alert" className="text-sm text-destructive">تعذّر التنفيذ: {String((toggle.error as Error).message)}</p>}

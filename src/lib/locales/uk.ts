@@ -746,4 +746,12 @@ export const uk: Record<TranslationKey, string> = {
   "plans.referral.shareText": "Я веду нагороди для клієнтів у Fellogram. Відкрийте свій магазин за моїм посиланням:",
   "plans.referral.stats": "Запрошено: {invited} · Винагороджено: {rewarded} · Отримано безкоштовних місяців: {earned}",
   "plans.referral.cap": "Усього не більше {cap} безкоштовних місяців.",
+  "plans.pay.months": "На скільки місяців платити",
+  "plans.pay.note": "Оплата зірками Telegram. Тариф увімкнеться одразу після підтвердження платежу.",
+  "plans.pay.button": "Сплатити {stars} ⭐",
+  "plans.pay.processing": "Відкриваємо…",
+  "plans.pay.done": "Платіж надіслано. Тариф оновиться за мить.",
+  "plans.pay.cancelled": "Платіж скасовано.",
+  "plans.pay.failed": "Платіж не пройшов. Нічого не списано.",
+  "plans.pay.unavailable": "Оплата зірками працює в застосунку Telegram.",
 };

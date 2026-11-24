@@ -744,6 +744,14 @@ export const en = {
   "plans.referral.shareText": "I run my customer rewards on Fellogram. Open a store with my link:",
   "plans.referral.stats": "Invited: {invited} · Rewarded: {rewarded} · Free months earned: {earned}",
   "plans.referral.cap": "Up to {cap} free months in total.",
+  "plans.pay.months": "Months to pay for",
+  "plans.pay.note": "Paid with Telegram Stars. The plan starts right after the payment is confirmed.",
+  "plans.pay.button": "Pay {stars} ⭐",
+  "plans.pay.processing": "Opening…",
+  "plans.pay.done": "Payment sent. Your plan will update in a moment.",
+  "plans.pay.cancelled": "Payment cancelled.",
+  "plans.pay.failed": "The payment did not go through. Nothing was charged.",
+  "plans.pay.unavailable": "Paying with Stars needs the Telegram app.",
 } satisfies Record<string, string>;
 
 export type TranslationKey = keyof typeof en;

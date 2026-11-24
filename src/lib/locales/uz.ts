@@ -746,4 +746,12 @@ export const uz: Record<TranslationKey, string> = {
   "plans.referral.shareText": "Men mijozlar mukofotlarini Fellogram'da yuritaman. Do'koningizni mening havolam orqali oching:",
   "plans.referral.stats": "Taklif qilingan: {invited} · Mukofotlangan: {rewarded} · Olingan bepul oylar: {earned}",
   "plans.referral.cap": "Jami {cap} tagacha bepul oy.",
+  "plans.pay.months": "Necha oy uchun to'lash",
+  "plans.pay.note": "Telegram Stars bilan to'lanadi. Tarif to'lov tasdiqlanishi bilan boshlanadi.",
+  "plans.pay.button": "{stars} ⭐ to'lash",
+  "plans.pay.processing": "Ochilmoqda…",
+  "plans.pay.done": "To'lov yuborildi. Tarifingiz bir zumda yangilanadi.",
+  "plans.pay.cancelled": "To'lov bekor qilindi.",
+  "plans.pay.failed": "To'lov amalga oshmadi. Hech narsa yechilmadi.",
+  "plans.pay.unavailable": "Stars bilan to'lash uchun Telegram ilovasi kerak.",
 };

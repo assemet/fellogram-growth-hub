@@ -14,6 +14,7 @@ type TelegramWebApp = {
   onEvent?: (event: string, callback: () => void) => void;
   offEvent?: (event: string, callback: () => void) => void;
   openTelegramLink?: (url: string) => void;
+  openInvoice?: (url: string, callback?: (status: "paid" | "cancelled" | "failed" | "pending") => void) => void;
   openLink?: (url: string, options?: { try_browser?: string; try_instant_view?: boolean }) => void;
   showScanQrPopup?: (params: { text?: string }, callback?: (text: string) => boolean | void) => void;
   closeScanQrPopup?: () => void;
@@ -273,4 +274,11 @@ export function openExternalLink(url: string): void {
   if (/^https:\/\/t\.me\//i.test(url) && app?.openTelegramLink) app.openTelegramLink(url);
   else if (app?.openLink) app.openLink(url);
   else window.open(url, "_blank", "noopener,noreferrer");
+}
+
+/** Opens a Telegram payment sheet. Outside Telegram (or in an old client) there is no sheet, so it reports "unsupported". */
+export function openInvoice(url: string, onDone: (status: "paid" | "cancelled" | "failed" | "pending" | "unsupported") => void): void {
+  const app = webApp();
+  if (app?.openInvoice) app.openInvoice(url, onDone);
+  else onDone("unsupported");
 }

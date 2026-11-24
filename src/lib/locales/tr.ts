@@ -737,4 +737,12 @@ export const tr: Record<TranslationKey, string> = {
   "plans.referral.shareText": "Müşteri ödüllerimi Fellogram'da yönetiyorum. Mağazanı benim bağlantımla aç:",
   "plans.referral.stats": "Davet edilen: {invited} · Ödüllendirilen: {rewarded} · Kazanılan ücretsiz ay: {earned}",
   "plans.referral.cap": "Toplamda en fazla {cap} ücretsiz ay.",
+  "plans.pay.months": "Ödenecek ay sayısı",
+  "plans.pay.note": "Telegram Stars ile ödenir. Paket, ödeme onaylanır onaylanmaz başlar.",
+  "plans.pay.button": "{stars} ⭐ öde",
+  "plans.pay.processing": "Açılıyor…",
+  "plans.pay.done": "Ödeme gönderildi. Paketiniz birazdan güncellenecek.",
+  "plans.pay.cancelled": "Ödeme iptal edildi.",
+  "plans.pay.failed": "Ödeme gerçekleşmedi. Hiçbir ücret alınmadı.",
+  "plans.pay.unavailable": "Stars ile ödeme için Telegram uygulaması gerekir.",
 };

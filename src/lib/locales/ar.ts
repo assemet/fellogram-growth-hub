@@ -736,4 +736,12 @@ export const ar: Record<TranslationKey, string> = {
   "plans.referral.shareText": "أدير مكافآت عملائي على Fellogram. افتح متجرك عبر رابطي:",
   "plans.referral.stats": "المدعوون: {invited} · المكافَأون: {rewarded} · الأشهر المجانية المكتسبة: {earned}",
   "plans.referral.cap": "الحد الأقصى {cap} شهرًا مجانيًا في المجموع.",
+  "plans.pay.months": "عدد الأشهر المراد دفعها",
+  "plans.pay.note": "الدفع بنجوم تيليجرام. تبدأ الباقة فور تأكيد الدفع.",
+  "plans.pay.button": "ادفع {stars} ⭐",
+  "plans.pay.processing": "جارٍ الفتح…",
+  "plans.pay.done": "تم إرسال الدفع. ستتحدث باقتك بعد لحظات.",
+  "plans.pay.cancelled": "تم إلغاء الدفع.",
+  "plans.pay.failed": "لم تتم عملية الدفع ولم يُخصم شيء.",
+  "plans.pay.unavailable": "الدفع بالنجوم يتطلب تطبيق تيليجرام.",
 };

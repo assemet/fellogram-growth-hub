@@ -7,6 +7,8 @@ import { currentOwnedStoreId } from "@/lib/current-store";
 import { loadSettings, maybeExtendTrial, processDueReferrals } from "@/lib/billing-server";
 import { miniAppLink } from "@/lib/bot-link";
 import { loadEntitlements } from "@/lib/entitlements";
+import { STAR_MONTH_OPTIONS } from "@/lib/billing";
+import { rateLimit } from "@/lib/rate-limit";
 
 export type PlanCard = { code: string; name: string; price: number; maxCashiers: number; features: PlanFeature[] };
 export type MyPlan = {
@@ -18,9 +20,11 @@ export type MyPlan = {
   features: PlanFeature[];
   maxCashiers: number;
   plans: PlanCard[];
+  /** Paying with Telegram Stars: whether it is switched on, and how many Stars one dollar of price costs. */
+  stars: { enabled: boolean; perUsd: number };
 };
 
-const OPEN: MyPlan = { enforced: false, current: { code: "open", name: "", endsAt: null, trial: false }, referral: null, features: [], maxCashiers: 100, plans: [] };
+const OPEN: MyPlan = { enforced: false, current: { code: "open", name: "", endsAt: null, trial: false }, referral: null, features: [], maxCashiers: 100, plans: [], stars: { enabled: false, perUsd: 50 } };
 
 /** Owner: what the store's plan includes, and the plans it could move to. Never fails the page: on any problem nothing is locked. */
 export const getMyPlan = createServerFn({ method: "POST" })
@@ -57,9 +61,27 @@ export const getMyPlan = createServerFn({ method: "POST" })
         features: entitlements.features,
         maxCashiers: entitlements.maxCashiers,
         plans,
+        stars: { enabled: settings.starsEnabled, perUsd: settings.starsPerUsd },
       };
     } catch (error) {
       console.error("[billing] getMyPlan failed, nothing is locked", error);
       return OPEN;
     }
+  });
+
+/** Owner: starts a Stars payment for a plan. Returns Telegram's invoice link; the plan is given only when Telegram confirms the payment. */
+export const createPlanInvoice = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: { planCode: string; months: number }) => {
+    if (typeof input?.planCode !== "string" || !/^[a-z0-9_-]{1,32}$/.test(input.planCode)) throw new Error("INVALID_PLAN");
+    if (!(STAR_MONTH_OPTIONS as readonly number[]).includes(input.months)) throw new Error("INVALID_MONTHS");
+    return { planCode: input.planCode, months: input.months };
+  })
+  .handler(async ({ context, data }) => {
+    await rateLimit("plan-invoice", context.userId, 10, 3600);
+    const storeId = await currentOwnedStoreId(context.supabase, context.userId);
+    if (!storeId) throw new Error("NO_STORE");
+    const { createPlanInvoice: create } = await import("@/lib/stars");
+    const invoice = await create({ storeId, userId: context.userId, planCode: data.planCode, months: data.months });
+    return { link: invoice.link, stars: invoice.stars };
   });

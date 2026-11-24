@@ -347,3 +347,84 @@ export const adminGrantTrialToExisting = createServerFn({ method: "POST" })
     console.info(`[admin] ${context.userId} granted trial to ${result.granted} existing stores`);
     return result;
   });
+
+/* ---------- Telegram Stars (platform owner) ---------- */
+
+export type AdminStarsPayment = { id: string; storeName: string; planCode: string; months: number; stars: number; status: string; createdAt: string; paidAt: string | null; note: string | null };
+
+/** Platform owner: latest Stars orders, newest first. */
+export const adminStarsPayments = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }): Promise<AdminStarsPayment[]> => {
+    await requireAdmin(context.userId);
+    const db = await looseClient();
+    const orders = rows(await db.from("star_payments").select("*").in("status", ["paid", "refunded", "failed"]).order("created_at", { ascending: false }).limit(100), "STARS_LIST_FAILED");
+    const ids = [...new Set(orders.map((o) => String(o["store_id"])))];
+    const stores = ids.length ? rows(await db.from("stores").select("id, name").in("id", ids), "STORES_FAILED") : [];
+    const names = new Map(stores.map((s) => [String(s["id"]), String(s["name"] ?? "")]));
+    return orders.map((o) => ({
+      id: String(o["id"]),
+      storeName: names.get(String(o["store_id"])) ?? "—",
+      planCode: String(o["plan_code"]),
+      months: Number(o["months"]),
+      stars: Number(o["stars"]),
+      status: String(o["status"]),
+      createdAt: String(o["created_at"]),
+      paidAt: o["paid_at"] ? String(o["paid_at"]) : null,
+      note: o["note"] ? String(o["note"]) : null,
+    }));
+  });
+
+/** Platform owner: returns the Stars to the buyer and ends the plan that payment bought. */
+export const adminRefundStars = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((data: { id: string }) => {
+    const id = String(data?.id ?? "");
+    if (!ID_RE.test(id)) throw new Error("INVALID_ORDER");
+    return { id };
+  })
+  .handler(async ({ data, context }) => {
+    await requireAdmin(context.userId);
+    await rateLimit("admin-write", context.userId, 30, 600);
+    const { refundOrder } = await import("@/lib/stars");
+    await refundOrder(data.id);
+    console.info(`[admin] ${context.userId} refunded stars order ${data.id}`);
+    return { ok: true as const };
+  });
+
+export type WebhookInfo = { secretSet: boolean; url: string; pending: number; lastError: string | null };
+
+/** Platform owner: where Telegram currently sends updates, and whether the secret is configured. */
+export const adminWebhookInfo = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }): Promise<WebhookInfo> => {
+    await requireAdmin(context.userId);
+    const { telegramCall } = await import("@/lib/stars");
+    const info = await telegramCall<{ url?: string; pending_update_count?: number; last_error_message?: string }>("getWebhookInfo", {});
+    return { secretSet: Boolean(process.env["TELEGRAM_WEBHOOK_SECRET"]), url: info.url ?? "", pending: info.pending_update_count ?? 0, lastError: info.last_error_message ?? null };
+  });
+
+/** Platform owner: points Telegram's webhook at this site. `origin` is the page the owner is on; it must be public https. */
+export const adminSetWebhook = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((data: { origin: string }) => {
+    let url: URL;
+    try {
+      url = new URL(String(data?.origin ?? ""));
+    } catch {
+      throw new Error("INVALID_ORIGIN");
+    }
+    const host = url.hostname;
+    if (url.protocol !== "https:" || host === "localhost" || /^\d+\.\d+\.\d+\.\d+$/.test(host) || !host.includes(".")) throw new Error("INVALID_ORIGIN");
+    return { url: `${url.origin}/api/telegram` };
+  })
+  .handler(async ({ data, context }) => {
+    await requireAdmin(context.userId);
+    await rateLimit("admin-write", context.userId, 10, 600);
+    const secret = process.env["TELEGRAM_WEBHOOK_SECRET"];
+    if (!secret || !/^[A-Za-z0-9_-]{16,256}$/.test(secret)) throw new Error("WEBHOOK_SECRET_MISSING");
+    const { telegramCall } = await import("@/lib/stars");
+    await telegramCall("setWebhook", { url: data.url, secret_token: secret, allowed_updates: ["message", "pre_checkout_query"], max_connections: 20 });
+    console.info(`[admin] ${context.userId} set the telegram webhook to ${data.url}`);
+    return { ok: true as const, url: data.url };
+  });

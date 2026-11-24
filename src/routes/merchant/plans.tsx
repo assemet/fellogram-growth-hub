@@ -1,4 +1,7 @@
+import { useQueryClient } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
+import { useServerFn } from "@tanstack/react-start";
+import { useState } from "react";
 import { Check, Copy, Lock, Share2 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -8,12 +11,13 @@ import { BottomNav } from "@/components/BottomNav";
 import { SplashScreen } from "@/components/SplashScreen";
 import { Button } from "@/components/ui/button";
 import { useMyPlan } from "@/hooks/useMyPlan";
-import { PLAN_FEATURES } from "@/lib/billing";
+import { PLAN_FEATURES, STAR_MONTH_OPTIONS, starsAmount } from "@/lib/billing";
+import { createPlanInvoice } from "@/lib/plans.functions";
 import { formatDate } from "@/lib/format";
 import { getLocale, t, type TranslationKey } from "@/lib/i18n";
 import { SUPPORT_EMAIL, supportMailto } from "@/lib/support";
 import { useMyContext } from "@/hooks/useMyContext";
-import { shareViaTelegram } from "@/lib/telegram";
+import { openInvoice, shareViaTelegram } from "@/lib/telegram";
 
 export const Route = createFileRoute("/merchant/plans")({
   ssr: false,
@@ -29,7 +33,32 @@ export const Route = createFileRoute("/merchant/plans")({
 function PlansPage() {
   const { plan, isLoading } = useMyPlan();
   const context = useMyContext();
+  const queryClient = useQueryClient();
+  const invoice = useServerFn(createPlanInvoice);
+  const [months, setMonths] = useState<number>(1);
+  const [paying, setPaying] = useState<string | null>(null);
   if (isLoading || !plan) return <SplashScreen />;
+
+  const pay = async (planCode: string) => {
+    if (paying) return;
+    setPaying(planCode);
+    try {
+      const { link } = await invoice({ data: { planCode, months } });
+      openInvoice(link, (status) => {
+        setPaying(null);
+        if (status === "paid") {
+          toast.success(t("plans.pay.done"));
+          // The plan is given by Telegram's confirmation on the server, which can arrive a moment after the sheet closes.
+          for (const delay of [1500, 5000, 12000]) setTimeout(() => void queryClient.invalidateQueries({ queryKey: ["my-plan"] }), delay);
+        } else if (status === "cancelled") toast(t("plans.pay.cancelled"));
+        else if (status === "unsupported") toast.error(t("plans.pay.unavailable"));
+        else if (status === "failed") toast.error(t("plans.pay.failed"));
+      });
+    } catch {
+      setPaying(null);
+      toast.error(t("plans.pay.failed"));
+    }
+  };
 
   const mailto = SUPPORT_EMAIL
     ? supportMailto(SUPPORT_EMAIL, {
@@ -56,6 +85,19 @@ function PlansPage() {
           <p className="rounded-lg border border-border bg-card p-4 text-sm text-muted-foreground">{t("plans.open")}</p>
         ) : (
           <>
+            {plan.stars.enabled && (
+              <div className="rounded-lg border border-border bg-card p-4">
+                <p className="text-sm font-semibold">{t("plans.pay.months")}</p>
+                <div className="mt-2 grid grid-cols-3 gap-2">
+                  {STAR_MONTH_OPTIONS.map((option) => (
+                    <Button key={option} type="button" variant={months === option ? "default" : "outline"} className="touch-action h-11 text-sm font-bold" aria-pressed={months === option} onClick={() => setMonths(option)}>
+                      {option}
+                    </Button>
+                  ))}
+                </div>
+                <p className="mt-2 text-xs text-muted-foreground">{t("plans.pay.note")}</p>
+              </div>
+            )}
             <ul className="space-y-3">
               {plan.plans.map((card) => {
                 const mine = card.code === plan.current.code;
@@ -81,6 +123,11 @@ function PlansPage() {
                         );
                       })}
                     </ul>
+                    {plan.stars.enabled && card.price > 0 && (
+                      <Button type="button" className="touch-action mt-3 h-11 w-full text-sm font-bold" disabled={paying !== null} onClick={() => void pay(card.code)}>
+                        {paying === card.code ? t("plans.pay.processing") : t("plans.pay.button", { stars: starsAmount(card.price, months, plan.stars.perUsd) })}
+                      </Button>
+                    )}
                   </li>
                 );
               })}

@@ -737,4 +737,12 @@ export const ru: Record<TranslationKey, string> = {
   "plans.referral.shareText": "Я веду награды для клиентов в Fellogram. Откройте свой магазин по моей ссылке:",
   "plans.referral.stats": "Приглашено: {invited} · Награждено: {rewarded} · Бесплатных месяцев получено: {earned}",
   "plans.referral.cap": "Всего не более {cap} бесплатных месяцев.",
+  "plans.pay.months": "На сколько месяцев платить",
+  "plans.pay.note": "Оплата звёздами Telegram. Тариф включится сразу после подтверждения платежа.",
+  "plans.pay.button": "Оплатить {stars} ⭐",
+  "plans.pay.processing": "Открываем…",
+  "plans.pay.done": "Платёж отправлен. Тариф обновится через мгновение.",
+  "plans.pay.cancelled": "Платёж отменён.",
+  "plans.pay.failed": "Платёж не прошёл. Ничего не списано.",
+  "plans.pay.unavailable": "Оплата звёздами работает в приложении Telegram.",
 };

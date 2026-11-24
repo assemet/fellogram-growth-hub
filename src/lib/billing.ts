@@ -38,6 +38,10 @@ export type PlatformSettings = {
   pricingGroup: PriceGroup;
   /** Off until the owner is ready: while off, every store has every feature and no limits. */
   enforceLimits: boolean;
+  /** Paying with Telegram Stars. Off until the owner has tested a payment. */
+  starsEnabled: boolean;
+  /** How many Stars one US dollar of plan price costs the buyer. The owner sets it from what a Star really costs. */
+  starsPerUsd: number;
 };
 
 export const DEFAULT_SETTINGS: PlatformSettings = {
@@ -52,6 +56,8 @@ export const DEFAULT_SETTINGS: PlatformSettings = {
   referralReleaseDays: 7,
   pricingGroup: "A",
   enforceLimits: false,
+  starsEnabled: false,
+  starsPerUsd: 50,
 };
 
 type SettingSpec = { key: string; field: keyof PlatformSettings; kind: "int" | "bool" | "group" | "plan"; min?: number; max?: number };
@@ -69,6 +75,8 @@ export const SETTING_KEYS: SettingSpec[] = [
   { key: "referral_release_days", field: "referralReleaseDays", kind: "int", min: 0, max: 90 },
   { key: "pricing_group", field: "pricingGroup", kind: "group" },
   { key: "enforce_limits", field: "enforceLimits", kind: "bool" },
+  { key: "stars_enabled", field: "starsEnabled", kind: "bool" },
+  { key: "stars_per_usd", field: "starsPerUsd", kind: "int", min: 1, max: 1000 },
 ];
 
 const PLAN_CODE = /^[a-z][a-z0-9_]{1,23}$/;
@@ -155,4 +163,12 @@ export function addMonths(from: Date, months: number): Date {
   const lastDay = new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth() + 1, 0)).getUTCDate();
   d.setUTCDate(Math.min(day, lastDay));
   return d;
+}
+
+/** Months a store can pay for in one go. No discount: the price is simply the monthly price times the months. */
+export const STAR_MONTH_OPTIONS = [1, 3, 12] as const;
+
+/** Stars for a plan: the monthly dollar price times the months times the Stars-per-dollar rate, rounded up to a whole Star. */
+export function starsAmount(priceUsd: number, months: number, starsPerUsd: number): number {
+  return Math.ceil(priceUsd * months * starsPerUsd - 1e-9);
 }

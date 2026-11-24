@@ -10,7 +10,11 @@ import {
   adminCancelPlan,
   adminGrantTrialToExisting,
   adminReferrals,
+  adminRefundStars,
   adminReviewReferral,
+  adminSetWebhook,
+  adminStarsPayments,
+  adminWebhookInfo,
   adminSavePlan,
   adminSaveSettings,
   type AdminBilling,
@@ -138,6 +142,14 @@ export function SettingsPanel({ settings, plans, onSaved }: { settings: Platform
         <input type="checkbox" className="size-5" checked={draft.referralEnabled} onChange={(e) => set("referralEnabled", e.target.checked)} />
         الإحالة مفعّلة
       </label>
+      <div className="space-y-2 rounded-lg border border-border p-3">
+        <label className="flex min-h-11 items-center gap-2 text-sm font-bold">
+          <input type="checkbox" className="size-5" checked={draft.starsEnabled} onChange={(e) => set("starsEnabled", e.target.checked)} />
+          الدفع بنجوم تيليجرام مفعّل
+        </label>
+        <NumberField label="عدد النجوم لكل 1 دولار من السعر" value={draft.starsPerUsd} onChange={(v) => set("starsPerUsd", v)} />
+        <p className="text-xs text-muted-foreground">فعّله بعد تسجيل الـ webhook واختبار دفعة صغيرة. السعر بالنجوم = سعر الباقة × الأشهر × هذا الرقم.</p>
+      </div>
       <label className="block text-xs text-muted-foreground">
         مجموعة تجريب الأسعار الحالية
         <select className={`${selectClass} mt-1 text-foreground`} value={draft.pricingGroup} onChange={(e) => set("pricingGroup", e.target.value as PriceGroup)}>
@@ -271,6 +283,67 @@ export function ReferralsCard() {
                   رفض
                 </Button>
               </div>
+            )}
+          </li>
+        ))}
+      </ul>
+    </SettingsCard>
+  );
+}
+
+const STARS_STATUS: Record<string, string> = { paid: "مدفوع", refunded: "مُسترد", failed: "فشل (راجعه يدويًا)" };
+
+/** Webhook registration (one button) and the latest Stars payments, each with a refund button. */
+export function StarsCard() {
+  const queryClient = useQueryClient();
+  const loadInfo = useServerFn(adminWebhookInfo);
+  const setHook = useServerFn(adminSetWebhook);
+  const loadPayments = useServerFn(adminStarsPayments);
+  const refund = useServerFn(adminRefundStars);
+  const info = useQuery({ queryKey: ["admin-webhook"], queryFn: () => loadInfo(), retry: false });
+  const payments = useQuery({ queryKey: ["admin-stars"], queryFn: () => loadPayments(), retry: false });
+  const register = useMutation({ mutationFn: () => setHook({ data: { origin: window.location.origin } }), onSuccess: () => void queryClient.invalidateQueries({ queryKey: ["admin-webhook"] }) });
+  const giveBack = useMutation({
+    mutationFn: (id: string) => refund({ data: { id } }),
+    onSuccess: () => void queryClient.invalidateQueries({ queryKey: ["admin-stars"] }),
+  });
+  return (
+    <SettingsCard title="الدفع بالنجوم" description="يحتاج متغير TELEGRAM_WEBHOOK_SECRET في Vercel (حروف وأرقام و _ و - فقط، 16 حرفًا أو أكثر).">
+      {info.isError && <p role="alert" className="text-sm text-destructive">{errorText(info.error)}</p>}
+      {info.data && (
+        <div className="space-y-1 text-xs text-muted-foreground">
+          <p>السر مضبوط: {info.data.secretSet ? "نعم" : "لا — أضفه في Vercel ثم أعد النشر"}</p>
+          <p className="break-all">العنوان الحالي: {info.data.url || "غير مسجّل"}</p>
+          <p>معلّق: {info.data.pending}{info.data.lastError ? ` · آخر خطأ: ${info.data.lastError}` : ""}</p>
+        </div>
+      )}
+      {register.isError && <p role="alert" className="text-sm text-destructive">تعذّر التسجيل: {errorText(register.error)}</p>}
+      {register.isSuccess && <p className="text-sm text-muted-foreground">تم تسجيل الـ webhook.</p>}
+      <Button type="button" variant="outline" className="h-11 w-full" disabled={register.isPending} onClick={() => register.mutate()}>
+        تسجيل الـ webhook على هذا الموقع
+      </Button>
+      {giveBack.isError && <p role="alert" className="text-sm text-destructive">تعذّر الاسترداد: {errorText(giveBack.error)}</p>}
+      {payments.isSuccess && (payments.data?.length ?? 0) === 0 && <p className="text-sm text-muted-foreground">لا توجد مدفوعات بعد.</p>}
+      <ul className="space-y-2">
+        {(payments.data ?? []).map((p) => (
+          <li key={p.id} className="rounded-lg border border-border bg-background p-3 text-sm">
+            <p className="font-semibold">{p.storeName} · {p.planCode} · {p.months} شهر · {p.stars} ⭐</p>
+            <p className="mt-0.5 text-xs text-muted-foreground">
+              {STARS_STATUS[p.status] ?? p.status} · {day.format(new Date(p.paidAt ?? p.createdAt))}
+              {p.note ? ` · ${p.note}` : ""}
+            </p>
+            {p.status === "paid" && (
+              <Button
+                type="button"
+                variant="outline"
+                className="mt-2 h-11 w-full"
+                disabled={giveBack.isPending}
+                onClick={() => {
+                  if (window.confirm("استرداد النجوم للمشتري وإنهاء الباقة التي اشتراها؟")) giveBack.mutate(p.id);
+                }}
+              >
+                استرداد
+              </Button>
             )}
           </li>
         ))}

@@ -737,4 +737,12 @@ export const es: Record<TranslationKey, string> = {
   "plans.referral.shareText": "Gestiono las recompensas de mis clientes con Fellogram. Abre tu tienda con mi enlace:",
   "plans.referral.stats": "Invitadas: {invited} · Premiadas: {rewarded} · Meses gratis ganados: {earned}",
   "plans.referral.cap": "Hasta {cap} meses gratis en total.",
+  "plans.pay.months": "Meses a pagar",
+  "plans.pay.note": "Pago con Telegram Stars. El plan empieza en cuanto se confirma el pago.",
+  "plans.pay.button": "Pagar {stars} ⭐",
+  "plans.pay.processing": "Abriendo…",
+  "plans.pay.done": "Pago enviado. Tu plan se actualizará en un momento.",
+  "plans.pay.cancelled": "Pago cancelado.",
+  "plans.pay.failed": "El pago no se realizó. No se cobró nada.",
+  "plans.pay.unavailable": "Pagar con Stars requiere la app de Telegram.",
 };

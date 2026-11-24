@@ -746,4 +746,12 @@ export const id: Record<TranslationKey, string> = {
   "plans.referral.shareText": "Saya mengelola hadiah pelanggan di Fellogram. Buka toko Anda lewat tautan saya:",
   "plans.referral.stats": "Diundang: {invited} · Dihadiahi: {rewarded} · Bulan gratis didapat: {earned}",
   "plans.referral.cap": "Maksimal {cap} bulan gratis secara total.",
+  "plans.pay.months": "Jumlah bulan yang dibayar",
+  "plans.pay.note": "Dibayar dengan Telegram Stars. Paket mulai segera setelah pembayaran dikonfirmasi.",
+  "plans.pay.button": "Bayar {stars} ⭐",
+  "plans.pay.processing": "Membuka…",
+  "plans.pay.done": "Pembayaran terkirim. Paket Anda akan diperbarui sebentar lagi.",
+  "plans.pay.cancelled": "Pembayaran dibatalkan.",
+  "plans.pay.failed": "Pembayaran gagal. Tidak ada yang ditagih.",
+  "plans.pay.unavailable": "Bayar dengan Stars memerlukan aplikasi Telegram.",
 };

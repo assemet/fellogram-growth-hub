@@ -19,6 +19,7 @@ import { Route as SettingsRouteImport } from './routes/settings'
 import { Route as TermsRouteImport } from './routes/terms'
 import { Route as WalletRouteImport } from './routes/wallet'
 import { Route as ApiHealthRouteImport } from './routes/api.health'
+import { Route as ApiTelegramRouteImport } from './routes/api.telegram'
 import { Route as JoinStoreIdRouteImport } from './routes/join.$storeId'
 import { Route as MerchantIndexRouteImport } from './routes/merchant/index'
 import { Route as MerchantCustomersRouteImport } from './routes/merchant/customers'
@@ -79,6 +80,11 @@ const ApiHealthRoute = ApiHealthRouteImport.update({
   path: '/api/health',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiTelegramRoute = ApiTelegramRouteImport.update({
+  id: '/api/telegram',
+  path: '/api/telegram',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const JoinStoreIdRoute = JoinStoreIdRouteImport.update({
   id: '/join/$storeId',
   path: '/join/$storeId',
@@ -136,6 +142,7 @@ export interface FileRoutesByFullPath {
   '/terms': typeof TermsRoute
   '/wallet': typeof WalletRoute
   '/api/health': typeof ApiHealthRoute
+  '/api/telegram': typeof ApiTelegramRoute
   '/join/$storeId': typeof JoinStoreIdRoute
   '/merchant/customers': typeof MerchantCustomersRoute
   '/merchant/new': typeof MerchantNewRoute
@@ -157,6 +164,7 @@ export interface FileRoutesByTo {
   '/terms': typeof TermsRoute
   '/wallet': typeof WalletRoute
   '/api/health': typeof ApiHealthRoute
+  '/api/telegram': typeof ApiTelegramRoute
   '/join/$storeId': typeof JoinStoreIdRoute
   '/merchant/customers': typeof MerchantCustomersRoute
   '/merchant/new': typeof MerchantNewRoute
@@ -179,6 +187,7 @@ export interface FileRoutesById {
   '/terms': typeof TermsRoute
   '/wallet': typeof WalletRoute
   '/api/health': typeof ApiHealthRoute
+  '/api/telegram': typeof ApiTelegramRoute
   '/join/$storeId': typeof JoinStoreIdRoute
   '/merchant/customers': typeof MerchantCustomersRoute
   '/merchant/new': typeof MerchantNewRoute
@@ -202,6 +211,7 @@ export interface FileRouteTypes {
     | '/terms'
     | '/wallet'
     | '/api/health'
+    | '/api/telegram'
     | '/join/$storeId'
     | '/merchant/customers'
     | '/merchant/new'
@@ -223,6 +233,7 @@ export interface FileRouteTypes {
     | '/terms'
     | '/wallet'
     | '/api/health'
+    | '/api/telegram'
     | '/join/$storeId'
     | '/merchant/customers'
     | '/merchant/new'
@@ -244,6 +255,7 @@ export interface FileRouteTypes {
     | '/terms'
     | '/wallet'
     | '/api/health'
+    | '/api/telegram'
     | '/join/$storeId'
     | '/merchant/customers'
     | '/merchant/new'
@@ -266,6 +278,7 @@ export interface RootRouteChildren {
   TermsRoute: typeof TermsRoute
   WalletRoute: typeof WalletRoute
   ApiHealthRoute: typeof ApiHealthRoute
+  ApiTelegramRoute: typeof ApiTelegramRoute
   JoinStoreIdRoute: typeof JoinStoreIdRoute
   MerchantCustomersRoute: typeof MerchantCustomersRoute
   MerchantNewRoute: typeof MerchantNewRoute
@@ -349,6 +362,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiHealthRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/telegram': {
+      id: '/api/telegram'
+      path: '/api/telegram'
+      fullPath: '/api/telegram'
+      preLoaderRoute: typeof ApiTelegramRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/join/$storeId': {
       id: '/join/$storeId'
       path: '/join/$storeId'
@@ -426,6 +446,7 @@ const rootRouteChildren: RootRouteChildren = {
   TermsRoute: TermsRoute,
   WalletRoute: WalletRoute,
   ApiHealthRoute: ApiHealthRoute,
+  ApiTelegramRoute: ApiTelegramRoute,
   JoinStoreIdRoute: JoinStoreIdRoute,
   MerchantCustomersRoute: MerchantCustomersRoute,
   MerchantNewRoute: MerchantNewRoute,
